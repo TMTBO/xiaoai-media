@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
-from xiaoai_media.api.routes import devices, tts, volume, command, config
+from xiaoai_media.api.routes import devices, tts, volume, command, config, music
 
 app = FastAPI(
     title="XiaoAI Media API",
@@ -35,6 +35,7 @@ app.include_router(tts.router, prefix="/api")
 app.include_router(volume.router, prefix="/api")
 app.include_router(command.router, prefix="/api")
 app.include_router(config.router, prefix="/api")
+app.include_router(music.router, prefix="/api")
 
 # Serve frontend static files in production (built by Docker)
 _static_dir = Path(__file__).resolve().parents[5] / "static"

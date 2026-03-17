@@ -3,23 +3,14 @@
     <template #header>音量控制</template>
     <el-form label-width="100px">
       <el-form-item label="目标设备">
-        <el-select
-          v-model="deviceId"
-          placeholder="留空则使用默认设备"
-          clearable
-          style="flex: 1; margin-right: 8px"
-          :loading="devicesLoading"
-          no-data-text="暂无设备，请先在配置页填写账号后点击刷新"
-        >
-          <el-option
-            v-for="d in devices"
-            :key="d.deviceID"
-            :label="`${d.name} (${d.deviceID})`"
-            :value="d.deviceID"
-          />
+        <el-select v-model="deviceId" placeholder="留空则使用默认设备" clearable style="flex: 1; margin-right: 8px"
+          :loading="devicesLoading" no-data-text="暂无设备，请先在配置页填写账号后点击刷新">
+          <el-option v-for="d in devices" :key="d.deviceID" :label="`${d.name} (${d.deviceID})`" :value="d.deviceID" />
         </el-select>
         <el-button :loading="devicesLoading" @click="loadDevices">
-          <el-icon><Refresh /></el-icon>
+          <el-icon>
+            <Refresh />
+          </el-icon>
         </el-button>
       </el-form-item>
       <el-form-item label="音量">
@@ -41,12 +32,11 @@ import { api } from '@/api'
 import { useDevices } from '@/composables/useDevices'
 
 const volume = ref(50)
-const deviceId = ref('')
 const loading = ref(false)
 const error = ref('')
 const success = ref(false)
 const lastVolume = ref(0)
-const { devices, devicesLoading, loadDevices } = useDevices()
+const { devices, devicesLoading, loadDevices, deviceId } = useDevices()
 
 async function submit() {
   loading.value = true

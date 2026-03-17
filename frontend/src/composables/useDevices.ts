@@ -3,6 +3,7 @@ import { api, type Device } from '@/api'
 
 export function useDevices() {
     const devices = ref<Device[]>([])
+    const deviceId = ref('')
     const devicesLoading = ref(false)
     const devicesError = ref('')
 
@@ -19,5 +20,14 @@ export function useDevices() {
         }
     }
 
-    return { devices, devicesLoading, devicesError, loadDevices }
+    // Auto-load on composable init: fetch devices and resolve default device ID
+    api.getConfig().then(cfg => {
+        if (!deviceId.value && cfg.MI_DID) {
+            deviceId.value = cfg.MI_DID
+        }
+    }).catch(() => { })
+
+    loadDevices()
+
+    return { devices, deviceId, devicesLoading, devicesError, loadDevices }
 }

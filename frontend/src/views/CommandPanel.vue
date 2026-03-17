@@ -6,23 +6,14 @@
         <el-input v-model="command" placeholder="例如：查询天气、播放音乐" clearable />
       </el-form-item>
       <el-form-item label="目标设备">
-        <el-select
-          v-model="deviceId"
-          placeholder="留空则使用默认设备"
-          clearable
-          style="flex: 1; margin-right: 8px"
-          :loading="devicesLoading"
-          no-data-text="暂无设备，请先在配置页填写账号后点击刷新"
-        >
-          <el-option
-            v-for="d in devices"
-            :key="d.deviceID"
-            :label="`${d.name} (${d.deviceID})`"
-            :value="d.deviceID"
-          />
+        <el-select v-model="deviceId" placeholder="留空则使用默认设备" clearable style="flex: 1; margin-right: 8px"
+          :loading="devicesLoading" no-data-text="暂无设备，请先在配置页填写账号后点击刷新">
+          <el-option v-for="d in devices" :key="d.deviceID" :label="`${d.name} (${d.deviceID})`" :value="d.deviceID" />
         </el-select>
         <el-button :loading="devicesLoading" @click="loadDevices">
-          <el-icon><Refresh /></el-icon>
+          <el-icon>
+            <Refresh />
+          </el-icon>
         </el-button>
       </el-form-item>
       <el-form-item>
@@ -45,11 +36,10 @@ import { api } from '@/api'
 import { useDevices } from '@/composables/useDevices'
 
 const command = ref('')
-const deviceId = ref('')
 const loading = ref(false)
 const error = ref('')
 const result = ref<{ device_id: string; command: string; result: unknown } | null>(null)
-const { devices, devicesLoading, loadDevices } = useDevices()
+const { devices, devicesLoading, loadDevices, deviceId } = useDevices()
 
 async function submit() {
   if (!command.value.trim()) return

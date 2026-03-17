@@ -10,7 +10,15 @@ from fastapi import APIRouter, HTTPException
 router = APIRouter(prefix="/config", tags=["config"])
 
 _ENV_PATH = Path(__file__).resolve().parents[5] / ".env"
-_ALLOWED_KEYS = {"MI_USER", "MI_PASS", "MI_PASS_TOKEN", "MI_DID", "MI_REGION"}
+_ALLOWED_KEYS = {
+    "MI_USER",
+    "MI_PASS",
+    "MI_PASS_TOKEN",
+    "MI_DID",
+    "MI_REGION",
+    "MUSIC_API_BASE_URL",
+    "MUSIC_DEFAULT_PLATFORM",
+}
 
 
 def _read_env_file() -> dict[str, str]:
@@ -43,6 +51,8 @@ async def get_config():
         "MI_PASS_TOKEN": "***" if env.get("MI_PASS_TOKEN") else "",
         "MI_DID": env.get("MI_DID", ""),
         "MI_REGION": env.get("MI_REGION", "cn"),
+        "MUSIC_API_BASE_URL": env.get("MUSIC_API_BASE_URL", "http://localhost:5050"),
+        "MUSIC_DEFAULT_PLATFORM": env.get("MUSIC_DEFAULT_PLATFORM", "tx"),
     }
 
 
@@ -52,6 +62,8 @@ class ConfigUpdate(BaseModel):
     MI_PASS_TOKEN: str | None = None
     MI_DID: str | None = None
     MI_REGION: str | None = None
+    MUSIC_API_BASE_URL: str | None = None
+    MUSIC_DEFAULT_PLATFORM: str | None = None
 
 
 @router.put("")

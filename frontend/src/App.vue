@@ -4,23 +4,39 @@
       <div class="logo">🎵 XiaoAI Media</div>
       <el-menu :default-active="$route.path" router>
         <el-menu-item index="/devices">
-          <el-icon><Monitor /></el-icon>
+          <el-icon>
+            <Monitor />
+          </el-icon>
           <span>设备列表</span>
         </el-menu-item>
         <el-menu-item index="/tts">
-          <el-icon><ChatDotRound /></el-icon>
+          <el-icon>
+            <ChatDotRound />
+          </el-icon>
           <span>TTS 朗读</span>
         </el-menu-item>
         <el-menu-item index="/volume">
-          <el-icon><Headset /></el-icon>
+          <el-icon>
+            <Headset />
+          </el-icon>
           <span>音量控制</span>
         </el-menu-item>
         <el-menu-item index="/command">
-          <el-icon><Mic /></el-icon>
+          <el-icon>
+            <Mic />
+          </el-icon>
           <span>语音指令</span>
         </el-menu-item>
+        <el-menu-item index="/music">
+          <el-icon>
+            <VideoPlay />
+          </el-icon>
+          <span>音乐搜索</span>
+        </el-menu-item>
         <el-menu-item index="/settings">
-          <el-icon><Setting /></el-icon>
+          <el-icon>
+            <Setting />
+          </el-icon>
           <span>配置管理</span>
         </el-menu-item>
       </el-menu>
@@ -33,7 +49,9 @@
 </template>
 
 <style>
-html, body, #app {
+html,
+body,
+#app {
   margin: 0;
   padding: 0;
   height: 100%;
@@ -44,9 +62,11 @@ html, body, #app {
 .app-layout {
   height: 100vh;
 }
+
 .aside {
   background: #1d2d44;
 }
+
 .aside .logo {
   padding: 20px 16px;
   font-size: 16px;
@@ -54,6 +74,7 @@ html, body, #app {
   color: #ffffff;
   border-bottom: 1px solid #2e4060;
 }
+
 .aside .el-menu {
   border-right: none;
   background: #1d2d44;
@@ -61,6 +82,7 @@ html, body, #app {
   --el-menu-hover-bg-color: #2e4060;
   --el-menu-active-color: #ffffff;
 }
+
 .main {
   background: #f5f7fa;
 }

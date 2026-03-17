@@ -3,31 +3,17 @@
     <template #header>TTS 文字朗读</template>
     <el-form label-width="100px" @submit.prevent="submit">
       <el-form-item label="文字内容">
-        <el-input
-          v-model="text"
-          type="textarea"
-          :rows="4"
-          placeholder="请输入要朗读的文字..."
-        />
+        <el-input v-model="text" type="textarea" :rows="4" placeholder="请输入要朗读的文字..." />
       </el-form-item>
       <el-form-item label="目标设备">
-        <el-select
-          v-model="deviceId"
-          placeholder="留空则使用默认设备"
-          clearable
-          style="flex: 1; margin-right: 8px"
-          :loading="devicesLoading"
-          no-data-text="暂无设备，请先在配置页填写账号后点击刷新"
-        >
-          <el-option
-            v-for="d in devices"
-            :key="d.deviceID"
-            :label="`${d.name} (${d.deviceID})`"
-            :value="d.deviceID"
-          />
+        <el-select v-model="deviceId" placeholder="留空则使用默认设备" clearable style="flex: 1; margin-right: 8px"
+          :loading="devicesLoading" no-data-text="暂无设备，请先在配置页填写账号后点击刷新">
+          <el-option v-for="d in devices" :key="d.deviceID" :label="`${d.name} (${d.deviceID})`" :value="d.deviceID" />
         </el-select>
         <el-button :loading="devicesLoading" @click="loadDevices">
-          <el-icon><Refresh /></el-icon>
+          <el-icon>
+            <Refresh />
+          </el-icon>
         </el-button>
       </el-form-item>
       <el-form-item>
@@ -46,11 +32,10 @@ import { api } from '@/api'
 import { useDevices } from '@/composables/useDevices'
 
 const text = ref('')
-const deviceId = ref('')
 const loading = ref(false)
 const error = ref('')
 const success = ref(false)
-const { devices, devicesLoading, loadDevices } = useDevices()
+const { devices, devicesLoading, loadDevices, deviceId } = useDevices()
 
 async function submit() {
   if (!text.value.trim()) return

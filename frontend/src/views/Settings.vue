@@ -34,6 +34,19 @@
           <el-option value="i2" label="印度 (i2)" />
         </el-select>
       </el-form-item>
+      <el-divider content-position="left" style="margin: 20px 0 16px">音乐服务</el-divider>
+      <el-form-item label="服务地址">
+        <el-input v-model="form.MUSIC_API_BASE_URL" placeholder="http://localhost:5050" />
+      </el-form-item>
+      <el-form-item label="默认平台">
+        <el-select v-model="form.MUSIC_DEFAULT_PLATFORM">
+          <el-option value="tx" label="腾讯音乐 (tx)" />
+          <el-option value="kw" label="酷我音乐 (kw)" />
+          <el-option value="kg" label="酷狗音乐 (kg)" />
+          <el-option value="wy" label="网易云音乐 (wy)" />
+          <el-option value="mg" label="咪咕音乐 (mg)" />
+        </el-select>
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" native-type="submit" :loading="saving">保存配置</el-button>
         <el-button @click="load">重新加载</el-button>
@@ -62,6 +75,8 @@ const form = ref<Config>({
   MI_PASS_TOKEN: '',
   MI_DID: '',
   MI_REGION: 'cn',
+  MUSIC_API_BASE_URL: 'http://localhost:5050',
+  MUSIC_DEFAULT_PLATFORM: 'tx',
 })
 
 async function load() {
@@ -110,5 +125,5 @@ async function save() {
   }
 }
 
-onMounted(load)
+onMounted(() => { load(); loadDevices() })
 </script>
