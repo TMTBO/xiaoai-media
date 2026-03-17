@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xiaoai-media"
+version = "0.1.0"
+description = "Xiaomi AI speaker management service via MiService"
+requires-python = ">=3.9"
+dependencies = [
+    "miservice",
+    "aiohttp",
+    "aiofiles",
+    "python-dotenv",
+    "fastapi",
+    "uvicorn[standard]",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "httpx",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

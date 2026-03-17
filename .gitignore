@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+*.egg
+
+# Environment & secrets
+.env
+.mi.token
+
+# Node.js
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# Coverage
+.coverage
+htmlcov/
+.pytest_cache/

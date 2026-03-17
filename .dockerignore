@@ -1,0 +1,13 @@
+.env
+.git/
+.venv/
+.vscode/
+__pycache__/
+*.py[cod]
+*.egg-info/
+node_modules/
+frontend/dist/
+frontend/.vite/
+.mi.token
+*.md
+.github/
