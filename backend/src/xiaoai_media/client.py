@@ -317,6 +317,28 @@ class XiaoAiClient:
         _log.info("MiService: Fallback to text_to_speech")
         return await self.text_to_speech(text, device_id)
 
+    async def _resolve_device_id(self, device_id: str | None) -> str:
+        """Return *device_id* if provided, otherwise fall back to config.MI_DID.
+
+        Raises HTTPException(422) if neither is available.
+        """
+        from fastapi import HTTPException
+
+        if device_id:
+            return device_id
+        if config.MI_DID:
+            return config.MI_DID
+        # Try the first available device
+        devices = await self.list_devices()
+        if devices:
+            did = devices[0]["deviceID"]
+            _log.info("_resolve_device_id: defaulting to first device %s", did)
+            return did
+        raise HTTPException(
+            status_code=422,
+            detail="No device_id provided and MI_DID is not configured",
+        )
+
     async def set_volume(self, volume: int, device_id: str | None = None) -> dict:
         """Set speaker volume (0-100)."""
         assert self._na_service is not None

@@ -231,22 +231,22 @@ async def play_music(req: PlayRequest):
 
     try:
         async with XiaoAiClient() as client:
-            did = await client._resolve_device_id(req.device_id)
-            result = await client.send_command(command_text, did)
+            # did = await client._resolve_device_id(req.device_id)
+            result = await client.send_command(command_text, req.device_id)
 
-        _playlists[did] = {
+        _playlists[req.device_id] = {
             "songs": [s.model_dump() for s in req.songs],
             "current": req.index,
-            "device_id": did,
+            "device_id": req.device_id,
         }
         _log.info(
             "Playlist set for device %s: %d songs, current=%d",
-            did,
+            req.device_id,
             len(req.songs),
             req.index,
         )
         return {
-            "device_id": did,
+            "device_id": req.device_id,
             "command": command_text,
             "result": result,
             "current": song.model_dump(),
@@ -264,8 +264,8 @@ async def play_next(req: DeviceRequest):
     """Advance to the next song in the server-side playlist."""
     try:
         async with XiaoAiClient() as client:
-            did = await client._resolve_device_id(req.device_id)
-            pl = _playlists.get(did)
+            # did = await client._resolve_device_id(req.device_id)
+            pl = _playlists.get(req.device_id)
             if not pl or not pl["songs"]:
                 raise HTTPException(
                     status_code=404,
@@ -275,11 +275,11 @@ async def play_next(req: DeviceRequest):
             next_idx = (pl["current"] + 1) % len(songs)
             song = songs[next_idx]
             command_text = _build_command(song)
-            result = await client.send_command(command_text, did)
+            result = await client.send_command(command_text, req.device_id)
 
         pl["current"] = next_idx
         return {
-            "device_id": did,
+            "device_id": req.device_id,
             "command": command_text,
             "result": result,
             "current": song,
@@ -297,8 +297,8 @@ async def play_prev(req: DeviceRequest):
     """Go back to the previous song in the server-side playlist."""
     try:
         async with XiaoAiClient() as client:
-            did = await client._resolve_device_id(req.device_id)
-            pl = _playlists.get(did)
+            # did = await client._resolve_device_id(req.device_id)
+            pl = _playlists.get(req.device_id)
             if not pl or not pl["songs"]:
                 raise HTTPException(
                     status_code=404,
@@ -308,11 +308,11 @@ async def play_prev(req: DeviceRequest):
             prev_idx = (pl["current"] - 1) % len(songs)
             song = songs[prev_idx]
             command_text = _build_command(song)
-            result = await client.send_command(command_text, did)
+            result = await client.send_command(command_text, req.device_id)
 
         pl["current"] = prev_idx
         return {
-            "device_id": did,
+            "device_id": req.device_id,
             "command": command_text,
             "result": result,
             "current": song,
@@ -396,26 +396,26 @@ async def voice_command(req: VoiceCommandRequest):
         )
         try:
             async with XiaoAiClient() as client:
-                did = await client._resolve_device_id(req.device_id)
-                result = await client.send_command(cmd, did)
+                # did = await client._resolve_device_id(req.device_id)
+                result = await client.send_command(cmd, req.device_id)
         except Exception as e:
             raise HTTPException(status_code=502, detail=str(e))
-        _playlists[did] = {
+        _playlists[req.device_id] = {
             "songs": [s.model_dump() for s in songs],
             "current": 0,
-            "device_id": did,
+            "device_id": req.device_id,
         }
         _log.info(
             "VoiceCommand: playing chart %r for device %s (%d songs)",
             matched.get("name"),
-            did,
+            req.device_id,
             len(songs),
         )
         return {
             "action": "play_chart",
             "chart": matched.get("name"),
             "platform": plat,
-            "device_id": did,
+            "device_id": req.device_id,
             "command": cmd,
             "result": result,
             "index": 0,
