@@ -135,16 +135,35 @@ def _find_chart(chart_list: list[dict], keyword: str) -> dict | None:
 # ---------------------------------------------------------------------------
 
 
+class SongQuality(BaseModel):
+    type: str  # e.g. '128k', '320k', 'flac'
+    format: str = "mp3"
+    size: int | str = 0  # bytes or human-readable string, e.g. '9.15M'
+
+
+class SongMeta(BaseModel):
+    albumName: str = ""
+    picUrl: str = ""
+    songId: int | str = 0
+
+
 class SongItem(BaseModel):
     id: str
     name: str
     singer: str
     platform: str
+    qualities: list[SongQuality] = []
+    interval: int = 0  # duration in seconds
+    meta: SongMeta = SongMeta()
 
 
 class PlayRequest(BaseModel):
-    songs: list[SongItem]
     index: int = 0
+    device_id: str | None = None
+
+
+class SyncPlaylistRequest(BaseModel):
+    songs: list[SongItem]
     device_id: str | None = None
 
 
@@ -161,6 +180,120 @@ class AnnounceSearchRequest(BaseModel):
     query: str
     count: int
     device_id: str | None = None
+
+
+# ---------------------------------------------------------------------------
+# Play URL resolution with quality fallback
+# ---------------------------------------------------------------------------
+
+
+def _parse_size(size: int | str) -> int:
+    """Convert a size value to bytes. Supports int or strings like '9.15M', '3.2K', '27.3MB', '165.9MB'."""
+    if isinstance(size, int):
+        return size
+    s = str(size).strip().upper().rstrip("B")  # strip trailing 'B' so MB→M, KB→K, GB→G
+    try:
+        if s.endswith("G"):
+            return int(float(s[:-1]) * 1024**3)
+        if s.endswith("M"):
+            return int(float(s[:-1]) * 1024**2)
+        if s.endswith("K"):
+            return int(float(s[:-1]) * 1024)
+        return int(float(s))
+    except ValueError:
+        return 0
+
+
+async def _get_play_url_with_fallback(song: SongItem | dict) -> dict | None:
+    """Fetch a playable URL from the music API, trying qualities from highest to lowest.
+
+    Mirrors the JavaScript ``getPlayUrlWithFallback`` logic:
+    - Sort qualities by size descending (highest quality first).
+    - Try each quality in order; skip on error or missing URL.
+    - Fall back to a single '128k/mp3' attempt if no qualities are declared.
+    Returns a dict ``{url, lyric, quality}`` or ``None`` if all attempts fail.
+    """
+    if isinstance(song, dict):
+        song_id = song.get("id", "")
+        platform = song.get("platform", "")
+        name = song.get("name", "")
+        singer = song.get("singer", "")
+        interval = song.get("interval", 0)
+        meta = song.get("meta") or {}
+        album_name = meta.get("albumName", "") if isinstance(meta, dict) else ""
+        pic_url = meta.get("picUrl", "") if isinstance(meta, dict) else ""
+        song_platform_id = meta.get("songId", 0) if isinstance(meta, dict) else 0
+        qualities_raw: list[dict] = song.get("qualities") or []
+    else:
+        song_id = song.id
+        platform = song.platform
+        name = song.name
+        singer = song.singer
+        interval = song.interval
+        album_name = song.meta.albumName
+        pic_url = song.meta.picUrl
+        song_platform_id = song.meta.songId
+        qualities_raw = [q.model_dump() for q in song.qualities]
+
+    qualities = (
+        qualities_raw
+        if qualities_raw
+        else [{"type": "128k", "format": "mp3", "size": 0}]
+    )
+
+    # Sort by size descending — prefer higher quality
+    qualities_sorted = sorted(
+        qualities, key=lambda q: _parse_size(q.get("size", 0)), reverse=True
+    )
+
+    for q in qualities_sorted:
+        quality_type = q.get("type", "128k")
+        quality_format = q.get("format", "mp3")
+        _log.info(
+            "MusicAPI: trying quality=%s format=%s for %s - %s",
+            quality_type,
+            quality_format,
+            singer,
+            name,
+        )
+        try:
+            data = await _proxy(
+                "POST",
+                "/api/v3/play",
+                json={
+                    "songId": song_id,
+                    "platform": platform,
+                    "quality": quality_type,
+                    "format": quality_format,
+                    "name": name,
+                    "singer": singer,
+                    "interval": interval,
+                    "size": q.get("size", 0),
+                    "albumName": album_name,
+                    "picUrl": pic_url,
+                    "song_platform_id": song_platform_id,
+                },
+            )
+            url = data.get("data", {}).get("url") if data.get("code") == 0 else None
+            if url:
+                _log.info("MusicAPI: quality=%s succeeded", quality_type)
+                return {
+                    "url": url,
+                    "lyric": data.get("data", {}).get("lyric", ""),
+                    "quality": quality_type,
+                }
+            _log.warning(
+                "MusicAPI: quality=%s returned no URL (code=%s)",
+                quality_type,
+                data.get("code"),
+            )
+        except HTTPException as e:
+            _log.warning(
+                "MusicAPI: quality=%s request failed: %s", quality_type, e.detail
+            )
+
+    _log.error("MusicAPI: all qualities failed for %s - %s", singer, name)
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -216,60 +349,74 @@ async def get_rank_songs(
 # ---------------------------------------------------------------------------
 
 
-@router.post("/play")
-async def play_music(req: PlayRequest):
-    """Set the playlist and play the song at the given index by URL."""
+@router.post("/playlist")
+async def sync_playlist(req: SyncPlaylistRequest):
+    """Sync (replace) the server-side playlist for a device."""
     if not req.songs:
         raise HTTPException(status_code=422, detail="songs must not be empty")
-    if not (0 <= req.index < len(req.songs)):
+    pl = _playlists.get(req.device_id) or {}
+    _playlists[req.device_id] = {
+        "songs": [s.model_dump() for s in req.songs],
+        "current": pl.get("current", 0),
+        "device_id": req.device_id,
+    }
+    _log.info("Playlist synced for device %s: %d songs", req.device_id, len(req.songs))
+    return {
+        "device_id": req.device_id,
+        "total": len(req.songs),
+        "current": _playlists[req.device_id]["current"],
+    }
+
+
+@router.post("/play")
+async def play_music(req: PlayRequest):
+    """Play the song at the given index from the server-side playlist."""
+    pl = _playlists.get(req.device_id)
+    if not pl or not pl.get("songs"):
+        raise HTTPException(
+            status_code=404,
+            detail="No playlist for this device. Use POST /api/music/playlist first.",
+        )
+    songs = pl["songs"]
+    if not (0 <= req.index < len(songs)):
         raise HTTPException(status_code=422, detail="index out of range")
 
-    song = req.songs[req.index]
-    
-    # Get the song URL from music API
-    plat = song.platform
-    song_id = song.id
-    _log.info("Getting URL for song %s (platform=%s, id=%s)", song.name, plat, song_id)
-    
+    song = songs[req.index]
+    _log.info(
+        "Getting URL for song %s (platform=%s, id=%s)",
+        song["name"],
+        song["platform"],
+        song["id"],
+    )
+
     try:
-        # Get playback URL from music API
-        url_data = await _proxy(
-            "POST",
-            "/api/v3/play",
-            json={"songId": song_id, "platform": plat, "quality": "128k"}
-        )
-        url = url_data.get("data", {}).get("url")
-        
-        if not url:
+        play_info = await _get_play_url_with_fallback(song)
+        if not play_info:
             raise HTTPException(
                 status_code=404,
-                detail=f"Cannot get playback URL for song {song.name}"
+                detail=f"Cannot get playback URL for song {song['name']}: all qualities failed",
             )
-        
-        _log.info("Got playback URL: %s", url)
-        
-        # Play the URL directly using the correct method
+        url = play_info["url"]
+        _log.info("Got playback URL (quality=%s): %s", play_info["quality"], url)
+
         async with XiaoAiClient() as client:
             result = await client.play_url(url, req.device_id, _type=2)
 
-        _playlists[req.device_id] = {
-            "songs": [s.model_dump() for s in req.songs],
-            "current": req.index,
-            "device_id": req.device_id,
-        }
+        pl["current"] = req.index
         _log.info(
-            "Playlist set for device %s: %d songs, current=%d",
+            "Playing device %s: index=%d/%d song=%s",
             req.device_id,
-            len(req.songs),
             req.index,
+            len(songs),
+            song["name"],
         )
         return {
             "device_id": req.device_id,
             "url": url,
             "result": result,
-            "current": song.model_dump(),
+            "current": song,
             "index": req.index,
-            "total": len(req.songs),
+            "total": len(songs),
         }
     except HTTPException:
         raise
@@ -292,24 +439,16 @@ async def play_next(req: DeviceRequest):
             songs = pl["songs"]
             next_idx = (pl["current"] + 1) % len(songs)
             song = songs[next_idx]
-            
-            # Get the song URL
-            plat = song["platform"]
-            song_id = song["id"]
-            _log.info("Getting URL for next song %s (platform=%s, id=%s)", song["name"], plat, song_id)
-            
-            url_data = await _proxy(
-                "POST",
-                "/api/v3/play",
-                json={"songId": song_id, "platform": plat, "quality": "128k"}
-            )
-            url = url_data.get("data", {}).get("url")
-            if not url:
+
+            # Get the song URL with quality fallback
+            _log.info("Getting URL for next song %s", song["name"])
+            play_info = await _get_play_url_with_fallback(song)
+            if not play_info:
                 raise HTTPException(
                     status_code=404,
-                    detail=f"Cannot get playback URL for song {song['name']}"
+                    detail=f"Cannot get playback URL for song {song['name']}: all qualities failed",
                 )
-            
+            url = play_info["url"]
             result = await client.play_url(url, req.device_id, _type=2)
 
         pl["current"] = next_idx
@@ -342,24 +481,16 @@ async def play_prev(req: DeviceRequest):
             songs = pl["songs"]
             prev_idx = (pl["current"] - 1) % len(songs)
             song = songs[prev_idx]
-            
-            # Get the song URL
-            plat = song["platform"]
-            song_id = song["id"]
-            _log.info("Getting URL for previous song %s (platform=%s, id=%s)", song["name"], plat, song_id)
-            
-            url_data = await _proxy(
-                "POST",
-                "/api/v3/play",
-                json={"songId": song_id, "platform": plat, "quality": "128k"}
-            )
-            url = url_data.get("data", {}).get("url")
-            if not url:
+
+            # Get the song URL with quality fallback
+            _log.info("Getting URL for previous song %s", song["name"])
+            play_info = await _get_play_url_with_fallback(song)
+            if not play_info:
                 raise HTTPException(
                     status_code=404,
-                    detail=f"Cannot get playback URL for song {song['name']}"
+                    detail=f"Cannot get playback URL for song {song['name']}: all qualities failed",
                 )
-            
+            url = play_info["url"]
             result = await client.play_url(url, req.device_id, _type=2)
 
         pl["current"] = prev_idx
@@ -503,17 +634,9 @@ async def announce_search(req: AnnounceSearchRequest):
 @router.get("/playlist")
 async def get_playlist(device_id: str | None = None):
     """Return the current playlist state for a device."""
-    did: str | None
-    if device_id:
-        did = device_id
-    elif config.MI_DID:
-        did = config.MI_DID
-    else:
-        return {"device_id": None, "songs": [], "current": -1, "total": 0}
-
-    pl = _playlists.get(did)
+    pl = _playlists.get(device_id)
     if not pl:
-        return {"device_id": did, "songs": [], "current": -1, "total": 0}
+        return {"device_id": device_id, "songs": [], "current": -1, "total": 0}
     return {
         "device_id": pl["device_id"],
         "songs": pl["songs"],

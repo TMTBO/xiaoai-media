@@ -24,13 +24,26 @@ export interface Config {
   MUSIC_DEFAULT_PLATFORM: string
 }
 
+export interface SongQuality {
+  type: string     // e.g. '128k', '320k', 'flac'
+  format: string   // e.g. 'mp3', 'flac'
+  size: number | string
+}
+
+export interface SongMeta {
+  albumName: string
+  picUrl: string
+  songId: number | string
+}
+
 export interface Song {
   id: string
   name: string
   singer: string
   platform: string
-  albumName?: string
-  picUrl?: string
+  qualities: SongQuality[]
+  interval: number
+  meta: SongMeta
 }
 
 export interface Chart {
@@ -78,8 +91,10 @@ export const api = {
     http.get(`/music/rank/${encodeURIComponent(rankId)}`, { params: { platform, page, limit } }).then(r => r.data),
 
   // Music: Playback control
-  playMusic: (songs: Pick<Song, 'id' | 'name' | 'singer' | 'platform'>[], index: number, deviceId?: string) =>
-    http.post('/music/play', { songs, index, device_id: deviceId }).then(r => r.data),
+  syncPlaylist: (songs: Song[], deviceId?: string) =>
+    http.post('/music/playlist', { songs, device_id: deviceId }).then(r => r.data),
+  playMusic: (index: number, deviceId?: string) =>
+    http.post('/music/play', { index, device_id: deviceId }).then(r => r.data),
   nextMusic: (deviceId?: string) =>
     http.post('/music/next', { device_id: deviceId }).then(r => r.data),
   prevMusic: (deviceId?: string) =>

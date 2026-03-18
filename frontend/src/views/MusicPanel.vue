@@ -198,7 +198,7 @@ import {
     Bell,
 } from '@element-plus/icons-vue'
 import { ElMessageBox } from 'element-plus'
-import { api, type Song, type Chart } from '@/api'
+import { api, type Song, type SongQuality, type Chart } from '@/api'
 import { useDevices } from '@/composables/useDevices'
 
 const { devices, devicesLoading, loadDevices, deviceId } = useDevices()
@@ -223,13 +223,26 @@ const searchResults = ref<Song[]>([])
 const playingIdx = ref(-999) // negative idx means chart row, positive means search row
 
 function normalizeSong(raw: Record<string, unknown>, platform: string): Song {
+    const qualities: SongQuality[] = Array.isArray(raw.qualities)
+        ? (raw.qualities as Record<string, unknown>[]).map((q) => ({
+            type: String(q.type ?? '128k'),
+            format: String(q.format ?? 'mp3'),
+            size: (q.size as number | string) ?? 0,
+        }))
+        : []
+    const meta = (raw.meta as Record<string, unknown>) ?? {}
     return {
         id: String(raw.id ?? raw.songId ?? ''),
         name: String(raw.name ?? ''),
         singer: String(raw.singer ?? ''),
         platform,
-        albumName: raw.albumName ? String(raw.albumName) : undefined,
-        picUrl: raw.picUrl ? String(raw.picUrl) : undefined,
+        qualities,
+        interval: typeof raw.interval === 'number' ? raw.interval : 0,
+        meta: {
+            albumName: String(meta.albumName ?? raw.albumName ?? ''),
+            picUrl: String(meta.picUrl ?? raw.picUrl ?? ''),
+            songId: (meta.songId ?? raw.songId ?? 0) as number | string,
+        },
     }
 }
 
@@ -252,7 +265,8 @@ async function playFromSearch(index: number) {
     playingIdx.value = index
     error.value = ''
     try {
-        await api.playMusic(searchResults.value, index, deviceId.value || undefined)
+        await api.syncPlaylist(searchResults.value, deviceId.value || undefined)
+        await api.playMusic(index, deviceId.value || undefined)
         playlist.value = [...searchResults.value]
         playlistIndex.value = index
         isPaused.value = false
@@ -336,7 +350,8 @@ async function playFromChart(index: number) {
     playingIdx.value = -(index + 1)
     error.value = ''
     try {
-        await api.playMusic(chartSongs.value, index, deviceId.value || undefined)
+        await api.syncPlaylist(chartSongs.value, deviceId.value || undefined)
+        await api.playMusic(index, deviceId.value || undefined)
         playlist.value = [...chartSongs.value]
         playlistIndex.value = index
         isPaused.value = false
@@ -396,7 +411,8 @@ async function handleAskPlay() {
             '确认播放',
             { confirmButtonText: '播放全部', cancelButtonText: '取消', type: 'info' },
         )
-        await api.playMusic(searchResults.value, 0, deviceId.value || undefined)
+        await api.syncPlaylist(searchResults.value, deviceId.value || undefined)
+        await api.playMusic(0, deviceId.value || undefined)
         playlist.value = [...searchResults.value]
         playlistIndex.value = 0
         isPaused.value = false
