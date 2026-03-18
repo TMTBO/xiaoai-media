@@ -218,21 +218,39 @@ async def get_rank_songs(
 
 @router.post("/play")
 async def play_music(req: PlayRequest):
-    """Set the playlist and play the song at the given index via voice command."""
+    """Set the playlist and play the song at the given index by URL."""
     if not req.songs:
         raise HTTPException(status_code=422, detail="songs must not be empty")
     if not (0 <= req.index < len(req.songs)):
         raise HTTPException(status_code=422, detail="index out of range")
 
     song = req.songs[req.index]
-    command_text = (
-        f"播放{song.singer}的{song.name}" if song.singer else f"播放{song.name}"
-    )
-
+    
+    # Get the song URL from music API
+    plat = song.platform
+    song_id = song.id
+    _log.info("Getting URL for song %s (platform=%s, id=%s)", song.name, plat, song_id)
+    
     try:
+        # Get playback URL from music API
+        url_data = await _proxy(
+            "POST",
+            "/api/v3/play",
+            json={"songId": song_id, "platform": plat, "quality": "128k"}
+        )
+        url = url_data.get("data", {}).get("url")
+        
+        if not url:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Cannot get playback URL for song {song.name}"
+            )
+        
+        _log.info("Got playback URL: %s", url)
+        
+        # Play the URL directly using the correct method
         async with XiaoAiClient() as client:
-            # did = await client._resolve_device_id(req.device_id)
-            result = await client.send_command(command_text, req.device_id)
+            result = await client.play_url(url, req.device_id, _type=2)
 
         _playlists[req.device_id] = {
             "songs": [s.model_dump() for s in req.songs],
@@ -247,7 +265,7 @@ async def play_music(req: PlayRequest):
         )
         return {
             "device_id": req.device_id,
-            "command": command_text,
+            "url": url,
             "result": result,
             "current": song.model_dump(),
             "index": req.index,
@@ -256,6 +274,7 @@ async def play_music(req: PlayRequest):
     except HTTPException:
         raise
     except Exception as e:
+        _log.error("Failed to play music: %s", e, exc_info=True)
         raise HTTPException(status_code=502, detail=str(e))
 
 
@@ -264,7 +283,6 @@ async def play_next(req: DeviceRequest):
     """Advance to the next song in the server-side playlist."""
     try:
         async with XiaoAiClient() as client:
-            # did = await client._resolve_device_id(req.device_id)
             pl = _playlists.get(req.device_id)
             if not pl or not pl["songs"]:
                 raise HTTPException(
@@ -274,13 +292,30 @@ async def play_next(req: DeviceRequest):
             songs = pl["songs"]
             next_idx = (pl["current"] + 1) % len(songs)
             song = songs[next_idx]
-            command_text = _build_command(song)
-            result = await client.send_command(command_text, req.device_id)
+            
+            # Get the song URL
+            plat = song["platform"]
+            song_id = song["id"]
+            _log.info("Getting URL for next song %s (platform=%s, id=%s)", song["name"], plat, song_id)
+            
+            url_data = await _proxy(
+                "POST",
+                "/api/v3/play",
+                json={"songId": song_id, "platform": plat, "quality": "128k"}
+            )
+            url = url_data.get("data", {}).get("url")
+            if not url:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Cannot get playback URL for song {song['name']}"
+                )
+            
+            result = await client.play_url(url, req.device_id, _type=2)
 
         pl["current"] = next_idx
         return {
             "device_id": req.device_id,
-            "command": command_text,
+            "url": url,
             "result": result,
             "current": song,
             "index": next_idx,
@@ -289,6 +324,7 @@ async def play_next(req: DeviceRequest):
     except HTTPException:
         raise
     except Exception as e:
+        _log.error("Failed to play next: %s", e, exc_info=True)
         raise HTTPException(status_code=502, detail=str(e))
 
 
@@ -297,7 +333,6 @@ async def play_prev(req: DeviceRequest):
     """Go back to the previous song in the server-side playlist."""
     try:
         async with XiaoAiClient() as client:
-            # did = await client._resolve_device_id(req.device_id)
             pl = _playlists.get(req.device_id)
             if not pl or not pl["songs"]:
                 raise HTTPException(
@@ -307,13 +342,30 @@ async def play_prev(req: DeviceRequest):
             songs = pl["songs"]
             prev_idx = (pl["current"] - 1) % len(songs)
             song = songs[prev_idx]
-            command_text = _build_command(song)
-            result = await client.send_command(command_text, req.device_id)
+            
+            # Get the song URL
+            plat = song["platform"]
+            song_id = song["id"]
+            _log.info("Getting URL for previous song %s (platform=%s, id=%s)", song["name"], plat, song_id)
+            
+            url_data = await _proxy(
+                "POST",
+                "/api/v3/play",
+                json={"songId": song_id, "platform": plat, "quality": "128k"}
+            )
+            url = url_data.get("data", {}).get("url")
+            if not url:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Cannot get playback URL for song {song['name']}"
+                )
+            
+            result = await client.play_url(url, req.device_id, _type=2)
 
         pl["current"] = prev_idx
         return {
             "device_id": req.device_id,
-            "command": command_text,
+            "url": url,
             "result": result,
             "current": song,
             "index": prev_idx,
@@ -322,6 +374,7 @@ async def play_prev(req: DeviceRequest):
     except HTTPException:
         raise
     except Exception as e:
+        _log.error("Failed to play previous: %s", e, exc_info=True)
         raise HTTPException(status_code=502, detail=str(e))
 
 

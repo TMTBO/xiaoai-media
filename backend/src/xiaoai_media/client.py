@@ -366,3 +366,100 @@ class XiaoAiClient:
         """
         _log.info("MiService: send command (silent=%s): %r", silent, text)
         return await self.execute_text_command(text, device_id, silent)
+
+    async def play_url(self, url: str, device_id: str | None = None, _type: int = 2) -> dict:
+        """Play audio from a URL directly on the speaker.
+
+        Uses the correct method based on hardware type:
+        - For certain hardware (OH2P, LX04, etc.): uses player_play_music
+        - For other hardware: uses player_play_url
+
+        Args:
+            url: Audio URL to play
+            device_id: Target device ID
+            _type: Play type (1=MUSIC with light on, 2=normal)
+        """
+        assert self._na_service is not None
+        did = await self._resolve_device_id(device_id)
+        devices = await self.list_devices()
+        device = next((d for d in devices if d["deviceID"] == did), None)
+        if not device:
+            raise Exception(f"Device {did} not found")
+            
+        device_name = device.get("name", "")
+        hardware = device.get("hardware", "")
+        
+        _log.info("MiService: play URL on device %s (hardware=%s): %s", did, hardware, url)
+        
+        # Hardware types that need player_play_music
+        USE_PLAY_MUSIC_API = [
+            "LX04", "LX05", "L05B", "L05C", "L06", "L06A",
+            "X08A", "X10A", "X08C", "X08E", "X8F", "X4B",
+            "OH2", "OH2P", "X6A",
+        ]
+        
+        try:
+            if hardware in USE_PLAY_MUSIC_API:
+                # Use player_play_music for these hardware types
+                _log.info("Using player_play_music for hardware %s", hardware)
+                audio_type = "MUSIC" if _type == 1 else ""
+                audio_id = "1582971365183456177"
+                music = {
+                    "payload": {
+                        "audio_type": audio_type,
+                        "audio_items": [{
+                            "item_id": {
+                                "audio_id": audio_id,
+                                "cp": {
+                                    "album_id": "-1",
+                                    "episode_index": 0,
+                                    "id": "355454500",
+                                    "name": "xiaowei",
+                                },
+                            },
+                            "stream": {"url": url},
+                        }],
+                        "list_params": {
+                            "listId": "-1",
+                            "loadmore_offset": 0,
+                            "origin": "xiaowei",
+                            "type": "MUSIC",
+                        },
+                    },
+                    "play_behavior": "REPLACE_ALL",
+                }
+                import json
+                result = await self._na_service.ubus_request(
+                    did,
+                    "player_play_music",
+                    "mediaplayer",
+                    {"startaudioid": audio_id, "music": json.dumps(music)},
+                )
+                _log.info("MiService: player_play_music result: %s", result)
+                return {
+                    "device": f"{device_name}({did})",
+                    "url": url,
+                    "result": result.get("code") == 0 if isinstance(result, dict) else result,
+                    "method": "player_play_music",
+                    "hardware": hardware
+                }
+            else:
+                # Use player_play_url for other hardware
+                _log.info("Using player_play_url for hardware %s", hardware)
+                result = await self._na_service.ubus_request(
+                    did,
+                    "player_play_url",
+                    "mediaplayer",
+                    {"url": url, "type": _type, "media": "app_ios"},
+                )
+                _log.info("MiService: player_play_url result: %s", result)
+                return {
+                    "device": f"{device_name}({did})",
+                    "url": url,
+                    "result": result.get("code") == 0 if isinstance(result, dict) else result,
+                    "method": "player_play_url",
+                    "hardware": hardware
+                }
+        except Exception as e:
+            _log.error("MiService: play_url failed: %s", e, exc_info=True)
+            raise
