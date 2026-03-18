@@ -27,6 +27,12 @@
           </el-icon>
           <span>语音指令</span>
         </el-menu-item>
+        <el-menu-item index="/conversation">
+          <el-icon>
+            <ChatLineRound />
+          </el-icon>
+          <span>对话记录</span>
+        </el-menu-item>
         <el-menu-item index="/music">
           <el-icon>
             <VideoPlay />

@@ -21,9 +21,10 @@
       </el-form-item>
     </el-form>
     <el-descriptions v-if="result" title="执行结果" border :column="1" style="margin-top: 16px">
-      <el-descriptions-item label="设备 ID">{{ result.device_id }}</el-descriptions-item>
+      <el-descriptions-item label="设备 ID">{{ result.device }}</el-descriptions-item>
       <el-descriptions-item label="指令">{{ result.command }}</el-descriptions-item>
       <el-descriptions-item label="结果">{{ JSON.stringify(result.result) }}</el-descriptions-item>
+      <el-descriptions-item label="方法">{{ result.method }}</el-descriptions-item>
     </el-descriptions>
     <el-alert v-if="error" :title="error" type="error" show-icon />
   </el-card>
@@ -38,7 +39,7 @@ import { useDevices } from '@/composables/useDevices'
 const command = ref('')
 const loading = ref(false)
 const error = ref('')
-const result = ref<{ device_id: string; command: string; result: unknown } | null>(null)
+const result = ref<{ device: string; command: string; result: unknown; method: string } | null>(null)
 const { devices, devicesLoading, loadDevices, deviceId } = useDevices()
 
 async function submit() {

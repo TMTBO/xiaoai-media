@@ -3,9 +3,14 @@ import axios from 'axios'
 const http = axios.create({ baseURL: '/api' })
 
 export interface Device {
-  deviceID: string
+  deviceID: string   // MiNA UUID — used for ubus commands (TTS, volume, etc.)
+  did?: string       // MiIO numeric device ID — used for miot_action
+  miotDID?: string   // same as did, from MiNA response
   name: string
-  model: string
+  model: string      // e.g. "xiaomi.wifispeaker.oh2p" (from MiIO)
+  hardware: string   // e.g. "OH2P" (from MiNA)
+  isOnline?: boolean
+  localip?: string
   [key: string]: unknown
 }
 
@@ -45,7 +50,8 @@ export interface PlaylistState {
 
 export const api = {
   // Devices
-  listDevices: () => http.get<{ devices: Device[] }>('/devices').then(r => r.data),
+  listDevices: (refresh = false) =>
+    http.get<{ devices: Device[] }>('/devices', { params: refresh ? { refresh: true } : undefined }).then(r => r.data),
 
   // TTS
   textToSpeech: (text: string, deviceId?: string) =>
@@ -90,4 +96,8 @@ export const api = {
     http.post('/music/voice-command', { text, device_id: deviceId }).then(r => r.data),
   announceSearch: (query: string, count: number, deviceId?: string) =>
     http.post('/music/announce-search', { query, count, device_id: deviceId }).then(r => r.data),
+
+  // Conversation
+  getConversation: (deviceId?: string) =>
+    http.get('/command/conversation', { params: { device_id: deviceId } }).then(r => r.data),
 }
