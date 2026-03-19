@@ -400,7 +400,7 @@ async def play_music(req: PlayRequest):
         _log.info("Got playback URL (quality=%s): %s", play_info["quality"], url)
 
         async with XiaoAiClient() as client:
-            result = await client.play_url(url, req.device_id, _type=2)
+            result = await client.play_url(url, req.device_id, _type=1)
 
         pl["current"] = req.index
         _log.info(
@@ -449,7 +449,7 @@ async def play_next(req: DeviceRequest):
                     detail=f"Cannot get playback URL for song {song['name']}: all qualities failed",
                 )
             url = play_info["url"]
-            result = await client.play_url(url, req.device_id, _type=2)
+            result = await client.play_url(url, req.device_id, _type=1)
 
         pl["current"] = next_idx
         return {
@@ -491,7 +491,7 @@ async def play_prev(req: DeviceRequest):
                     detail=f"Cannot get playback URL for song {song['name']}: all qualities failed",
                 )
             url = play_info["url"]
-            result = await client.play_url(url, req.device_id, _type=2)
+            result = await client.play_url(url, req.device_id, _type=1)
 
         pl["current"] = prev_idx
         return {

@@ -351,6 +351,28 @@ class XiaoAiClient:
         result = await self._na_service.player_set_volume(did, volume)
         _log.info("MiService: set volume result: %s", result)
         return {"device": f"{device_name}({did})", "volume": volume, "result": result}
+    async def get_volume(self, device_id: str | None = None) -> dict:
+        """Get current speaker volume."""
+        assert self._io_service is not None
+        devices = await self.list_devices()
+        did = await self._resolve_device_id(device_id)
+        device_name = next(
+            (d.get("name", "") for d in devices if d["deviceID"] == did), ""
+        )
+
+        # Get numeric did for miot request
+        numeric_did = next(
+            (d.get("did", "") for d in devices if d["deviceID"] == did), None
+        )
+        if not numeric_did:
+            raise ValueError(f"Cannot find numeric did for device {did}")
+
+        _log.info("MiService: get volume from device %s (did=%s)", did, numeric_did)
+        # Volume is at siid=2 (player service), piid=1 (volume property)
+        volume = await self._io_service.miot_get_prop(numeric_did, (2, 1))
+        _log.info("MiService: get volume result: %s", volume)
+
+        return {"device": f"{device_name}({did})", "volume": volume}
 
     async def send_command(
         self, text: str, device_id: str | None = None, silent: bool = False

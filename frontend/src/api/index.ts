@@ -71,6 +71,8 @@ export const api = {
     http.post('/tts', { text, device_id: deviceId }).then(r => r.data),
 
   // Volume
+  getVolume: (deviceId?: string) =>
+    http.get('/volume', { params: { device_id: deviceId } }).then(r => r.data),
   setVolume: (volume: number, deviceId?: string) =>
     http.post('/volume', { volume, device_id: deviceId }).then(r => r.data),
 

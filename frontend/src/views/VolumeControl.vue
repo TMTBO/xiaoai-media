@@ -26,7 +26,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { Refresh } from '@element-plus/icons-vue'
 import { api } from '@/api'
 import { useDevices } from '@/composables/useDevices'
@@ -37,6 +37,17 @@ const error = ref('')
 const success = ref(false)
 const lastVolume = ref(0)
 const { devices, devicesLoading, loadDevices, deviceId } = useDevices()
+
+async function loadCurrentVolume() {
+  try {
+    const result = await api.getVolume(deviceId.value || undefined)
+    if (result.volume !== null && result.volume !== undefined) {
+      volume.value = result.volume
+    }
+  } catch (e: unknown) {
+    console.error('Failed to load current volume:', e)
+  }
+}
 
 async function submit() {
   loading.value = true
@@ -52,4 +63,14 @@ async function submit() {
     loading.value = false
   }
 }
+
+// Load current volume when component mounts
+onMounted(() => {
+  loadCurrentVolume()
+})
+
+// Reload volume when device changes
+watch(deviceId, () => {
+  loadCurrentVolume()
+})
 </script>

@@ -20,3 +20,13 @@ async def set_volume(req: VolumeRequest):
         return result
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))
+@router.get("")
+async def get_volume(device_id: str | None = None):
+    """Get current speaker volume."""
+    try:
+        async with XiaoAiClient() as client:
+            result = await client.get_volume(device_id)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
