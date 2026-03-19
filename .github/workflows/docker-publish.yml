@@ -2,6 +2,8 @@ name: Build and Publish Docker Image
 
 on:
   push:
+    branches:
+      - 'feature/**'
     tags:
       - 'v*.*.*'
 
@@ -39,7 +41,8 @@ jobs:
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest
+            type=raw,value=latest,enable={{is_default_tag}}
+            type=ref,event=branch,suffix=-beta
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
@@ -51,3 +54,41 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          outputs: type=docker,dest=/tmp/image.tar
+
+      - name: Upload Docker image as artifact
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image
+          path: /tmp/image.tar
+          retention-days: 1
+
+  create-release:
+    name: Create GitHub Release
+    needs: build-and-push
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+          path: .
+
+      - name: Compress Docker image
+        run: gzip image.tar
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: image.tar.gz
+          generate_release_notes: true
+          draft: false
+          prerelease: false
