@@ -19,6 +19,13 @@
             </el-icon>
             查询对话
           </el-button>
+          <el-switch
+            v-model="autoRefresh"
+            active-text="自动刷新"
+            inactive-text=""
+            @change="toggleAutoRefresh"
+            style="margin-left: 8px"
+          />
         </div>
       </div>
     </template>
@@ -43,16 +50,29 @@
               <div class="content">
                 <div class="label">用户问题</div>
                 <div class="text">{{ conv.question }}</div>
+                <el-tag v-if="isPlayCommand(conv.question)" type="success" size="small" style="margin-top: 8px">
+                  <el-icon style="margin-right: 4px"><VideoPlay /></el-icon>
+                  播放指令（已拦截）
+                </el-tag>
               </div>
             </div>
             <el-divider />
-            <div class="answer">
+            <div class="answer" v-if="conv.content">
               <el-icon class="icon" color="#67c23a">
                 <ChatDotRound />
               </el-icon>
               <div class="content">
                 <div class="label">小爱回答</div>
                 <div class="text">{{ conv.content }}</div>
+              </div>
+            </div>
+            <div class="answer" v-else>
+              <el-icon class="icon" color="#909399">
+                <ChatDotRound />
+              </el-icon>
+              <div class="content">
+                <div class="label">小爱回答</div>
+                <div class="text" style="color: #909399; font-style: italic">暂无回答记录</div>
               </div>
             </div>
           </div>
@@ -71,7 +91,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Refresh, Search, User, ChatDotRound, Loading } from '@element-plus/icons-vue'
+import { Refresh, Search, User, ChatDotRound, Loading, VideoPlay } from '@element-plus/icons-vue'
 import { api } from '@/api'
 import { useDevices } from '@/composables/useDevices'
 import { ElMessage } from 'element-plus'
@@ -86,6 +106,46 @@ const { devices, devicesLoading, loadDevices, deviceId } = useDevices()
 const loading = ref(false)
 const error = ref('')
 const conversations = ref<Conversation[]>([])
+const autoRefresh = ref(false)
+let refreshTimer: number | null = null
+
+function isPlayCommand(query: string): boolean {
+  // 检测是否是播放指令
+  const playPattern = /^(?:播放|打开)(?:歌曲)?(.+)$/
+  const match = query.match(playPattern)
+  if (!match) return false
+  
+  const content = match[1].trim()
+  // 过滤掉控制指令
+  const controlKeywords = ['音量', '暂停', '继续', '停止', '下一首', '上一首']
+  return !!content && !controlKeywords.some(kw => content.includes(kw))
+}
+
+function toggleAutoRefresh(enabled: boolean) {
+  if (enabled) {
+    // 立即刷新一次
+    fetchConversations()
+    // 每 3 秒自动刷新
+    refreshTimer = window.setInterval(() => {
+      fetchConversations(true) // 静默刷新
+    }, 3000)
+    ElMessage.success('已开启自动刷新（每 3 秒）')
+  } else {
+    if (refreshTimer) {
+      clearInterval(refreshTimer)
+      refreshTimer = null
+    }
+    ElMessage.info('已关闭自动刷新')
+  }
+}
+
+// 组件卸载时清理定时器
+import { onUnmounted } from 'vue'
+onUnmounted(() => {
+  if (refreshTimer) {
+    clearInterval(refreshTimer)
+  }
+})
 
 function formatTimestamp(timestamp: number): string {
   const date = new Date(timestamp)
@@ -121,21 +181,25 @@ function formatTimestamp(timestamp: number): string {
   })
 }
 
-async function fetchConversations() {
+async function fetchConversations(silent = false) {
   loading.value = true
   error.value = ''
   try {
     const result = await api.getConversation(deviceId.value || undefined)
     conversations.value = result.conversations || []
     
-    if (conversations.value.length === 0) {
-      ElMessage.info('暂无对话记录')
-    } else {
-      ElMessage.success(`成功获取 ${conversations.value.length} 条对话记录`)
+    if (!silent) {
+      if (conversations.value.length === 0) {
+        ElMessage.info('暂无对话记录')
+      } else {
+        ElMessage.success(`成功获取 ${conversations.value.length} 条对话记录`)
+      }
     }
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : '获取对话记录失败'
-    ElMessage.error(error.value)
+    if (!silent) {
+      ElMessage.error(error.value)
+    }
   } finally {
     loading.value = false
   }

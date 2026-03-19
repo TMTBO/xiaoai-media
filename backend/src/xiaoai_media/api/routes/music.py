@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import re
 from difflib import get_close_matches
 from typing import Any
+from urllib.parse import quote
 
 import aiohttp
 from fastapi import APIRouter, HTTPException, Query
@@ -77,6 +79,28 @@ def _platform(platform: str | None) -> str:
             detail=f"Invalid platform: {plat!r}. Must be one of: {', '.join(sorted(_PLATFORMS))}",
         )
     return plat
+
+
+def _make_proxy_url(original_url: str) -> str:
+    """Convert a music platform URL to a proxy URL that the speaker can access.
+    
+    Music platform URLs often have anti-hotlinking protection that blocks direct
+    access from speakers. The proxy endpoint adds necessary headers and forwards
+    the stream to the speaker.
+    
+    Args:
+        original_url: Original music URL from platform (e.g., https://music.qq.com/xxx.mp3)
+    
+    Returns:
+        Proxy URL (e.g., http://10.184.62.160:5050/main/proxy?url=https%3A%2F%2F...)
+    
+    Example:
+        >>> _make_proxy_url("https://music.qq.com/song.mp3")
+        'http://10.184.62.160:5050/main/proxy?url=https%3A%2F%2Fmusic.qq.com%2Fsong.mp3'
+    """
+    proxy_url = f"{config.MUSIC_API_BASE_URL}/main/proxy?url={quote(original_url)}"
+    _log.debug("Converted URL to proxy: %s -> %s", original_url[:100], proxy_url[:100])
+    return proxy_url
 
 
 def _build_command(song: dict) -> str:
@@ -368,56 +392,104 @@ async def sync_playlist(req: SyncPlaylistRequest):
     }
 
 
-@router.post("/play")
-async def play_music(req: PlayRequest):
-    """Play the song at the given index from the server-side playlist."""
-    pl = _playlists.get(req.device_id)
+async def _play_song_at_index(
+    device_id: str,
+    index: int,
+    stop_first: bool = False,
+    action_name: str = "play"
+) -> dict:
+    """
+    Common logic for playing a song at a specific index.
+    
+    Args:
+        device_id: Device ID to play on
+        index: Index of the song in the playlist
+        stop_first: Whether to stop current playback before playing
+        action_name: Name of the action for logging (play/next/prev)
+    
+    Returns:
+        Response dict with playback info
+    """
+    pl = _playlists.get(device_id)
     if not pl or not pl.get("songs"):
         raise HTTPException(
             status_code=404,
             detail="No playlist for this device. Use POST /api/music/playlist first.",
         )
+    
     songs = pl["songs"]
-    if not (0 <= req.index < len(songs)):
+    if not (0 <= index < len(songs)):
         raise HTTPException(status_code=422, detail="index out of range")
-
-    song = songs[req.index]
+    
+    song = songs[index]
     _log.info(
-        "Getting URL for song %s (platform=%s, id=%s)",
+        "Getting URL for %s song %s (platform=%s, id=%s)",
+        action_name,
         song["name"],
         song["platform"],
         song["id"],
     )
+    
+    # Get playback URL with quality fallback
+    play_info = await _get_play_url_with_fallback(song)
+    if not play_info:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Cannot get playback URL for song {song['name']}: all qualities failed",
+        )
+    
+    original_url = play_info["url"]
+    _log.info("Got original playback URL (quality=%s): %s", play_info["quality"], original_url[:200])
+    
+    # Convert to proxy URL
+    url = _make_proxy_url(original_url)
+    
+    async with XiaoAiClient() as client:
+        # Stop current playback if requested
+        if stop_first:
+            try:
+                _log.debug("Stopping current playback before playing new song...")
+                await client.player_stop(device_id)
+                _log.debug("Current playback stopped")
+                await asyncio.sleep(0.5)
+            except Exception as e:
+                _log.warning("Failed to stop current playback (may not be playing): %s", e)
+        
+        # Play the new URL
+        _log.info("About to play URL: %s", url[:200])
+        result = await client.play_url(url, device_id, _type=1)
+        _log.info("Play result: %s", result)
+    
+    # Update current index
+    pl["current"] = index
+    _log.info(
+        "Playing device %s: index=%d/%d song=%s",
+        device_id,
+        index,
+        len(songs),
+        song["name"],
+    )
+    
+    return {
+        "device_id": device_id,
+        "url": url,
+        "result": result,
+        "current": song,
+        "index": index,
+        "total": len(songs),
+    }
 
+
+@router.post("/play")
+async def play_music(req: PlayRequest):
+    """Play the song at the given index from the server-side playlist."""
     try:
-        play_info = await _get_play_url_with_fallback(song)
-        if not play_info:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Cannot get playback URL for song {song['name']}: all qualities failed",
-            )
-        url = play_info["url"]
-        _log.info("Got playback URL (quality=%s): %s", play_info["quality"], url)
-
-        async with XiaoAiClient() as client:
-            result = await client.play_url(url, req.device_id, _type=1)
-
-        pl["current"] = req.index
-        _log.info(
-            "Playing device %s: index=%d/%d song=%s",
+        return await _play_song_at_index(
             req.device_id,
             req.index,
-            len(songs),
-            song["name"],
+            stop_first=True,
+            action_name="play"
         )
-        return {
-            "device_id": req.device_id,
-            "url": url,
-            "result": result,
-            "current": song,
-            "index": req.index,
-            "total": len(songs),
-        }
     except HTTPException:
         raise
     except Exception as e:
@@ -429,37 +501,14 @@ async def play_music(req: PlayRequest):
 async def play_next(req: DeviceRequest):
     """Advance to the next song in the server-side playlist."""
     try:
-        async with XiaoAiClient() as client:
-            pl = _playlists.get(req.device_id)
-            if not pl or not pl["songs"]:
-                raise HTTPException(
-                    status_code=404,
-                    detail="No playlist for this device. Use POST /api/music/play first.",
-                )
-            songs = pl["songs"]
-            next_idx = (pl["current"] + 1) % len(songs)
-            song = songs[next_idx]
-
-            # Get the song URL with quality fallback
-            _log.info("Getting URL for next song %s", song["name"])
-            play_info = await _get_play_url_with_fallback(song)
-            if not play_info:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Cannot get playback URL for song {song['name']}: all qualities failed",
-                )
-            url = play_info["url"]
-            result = await client.play_url(url, req.device_id, _type=1)
-
-        pl["current"] = next_idx
-        return {
-            "device_id": req.device_id,
-            "url": url,
-            "result": result,
-            "current": song,
-            "index": next_idx,
-            "total": len(songs),
-        }
+        pl = _playlists.get(req.device_id)
+        if not pl or not pl.get("songs"):
+            raise HTTPException(
+                status_code=404,
+                detail="No playlist for this device. Use POST /api/music/play first.",
+            )
+        next_idx = (pl["current"] + 1) % len(pl["songs"])
+        return await _play_song_at_index(req.device_id, next_idx, action_name="next")
     except HTTPException:
         raise
     except Exception as e:
@@ -471,37 +520,14 @@ async def play_next(req: DeviceRequest):
 async def play_prev(req: DeviceRequest):
     """Go back to the previous song in the server-side playlist."""
     try:
-        async with XiaoAiClient() as client:
-            pl = _playlists.get(req.device_id)
-            if not pl or not pl["songs"]:
-                raise HTTPException(
-                    status_code=404,
-                    detail="No playlist for this device. Use POST /api/music/play first.",
-                )
-            songs = pl["songs"]
-            prev_idx = (pl["current"] - 1) % len(songs)
-            song = songs[prev_idx]
-
-            # Get the song URL with quality fallback
-            _log.info("Getting URL for previous song %s", song["name"])
-            play_info = await _get_play_url_with_fallback(song)
-            if not play_info:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Cannot get playback URL for song {song['name']}: all qualities failed",
-                )
-            url = play_info["url"]
-            result = await client.play_url(url, req.device_id, _type=1)
-
-        pl["current"] = prev_idx
-        return {
-            "device_id": req.device_id,
-            "url": url,
-            "result": result,
-            "current": song,
-            "index": prev_idx,
-            "total": len(songs),
-        }
+        pl = _playlists.get(req.device_id)
+        if not pl or not pl.get("songs"):
+            raise HTTPException(
+                status_code=404,
+                detail="No playlist for this device. Use POST /api/music/play first.",
+            )
+        prev_idx = (pl["current"] - 1) % len(pl["songs"])
+        return await _play_song_at_index(req.device_id, prev_idx, action_name="prev")
     except HTTPException:
         raise
     except Exception as e:
@@ -511,10 +537,10 @@ async def play_prev(req: DeviceRequest):
 
 @router.post("/pause")
 async def pause_music(req: DeviceRequest):
-    """Pause playback via voice command."""
+    """Pause playback using the new player_pause API."""
     try:
         async with XiaoAiClient() as client:
-            result = await client.send_command("暂停", req.device_id)
+            result = await client.player_pause(req.device_id)
         return result
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))
@@ -522,10 +548,32 @@ async def pause_music(req: DeviceRequest):
 
 @router.post("/resume")
 async def resume_music(req: DeviceRequest):
-    """Resume playback via voice command."""
+    """Resume playback using the new player_play API."""
     try:
         async with XiaoAiClient() as client:
-            result = await client.send_command("继续播放", req.device_id)
+            result = await client.player_play(req.device_id)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+@router.post("/stop")
+async def stop_music(req: DeviceRequest):
+    """Stop playback using the new player_stop API."""
+    try:
+        async with XiaoAiClient() as client:
+            result = await client.player_stop(req.device_id)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+@router.get("/status")
+async def get_player_status(device_id: str | None = None):
+    """Get current player status."""
+    try:
+        async with XiaoAiClient() as client:
+            result = await client.player_get_status(device_id)
         return result
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))
@@ -580,7 +628,6 @@ async def voice_command(req: VoiceCommandRequest):
         )
         try:
             async with XiaoAiClient() as client:
-                # did = await client._resolve_device_id(req.device_id)
                 result = await client.send_command(cmd, req.device_id)
         except Exception as e:
             raise HTTPException(status_code=502, detail=str(e))

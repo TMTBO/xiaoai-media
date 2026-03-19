@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
+import time
 from typing import Any
 
 from aiohttp import ClientSession
@@ -71,7 +73,7 @@ class XiaoAiClient:
                 "userId": config.MI_USER,
                 "passToken": config.MI_PASS_TOKEN,
             }
-            _log.info("MiService: using passToken auth for user %s", config.MI_USER)
+            _log.debug("MiService: using passToken auth for user %s", config.MI_USER)
         elif config.MI_USER:
             _log.info("MiService: using password auth for user %s", config.MI_USER)
         else:
@@ -96,7 +98,7 @@ class XiaoAiClient:
         """
         global _device_cache
         if _device_cache is not None and not force_refresh:
-            _log.info(
+            _log.debug(
                 "MiService: returning %d device(s) from cache", len(_device_cache)
             )
             return _device_cache
@@ -257,7 +259,7 @@ class XiaoAiClient:
                 device_name = device.get("name", "")
                 break
 
-        _log.info(
+        _log.debug(
             "MiService: Execute command on device %s (hardware: %s, miotDID: %s, silent: %s): %r",
             device_id,
             hardware,
@@ -281,7 +283,7 @@ class XiaoAiClient:
                 # micli.py 5-4 查询天气 1  # 1 = voice response enabled
                 # micli.py 5-4 关灯 0     # 0 = silent execution
                 response_flag = 0 if silent else 1
-                _log.info(
+                _log.debug(
                     "MiService: miot_action execute command on device %s (siid=%d, aiid=%d, response=%d): %r",
                     miot_did,
                     siid,
@@ -296,7 +298,7 @@ class XiaoAiClient:
                         (siid, aiid),
                         [text, response_flag],
                     )
-                    _log.info(
+                    _log.debug(
                         "MiService: Execute command result (miot_action): %s", result
                     )
                     return {
@@ -394,9 +396,8 @@ class XiaoAiClient:
     ) -> dict:
         """Play audio from a URL directly on the speaker.
 
-        Uses the correct method based on hardware type:
-        - For certain hardware (OH2P, LX04, etc.): uses player_play_music
-        - For other hardware: uses player_play_url
+        Uses play_by_music_url method which uses the player_play_music API.
+        This method is more reliable for most Xiaomi speaker hardware.
 
         Args:
             url: Audio URL to play
@@ -414,97 +415,262 @@ class XiaoAiClient:
         hardware = device.get("hardware", "")
 
         _log.info(
-            "MiService: play URL on device %s (hardware=%s): %s", did, hardware, url
+            "MiService: play URL on device %s (hardware=%s, type=%d)", 
+            did, hardware, _type
         )
-
-        # Hardware types that need player_play_music
-        USE_PLAY_MUSIC_API = [
-            "LX04",
-            "LX05",
-            "L05B",
-            "L05C",
-            "L06",
-            "L06A",
-            "X08A",
-            "X10A",
-            "X08C",
-            "X08E",
-            "X8F",
-            "X4B",
-            "OH2",
-            "OH2P",
-            "X6A",
-        ]
+        _log.debug("Full URL: %s", url)
 
         try:
-            if hardware in USE_PLAY_MUSIC_API:
-                # Use player_play_music for these hardware types
-                _log.info("Using player_play_music for hardware %s", hardware)
-                audio_type = "MUSIC" if _type == 1 else ""
-                audio_id = "1582971365183456177"
-                music = {
-                    "payload": {
-                        "audio_type": audio_type,
-                        "audio_items": [
-                            {
-                                "item_id": {
-                                    "audio_id": audio_id,
-                                    "cp": {
-                                        "album_id": "-1",
-                                        "episode_index": 0,
-                                        "id": "355454500",
-                                        "name": "xiaowei",
-                                    },
-                                },
-                                "stream": {"url": url},
-                            }
-                        ],
-                        "list_params": {
-                            "listId": "-1",
-                            "loadmore_offset": 0,
-                            "origin": "xiaowei",
-                            "type": "MUSIC",
-                        },
-                    },
-                    "play_behavior": "REPLACE_ALL",
-                }
-                import json
+            # Ensure device hardware mapping is initialized
+            if not hasattr(self._na_service, 'device2hardware') or not self._na_service.device2hardware:
+                _log.debug("Initializing device hardware mapping...")
+                if not hasattr(self._na_service, 'device2hardware'):
+                    self._na_service.device2hardware = {}
+                for d in devices:
+                    dev_id = d.get("deviceID")
+                    hw = d.get("hardware")
+                    if dev_id and hw:
+                        self._na_service.device2hardware[dev_id] = hw
+                _log.debug("Device hardware mapping: %s", self._na_service.device2hardware)
 
-                result = await self._na_service.ubus_request(
-                    did,
-                    "player_play_music",
-                    "mediaplayer",
-                    {"startaudioid": audio_id, "music": json.dumps(music)},
-                )
-                _log.info("MiService: player_play_music result: %s", result)
-                return {
-                    "device": f"{device_name}({did})",
-                    "url": url,
-                    "result": (
-                        result.get("code") == 0 if isinstance(result, dict) else result
-                    ),
-                    "method": "player_play_music",
-                    "hardware": hardware,
-                }
-            else:
-                # Use player_play_url for other hardware
-                _log.info("Using player_play_url for hardware %s", hardware)
-                result = await self._na_service.ubus_request(
-                    did,
-                    "player_play_url",
-                    "mediaplayer",
-                    {"url": url, "type": _type, "media": "app_ios"},
-                )
-                _log.info("MiService: player_play_url result: %s", result)
-                return {
-                    "device": f"{device_name}({did})",
-                    "url": url,
-                    "result": (
-                        result.get("code") == 0 if isinstance(result, dict) else result
-                    ),
-                    "method": "player_play_url",
-                    "hardware": hardware,
-                }
+            # Use play_by_music_url for better compatibility
+            audio_id = "1582971365183456177"
+            cp_id = "355454500"
+            
+            _log.info("Calling play_by_music_url with audio_id=%s, cp_id=%s", audio_id, cp_id)
+            
+            result = await self._na_service.play_by_music_url(
+                did, url, _type, audio_id, cp_id
+            )
+            _log.info("MiService: play_by_music_url result: %s", result)
+            
+            # Check if the result indicates success
+            success = False
+            if isinstance(result, dict):
+                # Check nested code structure: result.data.code or result.code
+                data_code = result.get("data", {}).get("code") if isinstance(result.get("data"), dict) else None
+                result_code = result.get("code")
+                success = (data_code == 0) or (result_code == 0)
+                _log.info("Result codes: result.code=%s, result.data.code=%s, success=%s", 
+                          result_code, data_code, success)
+            
+            return {
+                "device": f"{device_name}({did})",
+                "url": url,
+                "result": success,
+                "hardware": hardware,
+                "raw_result": result,
+            }
         except Exception as e:
             _log.error("MiService: play_url failed: %s", e, exc_info=True)
             raise
+
+    async def get_latest_ask(self, device_id: str | None = None, limit: int = 2) -> list[dict]:
+        """Get latest conversation records from the speaker.
+
+        Args:
+            device_id: Target device ID (optional)
+            limit: Maximum number of records to fetch (default: 2)
+
+        Returns a list of conversation records with query, answer, and timestamp.
+        Uses the Xiaomi conversation API directly.
+        """
+        did = await self._resolve_device_id(device_id)
+
+        # Get device hardware for API request
+        devices = await self.list_devices()
+        hardware = None
+        for device in devices:
+            if device["deviceID"] == did:
+                hardware = device.get("hardware", "")
+                break
+
+        if not hardware:
+            _log.warning("Cannot find hardware for device %s, using default", did)
+            hardware = "LX06"
+
+        # Get serviceToken and userId from MiAccount or .mi.token file
+        # Ensure we're logged in first
+        assert self._na_service is not None
+        await self._na_service.device_list()  # This triggers login if needed
+        
+        service_token = None
+        user_id = None
+        
+        # Try to get from MiAccount first
+        if self._account and self._account.token:
+            token_data = self._account.token
+            service_token = token_data.get("serviceToken")
+            user_id = token_data.get("userId")
+        
+        # If serviceToken not in MiAccount, read from .mi.token file
+        if not service_token:
+            import os
+            project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+            token_file = os.path.join(project_root, ".mi.token")
+            
+            try:
+                if os.path.exists(token_file):
+                    with open(token_file, "r") as f:
+                        token_data = json.load(f)
+                        if not user_id:
+                            user_id = token_data.get("userId")
+                        micoapi = token_data.get("micoapi", [])
+                        if len(micoapi) > 1:
+                            service_token = micoapi[1]
+                            _log.debug("Loaded serviceToken from .mi.token file")
+            except Exception as e:
+                _log.warning("Failed to read .mi.token: %s", e)
+        
+        _log.debug("Auth info: userId=%s, has_serviceToken=%s", user_id, bool(service_token))
+        
+        if not service_token or not user_id:
+            _log.warning("No valid serviceToken or userId available for conversation API")
+            return []
+
+        # Use Xiaomi conversation API
+        timestamp = int(time.time() * 1000)
+        url = f"https://userprofile.mina.mi.com/device_profile/v2/conversation?source=dialogu&hardware={hardware}&timestamp={timestamp}&limit={limit}"
+
+        _log.debug("MiService: get latest ask from device %s (hardware: %s)", did, hardware)
+
+        try:
+            assert self._session is not None
+
+            # Build cookies manually
+            cookies = {"deviceId": did}
+            if service_token:
+                cookies["serviceToken"] = service_token
+            if user_id:
+                cookies["userId"] = str(user_id)
+
+            _log.debug("Request cookies: deviceId=%s, has_serviceToken=%s, userId=%s", 
+                      did, bool(service_token), user_id)
+
+            async with self._session.get(url, cookies=cookies, timeout=15) as resp:
+                if resp.status != 200:
+                    _log.debug("Conversation API returned status %d", resp.status)
+                    if resp.status == 401:
+                        _log.debug("Authentication failed, serviceToken may be invalid")
+                    elif resp.status == 400:
+                        _log.debug("Bad request, check deviceId and hardware parameters")
+                    return []
+
+                data = await resp.json()
+                _log.debug("Conversation API response: %s", data)
+
+                # Parse response
+                result = []
+                if d := data.get("data"):
+                    records = json.loads(d).get("records", [])
+                    for record in records:
+                        try:
+                            answers = record.get("answers", [{}])
+                            answer = ""
+                            if answers:
+                                answer = (
+                                    answers[0].get("tts", {}).get("text", "").strip()
+                                )
+
+                            result.append(
+                                {
+                                    "time": record.get("time", 0),
+                                    "query": record.get("query", "").strip(),
+                                    "answer": answer,
+                                }
+                            )
+                        except Exception as e:
+                            _log.warning("Failed to parse conversation record: %s", e)
+                            continue
+
+                return result
+
+        except Exception as e:
+            _log.error("MiService: get_latest_ask failed: %s", e, exc_info=True)
+            return []
+
+    async def player_pause(self, device_id: str | None = None) -> dict:
+        """Pause current playback.
+
+        Uses the player_play_operation API from miservice_fork.
+        """
+        assert self._na_service is not None
+        did = await self._resolve_device_id(device_id)
+        devices = await self.list_devices()
+        device_name = next(
+            (d.get("name", "") for d in devices if d["deviceID"] == did), ""
+        )
+        _log.info("MiService: pause playback on device %s", did)
+        result = await self._na_service.player_pause(did)
+        _log.info("MiService: pause result: %s", result)
+        return {"device": f"{device_name}({did})", "result": result}
+
+    async def player_stop(self, device_id: str | None = None) -> dict:
+        """Stop current playback.
+
+        Uses the player_play_operation API from miservice_fork.
+        """
+        assert self._na_service is not None
+        did = await self._resolve_device_id(device_id)
+        devices = await self.list_devices()
+        device_name = next(
+            (d.get("name", "") for d in devices if d["deviceID"] == did), ""
+        )
+        _log.info("MiService: stop playback on device %s", did)
+        result = await self._na_service.player_stop(did)
+        _log.info("MiService: stop result: %s", result)
+        return {"device": f"{device_name}({did})", "result": result}
+
+    async def player_play(self, device_id: str | None = None) -> dict:
+        """Resume/play current playback.
+
+        Uses the player_play_operation API from miservice_fork.
+        """
+        assert self._na_service is not None
+        did = await self._resolve_device_id(device_id)
+        devices = await self.list_devices()
+        device_name = next(
+            (d.get("name", "") for d in devices if d["deviceID"] == did), ""
+        )
+        _log.info("MiService: resume playback on device %s", did)
+        result = await self._na_service.player_play(did)
+        _log.info("MiService: play result: %s", result)
+        return {"device": f"{device_name}({did})", "result": result}
+
+    async def player_get_status(self, device_id: str | None = None) -> dict:
+        """Get current player status.
+
+        Uses the player_get_play_status API from miservice_fork.
+        """
+        assert self._na_service is not None
+        did = await self._resolve_device_id(device_id)
+        devices = await self.list_devices()
+        device_name = next(
+            (d.get("name", "") for d in devices if d["deviceID"] == did), ""
+        )
+        _log.info("MiService: get player status on device %s", did)
+        result = await self._na_service.player_get_status(did)
+        _log.info("MiService: player status result: %s", result)
+        return {"device": f"{device_name}({did})", "status": result}
+
+    async def player_set_loop(self, device_id: str | None = None, loop_type: int = 1) -> dict:
+        """Set loop mode for playback.
+
+        Args:
+            device_id: Target device ID
+            loop_type: 0=single track loop, 1=playlist loop (default)
+        """
+        assert self._na_service is not None
+        did = await self._resolve_device_id(device_id)
+        devices = await self.list_devices()
+        device_name = next(
+            (d.get("name", "") for d in devices if d["deviceID"] == did), ""
+        )
+        _log.info("MiService: set loop mode %d on device %s", loop_type, did)
+        result = await self._na_service.player_set_loop(did, loop_type)
+        _log.info("MiService: set loop result: %s", result)
+        return {"device": f"{device_name}({did})", "loop_type": loop_type, "result": result}
+
+
+
+

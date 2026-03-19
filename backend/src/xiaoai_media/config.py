@@ -21,3 +21,7 @@ MI_DID: str = _optional("MI_DID", "")
 MI_REGION: str = _optional("MI_REGION", "cn")
 MUSIC_API_BASE_URL: str = _optional("MUSIC_API_BASE_URL", "http://localhost:5050")
 MUSIC_DEFAULT_PLATFORM: str = _optional("MUSIC_DEFAULT_PLATFORM", "tx")
+
+# Conversation polling settings
+ENABLE_CONVERSATION_POLLING: bool = _optional("ENABLE_CONVERSATION_POLLING", "true").lower() in ("true", "1", "yes")
+CONVERSATION_POLL_INTERVAL: float = float(_optional("CONVERSATION_POLL_INTERVAL", "2.0"))

@@ -9,17 +9,27 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s — %(message)s",
 )
+# miservice logs every HTTP request at INFO; suppress to WARNING to reduce noise
+logging.getLogger("miservice").setLevel(logging.WARNING)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from xiaoai_media.api.routes import devices, tts, volume, command, config, music
+from xiaoai_media.conversation import ConversationPoller
+from xiaoai_media.command_handler import CommandHandler
+from xiaoai_media import config as app_config
 
 app = FastAPI(
     title="XiaoAI Media API",
     description="Manage Xiaomi AI speakers via MiService",
     version="0.1.0",
 )
+
+# Initialize conversation poller and command handler
+conversation_poller = ConversationPoller(poll_interval=app_config.CONVERSATION_POLL_INTERVAL)
+command_handler = CommandHandler()
+conversation_poller.set_command_callback(command_handler.handle_command)
 
 app.add_middleware(
     CORSMiddleware,
@@ -28,6 +38,24 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Start background tasks on application startup."""
+    if app_config.ENABLE_CONVERSATION_POLLING:
+        await conversation_poller.start()
+        logging.getLogger(__name__).info("对话监听已启用")
+    else:
+        logging.getLogger(__name__).info("对话监听已禁用")
+    logging.getLogger(__name__).info("应用启动完成")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Stop background tasks on application shutdown."""
+    await conversation_poller.stop()
+    logging.getLogger(__name__).info("应用已关闭")
 
 # API routes
 app.include_router(devices.router, prefix="/api")

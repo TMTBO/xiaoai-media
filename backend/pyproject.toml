@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Xiaomi AI speaker management service via MiService"
 requires-python = ">=3.9"
 dependencies = [
-    "miservice",
+    "miservice_fork",
     "aiohttp",
     "aiofiles",
     "python-dotenv",

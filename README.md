@@ -9,6 +9,7 @@
 - 💬 TTS文本转语音
 - 🎤 语音命令执行
 - 📱 设备管理
+- 🎧 **对话监听** - 自动拦截音箱播放指令，通过本服务获取音乐 URL
 
 ## 快速开始
 
@@ -49,6 +50,7 @@ npm run dev
 ### 快速链接
 - 📖 [文档中心](docs/README.md) - 所有文档的入口
 - 🎤 [TTS功能文档](docs/tts/) - TTS完整使用指南
+- 🎧 [对话监听功能](docs/conversation_monitoring.md) - 自动拦截播放指令
 - 🧭 [文档导航](docs/NAVIGATION.md) - 快速找到你需要的文档
 
 ### TTS功能文档
@@ -168,7 +170,7 @@ xiaoai-media/
 - Python 3.7+
 - FastAPI
 - aiohttp
-- miservice
+- miservice_fork (yihong0618/MiService)
 
 ### 前端
 - Vue.js
@@ -177,7 +179,8 @@ xiaoai-media/
 
 ## 参考资料
 
-- [MiService](https://github.com/Yonsm/MiService) - 小米云服务库
+- [MiService Fork](https://github.com/yihong0618/MiService) - 增强版小米云服务库
+- [MiService](https://github.com/Yonsm/MiService) - 原版小米云服务库
 - [xiaomusic](https://github.com/hanxi/xiaomusic) - 小爱音箱播放器
 
 ## License

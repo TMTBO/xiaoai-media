@@ -4,6 +4,20 @@
 
 ## 📚 文档目录
 
+### 🎵 播放功能文档
+**[playback/](playback/)** - 音乐播放功能完整文档
+
+小爱音箱播放功能的完整使用指南，包括：
+- 播放错误修复方案
+- 代理URL使用指南
+- 故障排查指南
+- 技术实现细节
+
+**快速链接**：
+- [播放错误快速修复](playback/播放错误快速修复.md)
+- [代理URL使用指南](playback/代理URL使用指南.md)
+- [故障排查指南](playback/PLAYBACK_TROUBLESHOOTING.md)
+
 ### 🎤 TTS功能文档
 **[tts/](tts/)** - 文本转语音功能完整文档
 
@@ -18,6 +32,20 @@
 - [5分钟快速上手](tts/README_TTS.md)
 - [完整解决方案](tts/TTS_完整解决方案.md)
 - [功能验证报告](tts/功能验证报告.md)
+
+### 💬 对话监听文档
+**[conversation/](conversation/)** - 对话拦截和自动播放功能
+
+对话监听功能的完整文档，包括：
+- 功能说明和使用指南
+- 播放拦截实现
+- 问题修复报告
+- 验证测试报告
+
+**快速链接**：
+- [快速开始](conversation/QUICK_START.md)
+- [功能说明](conversation/功能说明.md)
+- [使用说明](conversation/使用说明.md)
 
 ## 🚀 快速开始
 
@@ -66,28 +94,56 @@ async with XiaoAiClient() as client:
 
 ## 📖 功能模块
 
-### TTS文本转语音
+### 🎵 音乐播放
+- ✅ 搜索和播放 - 搜索音乐并播放
+- ✅ 播放控制 - 播放/暂停/上一首/下一首
+- ✅ 代理播放 - 通过代理访问音乐URL
+- ✅ 排行榜 - 播放各平台排行榜
+
+详细文档：[playback/README.md](playback/README.md)
+
+### 🎤 TTS文本转语音
 - ✅ TTS播报 - 播报文本消息
 - ✅ 命令执行 - 执行语音命令
 - ✅ 静默模式 - 静默执行命令
 
 详细文档：[tts/README.md](tts/README.md)
 
-### 音乐控制
-- 播放/暂停
-- 上一首/下一首
-- 音量控制
+### 💬 对话监听
+- ✅ 对话拦截 - 自动拦截播放指令
+- ✅ 自动播放 - 通过本服务获取音乐URL
+- ✅ 实时监听 - 持续监听音箱对话
 
-### 设备管理
+详细文档：[conversation/README.md](conversation/README.md)
+
+### 🔊 音量控制
+- 获取音量
+- 设置音量
+
+### 📱 设备管理
 - 设备列表查询
 - 设备状态监控
 - 多设备支持
 
 ## 🧪 测试
 
+### 播放功能测试
+```bash
+# 诊断播放问题
+python test/music/playback/diagnose_playback.py
+
+# 测试代理函数
+python test/music/playback/test_proxy_function.py
+```
+
 ### TTS功能测试
 ```bash
-python3 test/test_tts.py
+python test/tts/test_tts.py
+```
+
+### 对话监听测试
+```bash
+python test/conversation/test_conversation_monitoring.py
 ```
 
 ## 🔧 API文档
@@ -166,8 +222,14 @@ xiaoai-media/
 │           └── config.py # 配置
 ├── frontend/             # 前端界面
 ├── docs/                 # 文档（本目录）
-│   └── tts/             # TTS功能文档
+│   ├── playback/        # 播放功能文档
+│   ├── tts/             # TTS功能文档
+│   └── conversation/    # 对话监听文档
 ├── test/                 # 测试脚本
+│   ├── music/           # 音乐功能测试
+│   │   └── playback/    # 播放功能测试
+│   ├── tts/             # TTS功能测试
+│   └── conversation/    # 对话监听测试
 └── README.md            # 项目说明
 ```
 

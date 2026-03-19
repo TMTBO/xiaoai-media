@@ -37,13 +37,24 @@ async def send_command(req: CommandRequest):
 async def get_conversation(device_id: str | None = None):
     """Get latest conversation records from the speaker.
     
-    Returns the most recent conversation history including user questions
+    Returns the most recent 20 conversation history including user questions
     and XiaoAi's responses.
     """
     try:
         async with XiaoAiClient() as client:
-            result = await client.get_latest_ask(device_id)
-        return {"conversations": result}
+            result = await client.get_latest_ask(device_id, limit=20)
+        
+        # Transform to match frontend expected format
+        conversations = [
+            {
+                "timestamp_ms": conv["time"],
+                "question": conv["query"],
+                "content": conv["answer"],
+            }
+            for conv in result
+        ]
+        
+        return {"conversations": conversations}
     except Exception as e:
         import logging
         logging.getLogger(__name__).error("Get conversation error: %s", e, exc_info=True)
