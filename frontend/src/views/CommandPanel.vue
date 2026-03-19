@@ -1,6 +1,61 @@
 <template>
   <el-card>
     <template #header>语音指令</template>
+    
+    <!-- Quick command buttons -->
+    <div style="margin-bottom: 16px">
+      <el-text style="display: block; margin-bottom: 8px; font-weight: 500">快捷指令</el-text>
+      <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px">
+        <el-button size="small" @click="sendQuickCommand('上一首')" :loading="loading" 
+          style="width: 100%; height: 60px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 8px;">
+          <el-icon style="font-size: 20px; margin-bottom: 4px"><CaretLeft /></el-icon>
+          <span style="font-size: 12px">上一首</span>
+        </el-button>
+        <el-button size="small" @click="sendQuickCommand('下一首')" :loading="loading" 
+          style="width: 100%; height: 60px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 8px;">
+          <el-icon style="font-size: 20px; margin-bottom: 4px"><CaretRight /></el-icon>
+          <span style="font-size: 12px">下一首</span>
+        </el-button>
+        <el-button size="small" @click="sendQuickCommand('暂停')" :loading="loading" 
+          style="width: 100%; height: 60px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 8px;">
+          <el-icon style="font-size: 20px; margin-bottom: 4px"><VideoPause /></el-icon>
+          <span style="font-size: 12px">暂停</span>
+        </el-button>
+        <el-button size="small" @click="sendQuickCommand('继续播放')" :loading="loading" 
+          style="width: 100%; height: 60px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 8px;">
+          <el-icon style="font-size: 20px; margin-bottom: 4px"><VideoPlay /></el-icon>
+          <span style="font-size: 12px">继续</span>
+        </el-button>
+        <el-button size="small" @click="sendQuickCommand('停止播放')" :loading="loading" 
+          style="width: 100%; height: 60px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 8px;">
+          <el-icon style="font-size: 20px; margin-bottom: 4px"><CircleClose /></el-icon>
+          <span style="font-size: 12px">停止</span>
+        </el-button>
+        <el-button size="small" @click="sendQuickCommand('音量加大')" :loading="loading" 
+          style="width: 100%; height: 60px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 8px;">
+          <el-icon style="font-size: 20px; margin-bottom: 4px"><Plus /></el-icon>
+          <span style="font-size: 12px">音量+</span>
+        </el-button>
+        <el-button size="small" @click="sendQuickCommand('音量减小')" :loading="loading" 
+          style="width: 100%; height: 60px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 8px;">
+          <el-icon style="font-size: 20px; margin-bottom: 4px"><Minus /></el-icon>
+          <span style="font-size: 12px">音量-</span>
+        </el-button>
+        <el-button size="small" @click="sendQuickCommand('现在几点')" :loading="loading" 
+          style="width: 100%; height: 60px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 8px;">
+          <el-icon style="font-size: 20px; margin-bottom: 4px"><Clock /></el-icon>
+          <span style="font-size: 12px">时间</span>
+        </el-button>
+        <el-button size="small" @click="sendQuickCommand('今天天气怎么样')" :loading="loading" 
+          style="width: 100%; height: 60px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 8px;">
+          <el-icon style="font-size: 20px; margin-bottom: 4px"><Sunny /></el-icon>
+          <span style="font-size: 12px">天气</span>
+        </el-button>
+      </div>
+    </div>
+
+    <el-divider />
+
     <el-form label-width="100px" @submit.prevent="submit">
       <el-form-item label="指令内容">
         <el-input v-model="command" placeholder="例如：查询天气、播放音乐" clearable />
@@ -32,7 +87,18 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Refresh } from '@element-plus/icons-vue'
+import { 
+  Refresh, 
+  CaretLeft, 
+  CaretRight, 
+  VideoPause, 
+  VideoPlay, 
+  CircleClose,
+  Plus,
+  Minus,
+  Clock,
+  Sunny
+} from '@element-plus/icons-vue'
 import { api } from '@/api'
 import { useDevices } from '@/composables/useDevices'
 
@@ -55,5 +121,10 @@ async function submit() {
   } finally {
     loading.value = false
   }
+}
+
+async function sendQuickCommand(cmd: string) {
+  command.value = cmd
+  await submit()
 }
 </script>

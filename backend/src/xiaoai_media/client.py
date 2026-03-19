@@ -350,9 +350,13 @@ class XiaoAiClient:
             (d.get("name", "") for d in devices if d["deviceID"] == did), ""
         )
         _log.info("MiService: set volume %d on device %s", volume, did)
-        result = await self._na_service.player_set_volume(did, volume)
-        _log.info("MiService: set volume result: %s", result)
-        return {"device": f"{device_name}({did})", "volume": volume, "result": result}
+        try:
+            result = await self._na_service.player_set_volume(did, volume)
+            _log.info("MiService: set volume result: %s", result)
+            return {"device": f"{device_name}({did})", "volume": volume, "result": result}
+        except Exception as e:
+            _log.error("Failed to set volume: %s", e, exc_info=True)
+            raise
     async def get_volume(self, device_id: str | None = None) -> dict:
         """Get current speaker volume."""
         assert self._io_service is not None

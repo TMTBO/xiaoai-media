@@ -75,18 +75,12 @@
                     </div>
 
                     <el-table :data="searchResults" v-loading="searchLoading" style="width: 100%; margin-top: 8px"
-                        empty-text="暂无结果，请输入关键词搜索">
+                        empty-text="暂无结果，请输入关键词搜索"
+                        :row-class-name="getSearchRowClassName"
+                        @row-click="handleSearchRowClick">
                         <el-table-column prop="name" label="歌名" min-width="160" show-overflow-tooltip />
                         <el-table-column prop="singer" label="歌手" min-width="120" show-overflow-tooltip />
-                        <el-table-column prop="albumName" label="专辑" min-width="140" show-overflow-tooltip />
-                        <el-table-column label="操作" width="90" fixed="right">
-                            <template #default="scope">
-                                <el-button type="primary" size="small" :loading="playingIdx === scope.$index"
-                                    @click="playFromSearch(scope.$index)">
-                                    播放
-                                </el-button>
-                            </template>
-                        </el-table-column>
+                        <el-table-column prop="meta.albumName" label="专辑" min-width="140" show-overflow-tooltip />
                     </el-table>
                 </el-tab-pane>
 
@@ -109,41 +103,45 @@
                     </el-form>
 
                     <div v-if="chartsLoading" v-loading="true" style="height: 80px" />
-                    <div v-else-if="charts.length" class="charts-grid">
-                        <el-card v-for="chart in charts" :key="chart.id" class="chart-card"
-                            :class="{ 'chart-card--active': selectedChart?.id === chart.id }" shadow="hover"
-                            @click="loadChartSongs(chart)">
-                            <el-image :src="chart.picUrl" style="width: 100%; height: 110px" fit="cover" loading="lazy">
-                                <template #error>
-                                    <div class="image-placeholder">
-                                        <el-icon size="36">
-                                            <VideoPlay />
-                                        </el-icon>
-                                    </div>
-                                </template>
-                            </el-image>
-                            <div class="chart-name">{{ chart.name }}</div>
-                        </el-card>
+                    <div v-else-if="charts.length" class="charts-layout">
+                        <!-- Left: Charts List -->
+                        <div class="charts-list">
+                            <div v-for="chart in charts" :key="chart.id" class="chart-item"
+                                :class="{ 'chart-item--active': selectedChart?.id === chart.id }"
+                                @click="loadChartSongs(chart)">
+                                <el-image :src="chart.picUrl" class="chart-image" fit="cover" loading="lazy">
+                                    <template #error>
+                                        <div class="chart-image-error">
+                                            <el-icon size="24">
+                                                <VideoPlay />
+                                            </el-icon>
+                                        </div>
+                                    </template>
+                                </el-image>
+                                <div class="chart-name">{{ chart.name }}</div>
+                            </div>
+                        </div>
+
+                        <!-- Right: Chart Details -->
+                        <div class="chart-details">
+                            <template v-if="selectedChart">
+                                <div style="font-size: 16px; font-weight: 600; margin-bottom: 12px; padding: 0 4px">
+                                    {{ selectedChart.name }}
+                                </div>
+                                <el-table :data="chartSongs" v-loading="chartSongsLoading" style="width: 100%"
+                                    empty-text="暂无歌曲" max-height="600" 
+                                    :row-class-name="getRowClassName"
+                                    @row-click="handleRowClick">
+                                    <el-table-column type="index" label="#" width="50" />
+                                    <el-table-column prop="name" label="歌名" min-width="160" show-overflow-tooltip />
+                                    <el-table-column prop="singer" label="歌手" min-width="120" show-overflow-tooltip />
+                                    <el-table-column prop="meta.albumName" label="专辑" min-width="140" show-overflow-tooltip />
+                                </el-table>
+                            </template>
+                            <el-empty v-else description="请点击左侧排行榜查看详情" />
+                        </div>
                     </div>
                     <el-empty v-else description="点击刷新按钮加载排行榜" />
-
-                    <template v-if="selectedChart">
-                        <el-divider content-position="left">{{ selectedChart.name }}</el-divider>
-                        <el-table :data="chartSongs" v-loading="chartSongsLoading" style="width: 100%"
-                            empty-text="暂无歌曲">
-                            <el-table-column type="index" label="#" width="50" />
-                            <el-table-column prop="name" label="歌名" min-width="160" show-overflow-tooltip />
-                            <el-table-column prop="singer" label="歌手" min-width="120" show-overflow-tooltip />
-                            <el-table-column label="操作" width="90" fixed="right">
-                                <template #default="scope">
-                                    <el-button type="primary" size="small" :loading="playingIdx === -(scope.$index + 1)"
-                                        @click="playFromChart(scope.$index)">
-                                        播放
-                                    </el-button>
-                                </template>
-                            </el-table-column>
-                        </el-table>
-                    </template>
                 </el-tab-pane>
             </el-tabs>
         </el-card>
@@ -277,6 +275,17 @@ async function playFromSearch(index: number) {
     }
 }
 
+function handleSearchRowClick(row: Song, column: unknown, event: Event) {
+    const index = searchResults.value.findIndex(s => s.id === row.id)
+    if (index >= 0) {
+        playFromSearch(index)
+    }
+}
+
+function getSearchRowClassName({ rowIndex }: { rowIndex: number }) {
+    return playingIdx.value === rowIndex ? 'playing-row' : 'clickable-row'
+}
+
 // ---------------------------------------------------------------------------
 // Charts
 // ---------------------------------------------------------------------------
@@ -326,12 +335,6 @@ async function loadCharts() {
 }
 
 async function loadChartSongs(chart: Chart) {
-    // Toggle: click same chart again to collapse
-    if (selectedChart.value?.id === chart.id) {
-        selectedChart.value = null
-        chartSongs.value = []
-        return
-    }
     selectedChart.value = chart
     chartSongsLoading.value = true
     error.value = ''
@@ -360,6 +363,17 @@ async function playFromChart(index: number) {
     } finally {
         playingIdx.value = -999
     }
+}
+
+function handleRowClick(row: Song, column: unknown, event: Event) {
+    const index = chartSongs.value.findIndex(s => s.id === row.id)
+    if (index >= 0) {
+        playFromChart(index)
+    }
+}
+
+function getRowClassName({ rowIndex }: { rowIndex: number }) {
+    return playingIdx.value === -(rowIndex + 1) ? 'playing-row' : 'clickable-row'
 }
 
 // ---------------------------------------------------------------------------
@@ -513,34 +527,90 @@ watch(activeTab, (name) => {
 </script>
 
 <style scoped>
-.charts-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 12px;
+.charts-layout {
+    display: flex;
+    gap: 16px;
     margin-top: 12px;
 }
 
-.chart-card {
+.charts-list {
+    flex: 0 0 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 600px;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+.charts-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.charts-list::-webkit-scrollbar-thumb {
+    background: #dcdfe6;
+    border-radius: 3px;
+}
+
+.charts-list::-webkit-scrollbar-thumb:hover {
+    background: #c0c4cc;
+}
+
+.chart-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: #fff;
+    border: 1px solid #e4e7ed;
+    border-radius: 4px;
     cursor: pointer;
-    transition: transform 0.15s;
+    transition: all 0.2s;
 }
 
-.chart-card:hover {
-    transform: translateY(-2px);
+.chart-item:hover {
+    border-color: var(--el-color-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.chart-card--active {
-    box-shadow: 0 0 0 2px var(--el-color-primary);
+.chart-item--active {
+    border-color: var(--el-color-primary);
+    background: var(--el-color-primary-light-9);
+}
+
+.chart-image {
+    width: 60px;
+    height: 60px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.chart-image-error {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f5f7fa;
+    color: #c0c4cc;
+    border-radius: 4px;
 }
 
 .chart-name {
+    flex: 1;
     font-size: 13px;
-    text-align: center;
-    margin-top: 6px;
-    white-space: nowrap;
+    line-height: 1.5;
+    color: #303133;
     overflow: hidden;
     text-overflow: ellipsis;
-    padding: 0 4px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.chart-details {
+    flex: 1;
+    min-width: 0;
 }
 
 .image-placeholder {
@@ -584,5 +654,18 @@ watch(activeTab, (name) => {
     display: flex;
     align-items: center;
     gap: 8px;
+}
+
+.clickable-row {
+    cursor: pointer;
+}
+
+.clickable-row:hover {
+    background-color: var(--el-fill-color-light) !important;
+}
+
+.playing-row {
+    background-color: var(--el-color-primary-light-9) !important;
+    cursor: pointer;
 }
 </style>
