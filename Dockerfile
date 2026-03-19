@@ -7,7 +7,7 @@ COPY frontend/package.json frontend/package-lock.json* ./
 RUN npm ci
 
 COPY frontend/ ./
-RUN npm run build
+RUN npm run build:prod
 
 # ── Stage 2: Python runtime ───────────────────────────────────────────────────
 FROM python:3.11-slim AS runtime
