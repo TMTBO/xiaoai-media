@@ -16,7 +16,7 @@ class CommandHandler:
 
     def __init__(self, music_api_base_url: str | None = None):
         """Initialize command handler.
-        
+
         Args:
             music_api_base_url: Base URL for music API (defaults to config)
         """
@@ -26,63 +26,150 @@ class CommandHandler:
 
     async def handle_command(self, device_id: str, query: str):
         """Handle a voice command from a speaker.
-        
+
         Args:
             device_id: Device ID that issued the command
             query: Voice command text
         """
         _log.info("收到设备 %s 的指令: %s", device_id, query)
-        
+
         # 检查是否应该处理该指令（唤醒词过滤）
         if not config.should_handle_command(query):
             _log.debug("指令未包含唤醒词，忽略: %s", query)
             return
-        
+
         # 预处理指令（移除唤醒词等）
         processed_query = config.preprocess_command(query)
         _log.debug("预处理后的指令: %s", processed_query)
-        
+
+        # Check for playlist command first
+        playlist_info = self._parse_playlist_command(processed_query)
+        if playlist_info:
+            _log.info("检测到播单指令: %s", playlist_info["query"])
+            await self._handle_playlist_command(device_id, playlist_info["query"])
+            return
+
         # Parse play command
         play_info = self._parse_play_command(processed_query)
         if play_info:
             _log.info("检测到播放指令: %s", play_info["query"])
             await self._handle_play_command(device_id, play_info["query"])
             return
-        
+
         _log.debug("未匹配到播放指令: %s", processed_query)
+
+    def _parse_playlist_command(self, query: str) -> dict | None:
+        """Parse a playlist command from natural language query.
+
+        Detects patterns like:
+        - "播放音乐播单"
+        - "播放有声书"
+        - "播放我的播客"
+        - "打开音乐播单"
+
+        Returns:
+            dict with 'action' and 'query' keys, or None if not a playlist command
+        """
+        query = query.strip()
+
+        # Pattern: 播放/打开 内容 (包含"播单"或看起来是播单名称)
+        playlist_patterns = [
+            r"^(?:播放|打开)(.+播单.*)$",
+            r"^(?:播放|打开)(.+列表.*)$",
+        ]
+
+        for pattern in playlist_patterns:
+            match = re.match(pattern, query)
+            if match:
+                content = match.group(1).strip()
+                if content:
+                    return {
+                        "action": "play_playlist",
+                        "query": content,
+                    }
+
+        return None
+
+    async def _handle_playlist_command(self, device_id: str, voice_text: str):
+        """Handle a playlist command by calling the playlist API.
+
+        Args:
+            device_id: Device ID to play on
+            voice_text: Voice command text (e.g., "音乐播单")
+        """
+        _log.info("处理播单指令: 在设备 %s 上播放 '%s'", device_id, voice_text)
+
+        try:
+            # Call the playlist API endpoint
+            url = f"{self.music_api_base_url}/api/playlists/play-by-voice"
+
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    url,
+                    params={"voice_text": voice_text, "device_id": device_id},
+                    timeout=aiohttp.ClientTimeout(total=30),
+                ) as resp:
+                    if resp.status != 200:
+                        error_text = await resp.text()
+                        _log.error(
+                            "播单 API 返回错误: status=%d, body=%s",
+                            resp.status,
+                            error_text,
+                        )
+
+                        async with XiaoAiClient() as client:
+                            if resp.status == 404:
+                                await client.text_to_speech(
+                                    f"没有找到匹配的播单", device_id
+                                )
+                            else:
+                                await client.text_to_speech(f"播单播放失败", device_id)
+                        return
+
+                    result = await resp.json(content_type=None)
+                    _log.info("播单播放成功: %s", result)
+
+        except Exception as e:
+            _log.error("播单指令处理失败: %s", e, exc_info=True)
+            try:
+                async with XiaoAiClient() as client:
+                    await client.text_to_speech(f"播单播放出错", device_id)
+            except:
+                pass
 
     def _parse_play_command(self, query: str) -> dict | None:
         """Parse a play command from natural language query.
-        
+
         Detects patterns like:
         - "播放周杰伦的晴天"
         - "播放晴天"
         - "播放歌曲晴天"
         - "打开周杰伦的歌"
-        
+
         Returns:
             dict with 'action' and 'query' keys, or None if not a play command
         """
         query = query.strip()
-        
+
         # Pattern: 播放/打开 [歌曲] 内容
         play_patterns = [
             r"^(?:播放|打开)(?:歌曲)?(.+)$",
         ]
-        
+
         for pattern in play_patterns:
             match = re.match(pattern, query)
             if match:
                 content = match.group(1).strip()
                 # Filter out common non-music commands
                 if content and not any(
-                    x in content for x in ["音量", "暂停", "继续", "停止", "下一首", "上一首"]
+                    x in content
+                    for x in ["音量", "暂停", "继续", "停止", "下一首", "上一首"]
                 ):
                     return {
                         "action": "play",
                         "query": content,
                     }
-        
+
         return None
 
     async def _handle_play_command(self, device_id: str, search_query: str):
@@ -93,6 +180,7 @@ class CommandHandler:
             search_query: Search query (e.g., "周杰伦的晴天" or "晴天")
         """
         import time
+
         start_time = time.time()
         _log.info("处理播放指令: 在设备 %s 上搜索并播放 '%s'", device_id, search_query)
 
@@ -106,7 +194,9 @@ class CommandHandler:
             if not search_results:
                 _log.warning("搜索无结果: %s", search_query)
                 async with XiaoAiClient() as client:
-                    await client.text_to_speech(f"搜索失败，没有找到{search_query}", device_id)
+                    await client.text_to_speech(
+                        f"搜索失败，没有找到{search_query}", device_id
+                    )
                 return
 
             # Get the first result
@@ -158,19 +248,19 @@ class CommandHandler:
 
     async def _search_music(self, query: str, platform: str | None = None) -> dict:
         """Search for music via the music API.
-        
+
         Args:
             query: Search query
             platform: Music platform (defaults to config default)
-            
+
         Returns:
             Search results from music API
         """
         plat = platform or config.MUSIC_DEFAULT_PLATFORM
         url = f"{self.music_api_base_url}/api/v3/search"
-        
+
         _log.info("搜索音乐: query=%s platform=%s", query, plat)
-        
+
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(
@@ -187,14 +277,14 @@ class CommandHandler:
 
     async def _sync_playlist(self, device_id: str, songs: list[dict]):
         """Sync playlist to the music API's internal state.
-        
+
         Args:
             device_id: Device ID
             songs: List of song dictionaries
         """
         # Import here to avoid circular dependency
         from xiaoai_media.api.routes.music import _playlists, SongItem
-        
+
         def parse_interval(interval) -> int:
             """Convert interval from string (MM:SS) or int (seconds) to int seconds."""
             if isinstance(interval, int):
@@ -211,13 +301,13 @@ class CommandHandler:
                 except (ValueError, AttributeError):
                     return 0
             return 0
-        
+
         song_items = []
         for s in songs:
             try:
                 # Ensure platform is set (use default if missing)
                 platform = s.get("platform") or config.MUSIC_DEFAULT_PLATFORM
-                
+
                 song_items.append(
                     SongItem(
                         id=str(s.get("id", "")),
@@ -232,7 +322,7 @@ class CommandHandler:
             except Exception as e:
                 _log.warning("解析歌曲失败: %s", e)
                 continue
-        
+
         if song_items:
             _playlists[device_id] = {
                 "songs": [s.model_dump() for s in song_items],
@@ -252,7 +342,10 @@ class CommandHandler:
             Play result dict or None if failed
         """
         # Import here to avoid circular dependency
-        from xiaoai_media.api.routes.music import _playlists, _get_play_url_with_fallback
+        from xiaoai_media.api.routes.music import (
+            _playlists,
+            _get_play_url_with_fallback,
+        )
 
         pl = _playlists.get(device_id)
         if not pl or not pl.get("songs"):
@@ -281,9 +374,10 @@ class CommandHandler:
             original_url = play_info["url"]
             _log.info("获取到播放 URL (音质=%s)", play_info["quality"])
             _log.debug("原始 URL: %s", original_url)
-            
+
             # Convert to proxy URL so the speaker can access it
             from xiaoai_media.api.routes.music import _make_proxy_url
+
             url = _make_proxy_url(original_url)
 
             # Play the URL on the device

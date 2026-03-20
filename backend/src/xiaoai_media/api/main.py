@@ -15,7 +15,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
-from xiaoai_media.api.routes import devices, tts, volume, command, config, music
+from xiaoai_media.api.routes import (
+    devices,
+    tts,
+    volume,
+    command,
+    config,
+    music,
+    playlist,
+    proxy,
+)
 from xiaoai_media.conversation import ConversationPoller
 from xiaoai_media.command_handler import CommandHandler
 from xiaoai_media import config as app_config
@@ -27,7 +36,9 @@ app = FastAPI(
 )
 
 # Initialize conversation poller and command handler
-conversation_poller = ConversationPoller(poll_interval=app_config.CONVERSATION_POLL_INTERVAL)
+conversation_poller = ConversationPoller(
+    poll_interval=app_config.CONVERSATION_POLL_INTERVAL
+)
 command_handler = CommandHandler()
 conversation_poller.set_command_callback(command_handler.handle_command)
 
@@ -57,6 +68,7 @@ async def shutdown_event():
     await conversation_poller.stop()
     logging.getLogger(__name__).info("应用已关闭")
 
+
 # API routes
 app.include_router(devices.router, prefix="/api")
 app.include_router(tts.router, prefix="/api")
@@ -64,6 +76,8 @@ app.include_router(volume.router, prefix="/api")
 app.include_router(command.router, prefix="/api")
 app.include_router(config.router, prefix="/api")
 app.include_router(music.router, prefix="/api")
+app.include_router(playlist.router, prefix="/api")
+app.include_router(proxy.router, prefix="/api")
 
 # Serve frontend static files in production (built by Docker)
 _static_dir = Path(__file__).resolve().parents[5] / "static"

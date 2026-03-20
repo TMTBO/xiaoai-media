@@ -47,6 +47,56 @@
           <el-option value="mg" label="咪咕音乐 (mg)" />
         </el-select>
       </el-form-item>
+      <el-divider content-position="left" style="margin: 20px 0 16px">本服务配置</el-divider>
+      <el-form-item label="服务地址">
+        <el-input v-model="form.SERVER_BASE_URL" placeholder="http://192.168.1.100:8000" />
+        <div class="el-form-item__explain">⚠️ 必须使用局域网 IP，不能使用 localhost</div>
+      </el-form-item>
+      <el-divider content-position="left" style="margin: 20px 0 16px">对话监听</el-divider>
+      <el-form-item label="启用监听">
+        <el-switch v-model="form.ENABLE_CONVERSATION_POLLING" />
+        <div class="el-form-item__explain">持续监听音箱对话，自动拦截播放指令</div>
+      </el-form-item>
+      <el-form-item label="轮询间隔">
+        <el-input-number v-model="form.CONVERSATION_POLL_INTERVAL" :min="0.1" :max="60" :step="0.5" :precision="1" />
+        <span style="margin-left: 8px">秒</span>
+        <div class="el-form-item__explain">对话监听的轮询间隔时间</div>
+      </el-form-item>
+      <el-form-item label="唤醒词过滤">
+        <el-switch v-model="form.ENABLE_WAKE_WORD_FILTER" />
+        <div class="el-form-item__explain">只处理包含唤醒词的指令</div>
+      </el-form-item>
+      <el-form-item label="唤醒词列表">
+        <div style="width: 100%">
+          <el-tag v-for="(word, index) in form.WAKE_WORDS" :key="index" closable @close="removeWakeWord(index)"
+            style="margin-right: 8px; margin-bottom: 8px">
+            {{ word }}
+          </el-tag>
+          <el-input v-if="showWakeWordInput" ref="wakeWordInputRef" v-model="newWakeWord" size="small"
+            style="width: 120px" @blur="addWakeWord" @keyup.enter="addWakeWord" />
+          <el-button v-else size="small" @click="showWakeWordInput = true">+ 添加唤醒词</el-button>
+          <div class="el-form-item__explain">只有包含这些唤醒词的指令才会被处理</div>
+        </div>
+      </el-form-item>
+      <el-divider content-position="left" style="margin: 20px 0 16px">日志配置</el-divider>
+      <el-form-item label="日志级别">
+        <el-select v-model="form.LOG_LEVEL">
+          <el-option value="DEBUG" label="DEBUG - 调试" />
+          <el-option value="INFO" label="INFO - 信息" />
+          <el-option value="WARNING" label="WARNING - 警告" />
+          <el-option value="ERROR" label="ERROR - 错误" />
+          <el-option value="CRITICAL" label="CRITICAL - 严重" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="详细播放日志">
+        <el-switch v-model="form.VERBOSE_PLAYBACK_LOG" />
+        <div class="el-form-item__explain">显示详细的播放过程日志</div>
+      </el-form-item>
+      <el-divider content-position="left" style="margin: 20px 0 16px">存储配置</el-divider>
+      <el-form-item label="播单目录">
+        <el-input v-model="form.PLAYLIST_STORAGE_DIR" placeholder="~/.xiaoai-media" />
+        <div class="el-form-item__explain">播放列表数据存储目录</div>
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" native-type="submit" :loading="saving">保存配置</el-button>
         <el-button @click="load">重新加载</el-button>
@@ -58,7 +108,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick, watch } from 'vue'
 import { Refresh } from '@element-plus/icons-vue'
 import { api, type Config, type Device } from '@/api'
 
@@ -77,7 +127,41 @@ const form = ref<Config>({
   MI_REGION: 'cn',
   MUSIC_API_BASE_URL: 'http://localhost:5050',
   MUSIC_DEFAULT_PLATFORM: 'tx',
+  SERVER_BASE_URL: 'http://localhost:8000',
+  ENABLE_CONVERSATION_POLLING: false,
+  CONVERSATION_POLL_INTERVAL: 2.0,
+  ENABLE_WAKE_WORD_FILTER: true,
+  WAKE_WORDS: [],
+  LOG_LEVEL: 'INFO',
+  VERBOSE_PLAYBACK_LOG: false,
+  PLAYLIST_STORAGE_DIR: '~/.xiaoai-media',
 })
+
+const showWakeWordInput = ref(false)
+const newWakeWord = ref('')
+const wakeWordInputRef = ref()
+
+// 当显示输入框时自动聚焦
+watch(showWakeWordInput, (show) => {
+  if (show) {
+    nextTick(() => {
+      wakeWordInputRef.value?.focus()
+    })
+  }
+})
+
+function addWakeWord() {
+  const word = newWakeWord.value.trim()
+  if (word && !form.value.WAKE_WORDS.includes(word)) {
+    form.value.WAKE_WORDS.push(word)
+  }
+  newWakeWord.value = ''
+  showWakeWordInput.value = false
+}
+
+function removeWakeWord(index: number) {
+  form.value.WAKE_WORDS.splice(index, 1)
+}
 
 async function load() {
   loading.value = true
@@ -127,3 +211,12 @@ async function save() {
 
 onMounted(() => { load(); loadDevices() })
 </script>
+
+<style scoped>
+.el-form-item__explain {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  line-height: 1.5;
+  margin-top: 4px;
+}
+</style>

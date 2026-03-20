@@ -14,7 +14,7 @@ _user_config_path = Path(__file__).resolve().parents[3] / "user_config.py"
 
 def _load_user_config() -> Any | None:
     """加载用户配置文件 user_config.py
-    
+
     Returns:
         用户配置模块，如果不存在则返回 None
     """
@@ -25,7 +25,7 @@ def _load_user_config() -> Any | None:
             f"配置文件不存在: {_user_config_path}\n"
             f"请运行: cp user_config_template.py user_config.py"
         )
-    
+
     try:
         spec = importlib.util.spec_from_file_location("user_config", _user_config_path)
         if spec and spec.loader:
@@ -37,7 +37,7 @@ def _load_user_config() -> Any | None:
     except Exception as e:
         _log.error("加载用户配置文件失败: %s", e, exc_info=True)
         raise
-    
+
     return None
 
 
@@ -47,18 +47,18 @@ _user_config = _load_user_config()
 
 def _get_config(key: str, default: Any = "") -> Any:
     """获取配置值
-    
+
     Args:
         key: 配置键名
         default: 默认值
-        
+
     Returns:
         配置值
     """
     if _user_config is not None and hasattr(_user_config, key):
         value = getattr(_user_config, key)
         return value
-    
+
     return default
 
 
@@ -80,6 +80,14 @@ MUSIC_API_BASE_URL: str = _get_config("MUSIC_API_BASE_URL", "http://localhost:50
 MUSIC_DEFAULT_PLATFORM: str = _get_config("MUSIC_DEFAULT_PLATFORM", "tx")
 
 # ============================================
+# 本服务配置
+# ============================================
+
+# 本服务的基础 URL，用于生成代理链接
+# 注意：必须使用音箱可访问的局域网 IP，不能使用 localhost
+SERVER_BASE_URL: str = _get_config("SERVER_BASE_URL", "http://localhost:8000")
+
+# ============================================
 # 对话监听配置
 # ============================================
 
@@ -94,15 +102,29 @@ WAKE_WORDS: list[str] = _get_config("WAKE_WORDS", [])
 ENABLE_WAKE_WORD_FILTER: bool = _get_config("ENABLE_WAKE_WORD_FILTER", True)
 
 # ============================================
+# 播单管理配置
+# ============================================
+
+PLAYLIST_STORAGE_DIR: str = _get_config("PLAYLIST_STORAGE_DIR", "~/.xiaoai-media")
+
+# ============================================
+# 日志配置
+# ============================================
+
+LOG_LEVEL: str = _get_config("LOG_LEVEL", "INFO")
+VERBOSE_PLAYBACK_LOG: bool = _get_config("VERBOSE_PLAYBACK_LOG", False)
+
+# ============================================
 # 自定义处理函数
 # ============================================
 
+
 def should_handle_command(query: str) -> bool:
     """判断是否应该处理该指令
-    
+
     Args:
         query: 用户的语音指令文本
-        
+
     Returns:
         True 表示应该处理，False 表示忽略
     """
@@ -113,28 +135,28 @@ def should_handle_command(query: str) -> bool:
         except Exception as e:
             _log.error("用户自定义 should_handle_command 函数执行失败: %s", e)
             # 失败时使用默认逻辑
-    
+
     # 默认逻辑：检查唤醒词
     if not ENABLE_WAKE_WORD_FILTER:
         return True
-    
+
     if not WAKE_WORDS:
         return True
-    
+
     # 检查是否包含任何唤醒词
     for wake_word in WAKE_WORDS:
         if wake_word in query:
             return True
-    
+
     return False
 
 
 def preprocess_command(query: str) -> str:
     """预处理指令文本
-    
+
     Args:
         query: 原始指令文本
-        
+
     Returns:
         处理后的指令文本
     """
@@ -145,12 +167,12 @@ def preprocess_command(query: str) -> str:
         except Exception as e:
             _log.error("用户自定义 preprocess_command 函数执行失败: %s", e)
             # 失败时使用默认逻辑
-    
+
     # 默认逻辑：移除唤醒词
     processed = query
     for wake_word in WAKE_WORDS:
         processed = processed.replace(wake_word, "")
-    
+
     return processed.strip()
 
 

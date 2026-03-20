@@ -83,32 +83,24 @@ def _platform(platform: str | None) -> str:
 
 def _make_proxy_url(original_url: str) -> str:
     """Convert a music platform URL to a proxy URL that the speaker can access.
-    
+
     Music platform URLs often have anti-hotlinking protection that blocks direct
     access from speakers. The proxy endpoint adds necessary headers and forwards
     the stream to the speaker.
-    
+
     Args:
         original_url: Original music URL from platform (e.g., https://music.qq.com/xxx.mp3)
-    
+
     Returns:
-        Proxy URL (e.g., http://10.184.62.160:5050/main/proxy?url=https%3A%2F%2F...)
-    
+        Proxy URL (e.g., http://192.168.1.100:8000/api/proxy/stream?url=https%3A%2F%2F...)
+
     Example:
         >>> _make_proxy_url("https://music.qq.com/song.mp3")
-        'http://10.184.62.160:5050/main/proxy?url=https%3A%2F%2Fmusic.qq.com%2Fsong.mp3'
+        'http://192.168.1.100:8000/api/proxy/stream?url=https%3A%2F%2Fmusic.qq.com%2Fsong.mp3'
     """
-    proxy_url = f"{config.MUSIC_API_BASE_URL}/main/proxy?url={quote(original_url)}"
-    # proxy_url = f"http://192.168.1.111:5050/main/proxy?url={quote(original_url)}"
+    proxy_url = f"{config.SERVER_BASE_URL}/api/proxy/stream?url={quote(original_url)}"
     _log.debug("Converted URL to proxy: %s -> %s", original_url[:100], proxy_url[:100])
     return proxy_url
-
-
-def _build_command(song: dict) -> str:
-    """Build an idiomatic Chinese voice command to play a song."""
-    name = song.get("name", "")
-    singer = song.get("singer", "")
-    return f"播放{singer}的{name}" if singer else f"播放{name}"
 
 
 def _parse_chart_command(text: str) -> tuple[str | None, str]:
@@ -394,20 +386,17 @@ async def sync_playlist(req: SyncPlaylistRequest):
 
 
 async def _play_song_at_index(
-    device_id: str,
-    index: int,
-    stop_first: bool = False,
-    action_name: str = "play"
+    device_id: str, index: int, stop_first: bool = False, action_name: str = "play"
 ) -> dict:
     """
     Common logic for playing a song at a specific index.
-    
+
     Args:
         device_id: Device ID to play on
         index: Index of the song in the playlist
         stop_first: Whether to stop current playback before playing
         action_name: Name of the action for logging (play/next/prev)
-    
+
     Returns:
         Response dict with playback info
     """
@@ -417,11 +406,11 @@ async def _play_song_at_index(
             status_code=404,
             detail="No playlist for this device. Use POST /api/music/playlist first.",
         )
-    
+
     songs = pl["songs"]
     if not (0 <= index < len(songs)):
         raise HTTPException(status_code=422, detail="index out of range")
-    
+
     song = songs[index]
     _log.info(
         "Getting URL for %s song %s (platform=%s, id=%s)",
@@ -430,7 +419,7 @@ async def _play_song_at_index(
         song["platform"],
         song["id"],
     )
-    
+
     # Get playback URL with quality fallback
     play_info = await _get_play_url_with_fallback(song)
     if not play_info:
@@ -438,13 +427,17 @@ async def _play_song_at_index(
             status_code=404,
             detail=f"Cannot get playback URL for song {song['name']}: all qualities failed",
         )
-    
+
     original_url = play_info["url"]
-    _log.info("Got original playback URL (quality=%s): %s", play_info["quality"], original_url[:200])
-    
+    _log.info(
+        "Got original playback URL (quality=%s): %s",
+        play_info["quality"],
+        original_url[:200],
+    )
+
     # Convert to proxy URL
     url = _make_proxy_url(original_url)
-    
+
     async with XiaoAiClient() as client:
         # Stop current playback if requested
         if stop_first:
@@ -454,13 +447,15 @@ async def _play_song_at_index(
                 _log.debug("Current playback stopped")
                 await asyncio.sleep(0.5)
             except Exception as e:
-                _log.warning("Failed to stop current playback (may not be playing): %s", e)
-        
+                _log.warning(
+                    "Failed to stop current playback (may not be playing): %s", e
+                )
+
         # Play the new URL
         _log.info("About to play URL: %s", url[:200])
         result = await client.play_url(url, device_id, _type=1)
         _log.info("Play result: %s", result)
-    
+
     # Update current index
     pl["current"] = index
     _log.info(
@@ -470,7 +465,7 @@ async def _play_song_at_index(
         len(songs),
         song["name"],
     )
-    
+
     return {
         "device_id": device_id,
         "url": url,
@@ -486,10 +481,7 @@ async def play_music(req: PlayRequest):
     """Play the song at the given index from the server-side playlist."""
     try:
         return await _play_song_at_index(
-            req.device_id,
-            req.index,
-            stop_first=True,
-            action_name="play"
+            req.device_id, req.index, stop_first=True, action_name="play"
         )
     except HTTPException:
         raise

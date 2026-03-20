@@ -49,6 +49,16 @@ MUSIC_DEFAULT_PLATFORM = "tx"
 
 
 # ============================================
+# 本服务配置
+# ============================================
+
+# 本服务的基础 URL，用于生成代理链接
+# ⚠️ 重要：必须使用音箱可访问的局域网 IP，不能使用 localhost
+# 例如：SERVER_BASE_URL = "http://192.168.1.100:8000"
+SERVER_BASE_URL = "http://localhost:8000"
+
+
+# ============================================
 # 对话监听配置
 # ============================================
 
@@ -81,16 +91,17 @@ ENABLE_WAKE_WORD_FILTER = True
 # 自定义指令处理函数（高级功能）
 # ============================================
 
+
 def should_handle_command(query: str) -> bool:
     """
     判断是否应该处理该指令
-    
+
     Args:
         query: 用户的语音指令文本
-        
+
     Returns:
         True 表示应该处理，False 表示忽略
-        
+
     示例:
         def should_handle_command(query: str) -> bool:
             # 只处理包含"播放"的指令
@@ -99,33 +110,33 @@ def should_handle_command(query: str) -> bool:
     # 默认实现：检查唤醒词
     if not ENABLE_WAKE_WORD_FILTER:
         return True
-    
+
     if not WAKE_WORDS:
         return True
-    
+
     # 检查是否包含任何唤醒词
     for wake_word in WAKE_WORDS:
         if wake_word in query:
             return True
-    
+
     return False
 
 
 def preprocess_command(query: str) -> str:
     """
     预处理指令文本
-    
+
     在指令被解析之前调用，可以用于：
     - 移除唤醒词
     - 标准化文本
     - 替换同义词
-    
+
     Args:
         query: 原始指令文本
-        
+
     Returns:
         处理后的指令文本
-        
+
     示例:
         def preprocess_command(query: str) -> str:
             # 移除唤醒词
@@ -137,7 +148,7 @@ def preprocess_command(query: str) -> str:
     processed = query
     for wake_word in WAKE_WORDS:
         processed = processed.replace(wake_word, "")
-    
+
     return processed.strip()
 
 

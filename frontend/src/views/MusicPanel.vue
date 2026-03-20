@@ -72,11 +72,15 @@
                                 <Bell />
                             </el-icon>询问音箱并播放全部
                         </el-button>
+                        <el-button size="small" type="primary" @click="handleCreatePlaylist('search')">
+                            <el-icon style="margin-right: 4px">
+                                <Plus />
+                            </el-icon>创建播单
+                        </el-button>
                     </div>
 
                     <el-table :data="searchResults" v-loading="searchLoading" style="width: 100%; margin-top: 8px"
-                        empty-text="暂无结果，请输入关键词搜索"
-                        :row-class-name="getSearchRowClassName"
+                        empty-text="暂无结果，请输入关键词搜索" :row-class-name="getSearchRowClassName"
                         @row-click="handleSearchRowClick">
                         <el-table-column prop="name" label="歌名" min-width="160" show-overflow-tooltip />
                         <el-table-column prop="singer" label="歌手" min-width="120" show-overflow-tooltip />
@@ -125,17 +129,26 @@
                         <!-- Right: Chart Details -->
                         <div class="chart-details">
                             <template v-if="selectedChart">
-                                <div style="font-size: 16px; font-weight: 600; margin-bottom: 12px; padding: 0 4px">
-                                    {{ selectedChart.name }}
+                                <div
+                                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px">
+                                    <div style="font-size: 16px; font-weight: 600">
+                                        {{ selectedChart.name }}
+                                    </div>
+                                    <el-button v-if="chartSongs.length" size="small" type="primary"
+                                        @click="handleCreatePlaylist('chart')">
+                                        <el-icon style="margin-right: 4px">
+                                            <Plus />
+                                        </el-icon>创建播单
+                                    </el-button>
                                 </div>
                                 <el-table :data="chartSongs" v-loading="chartSongsLoading" style="width: 100%"
-                                    empty-text="暂无歌曲" max-height="600" 
-                                    :row-class-name="getRowClassName"
+                                    empty-text="暂无歌曲" max-height="600" :row-class-name="getRowClassName"
                                     @row-click="handleRowClick">
                                     <el-table-column type="index" label="#" width="50" />
                                     <el-table-column prop="name" label="歌名" min-width="160" show-overflow-tooltip />
                                     <el-table-column prop="singer" label="歌手" min-width="120" show-overflow-tooltip />
-                                    <el-table-column prop="meta.albumName" label="专辑" min-width="140" show-overflow-tooltip />
+                                    <el-table-column prop="meta.albumName" label="专辑" min-width="140"
+                                        show-overflow-tooltip />
                                 </el-table>
                             </template>
                             <el-empty v-else description="请点击左侧排行榜查看详情" />
@@ -180,6 +193,41 @@
 
         <el-alert v-if="error" :title="error" type="error" show-icon closable style="margin-top: 16px"
             @close="error = ''" />
+
+        <!-- 创建播单对话框 -->
+        <el-dialog v-model="showCreatePlaylistDialog" title="创建播单" width="500px">
+            <el-form :model="createPlaylistForm" label-width="80px">
+                <el-form-item label="播单名称" required>
+                    <el-input v-model="createPlaylistForm.name" placeholder="请输入播单名称" />
+                </el-form-item>
+                <el-form-item label="类型">
+                    <el-select v-model="createPlaylistForm.type" style="width: 100%">
+                        <el-option label="音乐" value="music" />
+                        <el-option label="有声书" value="audiobook" />
+                        <el-option label="播客" value="podcast" />
+                        <el-option label="其他" value="other" />
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="描述">
+                    <el-input v-model="createPlaylistForm.description" type="textarea" :rows="3"
+                        placeholder="播单描述（可选）" />
+                </el-form-item>
+                <el-form-item>
+                    <el-alert type="info" :closable="false" show-icon>
+                        <template #title>
+                            将从{{ createPlaylistSource === 'search' ? '搜索结果' : '排行榜' }}中添加
+                            {{ createPlaylistSource === 'search' ? searchResults.length : chartSongs.length }} 首歌曲
+                        </template>
+                    </el-alert>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <el-button @click="showCreatePlaylistDialog = false">取消</el-button>
+                <el-button type="primary" :loading="createPlaylistLoading" @click="confirmCreatePlaylist">
+                    创建
+                </el-button>
+            </template>
+        </el-dialog>
     </div>
 </template>
 
@@ -194,9 +242,10 @@ import {
     VideoPause,
     Mic,
     Bell,
+    Plus,
 } from '@element-plus/icons-vue'
-import { ElMessageBox } from 'element-plus'
-import { api, type Song, type SongQuality, type Chart } from '@/api'
+import { ElMessageBox, ElMessage } from 'element-plus'
+import { api, type Song, type SongQuality, type Chart, type PlaylistItem } from '@/api'
 import { useDevices } from '@/composables/useDevices'
 
 const { devices, devicesLoading, loadDevices, deviceId } = useDevices()
@@ -516,6 +565,90 @@ async function handlePlayPause() {
         error.value = e instanceof Error ? e.message : '操作失败'
     } finally {
         controlLoading.value = false
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Create Playlist from search/chart results
+// ---------------------------------------------------------------------------
+const showCreatePlaylistDialog = ref(false)
+const createPlaylistLoading = ref(false)
+const createPlaylistForm = ref({
+    name: '',
+    type: 'music',
+    description: '',
+})
+const createPlaylistSource = ref<'search' | 'chart'>('search')
+
+function handleCreatePlaylist(source: 'search' | 'chart') {
+    createPlaylistSource.value = source
+
+    // 预填播单名称
+    if (source === 'search' && searchQuery.value) {
+        createPlaylistForm.value.name = `${searchQuery.value} 的搜索结果`
+        createPlaylistForm.value.description = `从搜索"${searchQuery.value}"创建的播单`
+    } else if (source === 'chart' && selectedChart.value) {
+        createPlaylistForm.value.name = selectedChart.value.name
+        createPlaylistForm.value.description = `从排行榜"${selectedChart.value.name}"创建的播单`
+    }
+
+    showCreatePlaylistDialog.value = true
+}
+
+async function confirmCreatePlaylist() {
+    if (!createPlaylistForm.value.name.trim()) {
+        ElMessage.error('请输入播单名称')
+        return
+    }
+
+    const songs = createPlaylistSource.value === 'search' ? searchResults.value : chartSongs.value
+
+    if (!songs.length) {
+        ElMessage.error('没有歌曲可添加')
+        return
+    }
+
+    createPlaylistLoading.value = true
+    try {
+        // 创建播单
+        const playlist = await api.createPlaylist({
+            name: createPlaylistForm.value.name,
+            type: createPlaylistForm.value.type,
+            description: createPlaylistForm.value.description,
+        })
+
+        // 将歌曲转换为播单项
+        const items: PlaylistItem[] = songs.map(song => ({
+            title: song.name,
+            artist: song.singer,
+            album: song.meta.albumName,
+            duration: song.interval,
+            cover_url: song.meta.picUrl,
+            url: '', // 留空，由动态获取
+            custom_params: {
+                type: 'music',
+                platform: song.platform,
+                song_id: song.id,
+                qualities: song.qualities,
+            },
+        }))
+
+        // 添加歌曲到播单
+        await api.addPlaylistItems(playlist.id, { items })
+
+        ElMessage.success(`播单"${playlist.name}"创建成功，已添加 ${items.length} 首歌曲`)
+        showCreatePlaylistDialog.value = false
+
+        // 重置表单
+        createPlaylistForm.value = {
+            name: '',
+            type: 'music',
+            description: '',
+        }
+    } catch (error: any) {
+        ElMessage.error(`创建播单失败: ${error.message}`)
+    } finally {
+        createPlaylistLoading.value = false
     }
 }
 

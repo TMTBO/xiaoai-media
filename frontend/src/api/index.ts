@@ -22,6 +22,14 @@ export interface Config {
   MI_REGION: string
   MUSIC_API_BASE_URL: string
   MUSIC_DEFAULT_PLATFORM: string
+  SERVER_BASE_URL: string
+  ENABLE_CONVERSATION_POLLING: boolean
+  CONVERSATION_POLL_INTERVAL: number
+  ENABLE_WAKE_WORD_FILTER: boolean
+  WAKE_WORDS: string[]
+  LOG_LEVEL: string
+  VERBOSE_PLAYBACK_LOG: boolean
+  PLAYLIST_STORAGE_DIR: string
 }
 
 export interface SongQuality {
@@ -59,6 +67,51 @@ export interface PlaylistState {
   songs: Song[]
   current: number
   total: number
+}
+
+export interface PlaylistItem {
+  title: string
+  url?: string
+  artist: string
+  album: string
+  duration: number
+  cover_url: string
+  custom_params: Record<string, any>
+}
+
+export interface Playlist {
+  id: string
+  name: string
+  type: string
+  description: string
+  items: PlaylistItem[]
+  voice_keywords: string[]
+  created_at: string
+  updated_at: string
+}
+
+export interface CreatePlaylistRequest {
+  name: string
+  type?: string
+  description?: string
+  voice_keywords?: string[]
+}
+
+export interface UpdatePlaylistRequest {
+  name?: string
+  type?: string
+  description?: string
+  voice_keywords?: string[]
+}
+
+export interface AddItemRequest {
+  items: PlaylistItem[]
+}
+
+export interface PlayPlaylistRequest {
+  device_id?: string
+  start_index?: number
+  announce?: boolean
 }
 
 export const api = {
@@ -117,4 +170,22 @@ export const api = {
   // Conversation
   getConversation: (deviceId?: string) =>
     http.get('/command/conversation', { params: { device_id: deviceId } }).then(r => r.data),
+
+  // Playlists
+  listPlaylists: () =>
+    http.get<{ playlists: Playlist[], total: number }>('/playlists').then(r => r.data),
+  createPlaylist: (data: CreatePlaylistRequest) =>
+    http.post<Playlist>('/playlists', data).then(r => r.data),
+  getPlaylistById: (playlistId: string) =>
+    http.get<Playlist>(`/playlists/${playlistId}`).then(r => r.data),
+  updatePlaylist: (playlistId: string, data: UpdatePlaylistRequest) =>
+    http.put<Playlist>(`/playlists/${playlistId}`, data).then(r => r.data),
+  deletePlaylist: (playlistId: string) =>
+    http.delete(`/playlists/${playlistId}`).then(r => r.data),
+  addPlaylistItems: (playlistId: string, data: AddItemRequest) =>
+    http.post(`/playlists/${playlistId}/items`, data).then(r => r.data),
+  deletePlaylistItem: (playlistId: string, itemIndex: number) =>
+    http.delete(`/playlists/${playlistId}/items/${itemIndex}`).then(r => r.data),
+  playPlaylist: (playlistId: string, data: PlayPlaylistRequest) =>
+    http.post(`/playlists/${playlistId}/play`, data).then(r => r.data),
 }

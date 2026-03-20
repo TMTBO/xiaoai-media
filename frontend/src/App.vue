@@ -39,6 +39,12 @@
           </el-icon>
           <span>音乐搜索</span>
         </el-menu-item>
+        <el-menu-item index="/playlists">
+          <el-icon>
+            <List />
+          </el-icon>
+          <span>播单管理</span>
+        </el-menu-item>
         <el-menu-item index="/settings">
           <el-icon>
             <Setting />

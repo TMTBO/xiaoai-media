@@ -13,6 +13,7 @@ dependencies = [
     "aiofiles",
     "fastapi",
     "uvicorn[standard]",
+    "httpx",
 ]
 
 [project.optional-dependencies]

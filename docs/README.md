@@ -2,52 +2,89 @@
 
 欢迎来到 XiaoAi Media 项目文档中心！
 
-## 📚 文档目录
+## 📚 快速导航
 
-### 🎵 播放功能文档
+- **[文档结构说明](STRUCTURE.md)** - 完整的文档组织结构
+- **[文档索引](INDEX.md)** - 按主题查找文档
+- **[导航指南](NAVIGATION.md)** - 功能导航地图
+
+## 🚀 快速开始
+
+1. [快速配置指南](config/QUICK_CONFIG.md) - 5 分钟配置完成
+2. [快速播放测试](playback/QUICK_PLAYBACK_GUIDE.md) - 测试音乐播放
+3. [TTS 快速测试](tts/QUICK_TEST.md) - 测试语音播报
+
+## 📖 功能文档
+
+### ⚙️ 配置管理
+**[config/](config/)** - 配置系统完整文档
+
+- [配置管理 API](config/CONFIG_API.md) - 通过管理后台管理配置
+- [用户配置指南](config/USER_CONFIG_GUIDE.md) - 详细配置说明
+- [配置常见问题](config/CONFIG_FAQ.md) - 配置问题排查
+- [配置速查表](config/CONFIG_CHEATSHEET.md) - 配置项速查
+
+### 🎵 播放功能
 **[playback/](playback/)** - 音乐播放功能完整文档
 
-小爱音箱播放功能的完整使用指南，包括：
-- 播放错误修复方案
-- 代理URL使用指南
-- 故障排查指南
-- 技术实现细节
+- [快速播放指南](playback/QUICK_PLAYBACK_GUIDE.md) - 快速上手
+- [播放故障排查](playback/PLAYBACK_TROUBLESHOOTING.md) - 问题诊断
+- [代理 URL 使用](playback/代理URL使用指南.md) - 代理功能说明
+- [播放错误修复](playback/播放错误修复说明.md) - 错误解决方案
 
-**快速链接**：
-- [播放错误快速修复](playback/播放错误快速修复.md)
-- [代理URL使用指南](playback/代理URL使用指南.md)
-- [故障排查指南](playback/PLAYBACK_TROUBLESHOOTING.md)
+### 📝 播放列表
+**[playlist/](playlist/)** - 播放列表功能文档
 
-### 🎤 TTS功能文档
+- [播放列表指南](playlist/PLAYLIST_GUIDE.md) - 播放列表使用
+- [功能更新说明](playlist/PLAYLIST_FEATURE_UPDATE.md) - 最新功能
+- [功能改进记录](playlist/PLAYLIST_IMPROVEMENTS.md) - 改进历史
+
+### 🎤 TTS 语音播报
 **[tts/](tts/)** - 文本转语音功能完整文档
 
-小爱音箱TTS功能的完整使用指南，包括：
-- 快速开始指南
-- 完整功能说明
-- 技术实现细节
-- 测试验证报告
-- 故障排查指南
+- [TTS 功能概览](tts/README.md) - 功能介绍
+- [快速测试指南](tts/QUICK_TEST.md) - 5 分钟测试
+- [完整解决方案](tts/TTS_完整解决方案.md) - 深入了解
+- [功能验证报告](tts/功能验证报告.md) - 测试结果
 
-**快速链接**：
-- [5分钟快速上手](tts/README_TTS.md)
-- [完整解决方案](tts/TTS_完整解决方案.md)
-- [功能验证报告](tts/功能验证报告.md)
-
-### 💬 对话监听文档
+### 💬 对话监听
 **[conversation/](conversation/)** - 对话拦截和自动播放功能
 
-对话监听功能的完整文档，包括：
-- 功能说明和使用指南
-- 播放拦截实现
-- 问题修复报告
-- 验证测试报告
+- [快速开始](conversation/QUICK_START.md) - 快速配置
+- [用户指南](conversation/USER_GUIDE.md) - 完整使用指南
+- [功能说明](conversation/功能说明.md) - 功能详解
+- [快速参考](conversation/快速参考.md) - 常用命令
 
-**快速链接**：
-- [快速开始](conversation/QUICK_START.md)
-- [功能说明](conversation/功能说明.md)
-- [使用说明](conversation/使用说明.md)
+### 🔧 API 开发
+**[api/](api/)** - API 接口文档
 
-### ⚙️ 配置系统文档
+- [API 参考手册](api/API_REFERENCE.md) - 完整 API 文档
+- [API 实现说明](api/API实现说明.md) - 实现细节
+
+### 🔄 迁移与升级
+**[migration/](migration/)** - 迁移和升级指南
+
+- [MiService 迁移](migration/MISERVICE_MIGRATION.md) - MiService 迁移
+- [配置迁移指南](migration/MIGRATION_TO_USER_CONFIG.md) - 配置迁移
+- [升级指南](UPGRADE_GUIDE.md) - 版本升级
+
+## 🔍 问题排查
+
+遇到问题？查看这些文档：
+
+- [配置常见问题](config/CONFIG_FAQ.md) - 配置相关问题
+- [播放故障排查](playback/PLAYBACK_TROUBLESHOOTING.md) - 播放问题
+- [TTS 修复说明](tts/TTS修复说明.md) - TTS 问题
+
+## 📊 项目信息
+
+- [改进前后对比](BEFORE_AFTER.md) - 项目改进历史
+- [代码组织报告](ORGANIZATION_REPORT.md) - 代码结构
+- [组织摘要](ORGANIZATION_SUMMARY.md) - 架构概览
+
+## 💡 贡献指南
+
+文档维护原则请参考 [文档结构说明](STRUCTURE.md)。
 **配置系统** - 用户配置和唤醒词功能
 
 配置系统的完整文档，包括：
