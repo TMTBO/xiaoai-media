@@ -99,6 +99,7 @@ def _make_proxy_url(original_url: str) -> str:
         'http://10.184.62.160:5050/main/proxy?url=https%3A%2F%2Fmusic.qq.com%2Fsong.mp3'
     """
     proxy_url = f"{config.MUSIC_API_BASE_URL}/main/proxy?url={quote(original_url)}"
+    # proxy_url = f"http://192.168.1.111:5050/main/proxy?url={quote(original_url)}"
     _log.debug("Converted URL to proxy: %s -> %s", original_url[:100], proxy_url[:100])
     return proxy_url
 
