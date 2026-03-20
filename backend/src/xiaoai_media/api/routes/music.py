@@ -13,13 +13,11 @@ from pydantic import BaseModel
 
 from xiaoai_media import config
 from xiaoai_media.client import XiaoAiClient
+from xiaoai_media.player import get_player
 
 _log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/music", tags=["music"])
-
-# In-memory playlist store: resolved_device_id -> {songs, current, device_id}
-_playlists: dict[str, dict[str, Any]] = {}
 
 _PLATFORMS = {"tx", "kw", "kg", "wy", "mg"}
 
@@ -81,26 +79,7 @@ def _platform(platform: str | None) -> str:
     return plat
 
 
-def _make_proxy_url(original_url: str) -> str:
-    """Convert a music platform URL to a proxy URL that the speaker can access.
-
-    Music platform URLs often have anti-hotlinking protection that blocks direct
-    access from speakers. The proxy endpoint adds necessary headers and forwards
-    the stream to the speaker.
-
-    Args:
-        original_url: Original music URL from platform (e.g., https://music.qq.com/xxx.mp3)
-
-    Returns:
-        Proxy URL (e.g., http://192.168.1.100:8000/api/proxy/stream?url=https%3A%2F%2F...)
-
-    Example:
-        >>> _make_proxy_url("https://music.qq.com/song.mp3")
-        'http://192.168.1.100:8000/api/proxy/stream?url=https%3A%2F%2Fmusic.qq.com%2Fsong.mp3'
-    """
-    proxy_url = f"{config.SERVER_BASE_URL}/api/proxy/stream?url={quote(original_url)}"
-    _log.debug("Converted URL to proxy: %s -> %s", original_url[:100], proxy_url[:100])
-    return proxy_url
+# URL conversion helpers moved to player.py
 
 
 def _parse_chart_command(text: str) -> tuple[str | None, str]:
@@ -199,118 +178,31 @@ class AnnounceSearchRequest(BaseModel):
     device_id: str | None = None
 
 
+class LoadFromSearchRequest(BaseModel):
+    query: str
+    device_id: str | None = None
+    platform: str | None = None
+    auto_play: bool = True  # Whether to start playing immediately
+
+
+class LoadFromChartRequest(BaseModel):
+    chart_id: str | None = None  # If None, will try to match chart_keyword
+    chart_keyword: str | None = None  # Natural language keyword like "热歌榜"
+    device_id: str | None = None
+    platform: str | None = None
+    auto_play: bool = True  # Whether to start playing immediately
+
+
+class LoadFromPlaylistRequest(BaseModel):
+    playlist_id: str
+    device_id: str | None = None
+    auto_play: bool = True  # Whether to start playing immediately
+
+
 # ---------------------------------------------------------------------------
 # Play URL resolution with quality fallback
 # ---------------------------------------------------------------------------
-
-
-def _parse_size(size: int | str) -> int:
-    """Convert a size value to bytes. Supports int or strings like '9.15M', '3.2K', '27.3MB', '165.9MB'."""
-    if isinstance(size, int):
-        return size
-    s = str(size).strip().upper().rstrip("B")  # strip trailing 'B' so MB→M, KB→K, GB→G
-    try:
-        if s.endswith("G"):
-            return int(float(s[:-1]) * 1024**3)
-        if s.endswith("M"):
-            return int(float(s[:-1]) * 1024**2)
-        if s.endswith("K"):
-            return int(float(s[:-1]) * 1024)
-        return int(float(s))
-    except ValueError:
-        return 0
-
-
-async def _get_play_url_with_fallback(song: SongItem | dict) -> dict | None:
-    """Fetch a playable URL from the music API, trying qualities from highest to lowest.
-
-    Mirrors the JavaScript ``getPlayUrlWithFallback`` logic:
-    - Sort qualities by size descending (highest quality first).
-    - Try each quality in order; skip on error or missing URL.
-    - Fall back to a single '128k/mp3' attempt if no qualities are declared.
-    Returns a dict ``{url, lyric, quality}`` or ``None`` if all attempts fail.
-    """
-    if isinstance(song, dict):
-        song_id = song.get("id", "")
-        platform = song.get("platform", "")
-        name = song.get("name", "")
-        singer = song.get("singer", "")
-        interval = song.get("interval", 0)
-        meta = song.get("meta") or {}
-        album_name = meta.get("albumName", "") if isinstance(meta, dict) else ""
-        pic_url = meta.get("picUrl", "") if isinstance(meta, dict) else ""
-        song_platform_id = meta.get("songId", 0) if isinstance(meta, dict) else 0
-        qualities_raw: list[dict] = song.get("qualities") or []
-    else:
-        song_id = song.id
-        platform = song.platform
-        name = song.name
-        singer = song.singer
-        interval = song.interval
-        album_name = song.meta.albumName
-        pic_url = song.meta.picUrl
-        song_platform_id = song.meta.songId
-        qualities_raw = [q.model_dump() for q in song.qualities]
-
-    qualities = (
-        qualities_raw
-        if qualities_raw
-        else [{"type": "128k", "format": "mp3", "size": 0}]
-    )
-
-    # Sort by size descending — prefer higher quality
-    qualities_sorted = sorted(
-        qualities, key=lambda q: _parse_size(q.get("size", 0)), reverse=True
-    )
-
-    for q in qualities_sorted:
-        quality_type = q.get("type", "128k")
-        quality_format = q.get("format", "mp3")
-        _log.info(
-            "MusicAPI: trying quality=%s format=%s for %s - %s",
-            quality_type,
-            quality_format,
-            singer,
-            name,
-        )
-        try:
-            data = await _proxy(
-                "POST",
-                "/api/v3/play",
-                json={
-                    "songId": song_id,
-                    "platform": platform,
-                    "quality": quality_type,
-                    "format": quality_format,
-                    "name": name,
-                    "singer": singer,
-                    "interval": interval,
-                    "size": q.get("size", 0),
-                    "albumName": album_name,
-                    "picUrl": pic_url,
-                    "song_platform_id": song_platform_id,
-                },
-            )
-            url = data.get("data", {}).get("url") if data.get("code") == 0 else None
-            if url:
-                _log.info("MusicAPI: quality=%s succeeded", quality_type)
-                return {
-                    "url": url,
-                    "lyric": data.get("data", {}).get("lyric", ""),
-                    "quality": quality_type,
-                }
-            _log.warning(
-                "MusicAPI: quality=%s returned no URL (code=%s)",
-                quality_type,
-                data.get("code"),
-            )
-        except HTTPException as e:
-            _log.warning(
-                "MusicAPI: quality=%s request failed: %s", quality_type, e.detail
-            )
-
-    _log.error("MusicAPI: all qualities failed for %s - %s", singer, name)
-    return None
+# These functions moved to player.py
 
 
 # ---------------------------------------------------------------------------
@@ -364,6 +256,7 @@ async def get_rank_songs(
 # ---------------------------------------------------------------------------
 # Playback control (via Xiaomi voice commands + server-side playlist)
 # ---------------------------------------------------------------------------
+# Playlist management functions moved to player.py
 
 
 @router.post("/playlist")
@@ -371,108 +264,19 @@ async def sync_playlist(req: SyncPlaylistRequest):
     """Sync (replace) the server-side playlist for a device."""
     if not req.songs:
         raise HTTPException(status_code=422, detail="songs must not be empty")
-    pl = _playlists.get(req.device_id) or {}
-    _playlists[req.device_id] = {
-        "songs": [s.model_dump() for s in req.songs],
-        "current": pl.get("current", 0),
-        "device_id": req.device_id,
-    }
+
+    player = get_player()
+    player.set_playlist(
+        req.device_id,
+        [s.model_dump() for s in req.songs],
+        current_index=0,
+    )
+
     _log.info("Playlist synced for device %s: %d songs", req.device_id, len(req.songs))
     return {
         "device_id": req.device_id,
         "total": len(req.songs),
-        "current": _playlists[req.device_id]["current"],
-    }
-
-
-async def _play_song_at_index(
-    device_id: str, index: int, stop_first: bool = False, action_name: str = "play"
-) -> dict:
-    """
-    Common logic for playing a song at a specific index.
-
-    Args:
-        device_id: Device ID to play on
-        index: Index of the song in the playlist
-        stop_first: Whether to stop current playback before playing
-        action_name: Name of the action for logging (play/next/prev)
-
-    Returns:
-        Response dict with playback info
-    """
-    pl = _playlists.get(device_id)
-    if not pl or not pl.get("songs"):
-        raise HTTPException(
-            status_code=404,
-            detail="No playlist for this device. Use POST /api/music/playlist first.",
-        )
-
-    songs = pl["songs"]
-    if not (0 <= index < len(songs)):
-        raise HTTPException(status_code=422, detail="index out of range")
-
-    song = songs[index]
-    _log.info(
-        "Getting URL for %s song %s (platform=%s, id=%s)",
-        action_name,
-        song["name"],
-        song["platform"],
-        song["id"],
-    )
-
-    # Get playback URL with quality fallback
-    play_info = await _get_play_url_with_fallback(song)
-    if not play_info:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Cannot get playback URL for song {song['name']}: all qualities failed",
-        )
-
-    original_url = play_info["url"]
-    _log.info(
-        "Got original playback URL (quality=%s): %s",
-        play_info["quality"],
-        original_url[:200],
-    )
-
-    # Convert to proxy URL
-    url = _make_proxy_url(original_url)
-
-    async with XiaoAiClient() as client:
-        # Stop current playback if requested
-        if stop_first:
-            try:
-                _log.debug("Stopping current playback before playing new song...")
-                await client.player_stop(device_id)
-                _log.debug("Current playback stopped")
-                await asyncio.sleep(0.5)
-            except Exception as e:
-                _log.warning(
-                    "Failed to stop current playback (may not be playing): %s", e
-                )
-
-        # Play the new URL
-        _log.info("About to play URL: %s", url[:200])
-        result = await client.play_url(url, device_id, _type=1)
-        _log.info("Play result: %s", result)
-
-    # Update current index
-    pl["current"] = index
-    _log.info(
-        "Playing device %s: index=%d/%d song=%s",
-        device_id,
-        index,
-        len(songs),
-        song["name"],
-    )
-
-    return {
-        "device_id": device_id,
-        "url": url,
-        "result": result,
-        "current": song,
-        "index": index,
-        "total": len(songs),
+        "current": 0,
     }
 
 
@@ -480,7 +284,8 @@ async def _play_song_at_index(
 async def play_music(req: PlayRequest):
     """Play the song at the given index from the server-side playlist."""
     try:
-        return await _play_song_at_index(
+        player = get_player()
+        return await player.play_at_index(
             req.device_id, req.index, stop_first=True, action_name="play"
         )
     except HTTPException:
@@ -494,14 +299,8 @@ async def play_music(req: PlayRequest):
 async def play_next(req: DeviceRequest):
     """Advance to the next song in the server-side playlist."""
     try:
-        pl = _playlists.get(req.device_id)
-        if not pl or not pl.get("songs"):
-            raise HTTPException(
-                status_code=404,
-                detail="No playlist for this device. Use POST /api/music/play first.",
-            )
-        next_idx = (pl["current"] + 1) % len(pl["songs"])
-        return await _play_song_at_index(req.device_id, next_idx, action_name="next")
+        player = get_player()
+        return await player.play_next(req.device_id)
     except HTTPException:
         raise
     except Exception as e:
@@ -513,14 +312,8 @@ async def play_next(req: DeviceRequest):
 async def play_prev(req: DeviceRequest):
     """Go back to the previous song in the server-side playlist."""
     try:
-        pl = _playlists.get(req.device_id)
-        if not pl or not pl.get("songs"):
-            raise HTTPException(
-                status_code=404,
-                detail="No playlist for this device. Use POST /api/music/play first.",
-            )
-        prev_idx = (pl["current"] - 1) % len(pl["songs"])
-        return await _play_song_at_index(req.device_id, prev_idx, action_name="prev")
+        player = get_player()
+        return await player.play_prev(req.device_id)
     except HTTPException:
         raise
     except Exception as e:
@@ -530,33 +323,30 @@ async def play_prev(req: DeviceRequest):
 
 @router.post("/pause")
 async def pause_music(req: DeviceRequest):
-    """Pause playback using the new player_pause API."""
+    """Pause playback using the player_pause API."""
     try:
-        async with XiaoAiClient() as client:
-            result = await client.player_pause(req.device_id)
-        return result
+        player = get_player()
+        return await player.pause(req.device_id)
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))
 
 
 @router.post("/resume")
 async def resume_music(req: DeviceRequest):
-    """Resume playback using the new player_play API."""
+    """Resume playback using the player_play API."""
     try:
-        async with XiaoAiClient() as client:
-            result = await client.player_play(req.device_id)
-        return result
+        player = get_player()
+        return await player.resume(req.device_id)
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))
 
 
 @router.post("/stop")
 async def stop_music(req: DeviceRequest):
-    """Stop playback using the new player_stop API."""
+    """Stop playback using the player_stop API."""
     try:
-        async with XiaoAiClient() as client:
-            result = await client.player_stop(req.device_id)
-        return result
+        player = get_player()
+        return await player.stop(req.device_id)
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))
 
@@ -565,25 +355,438 @@ async def stop_music(req: DeviceRequest):
 async def get_player_status(device_id: str | None = None):
     """Get current player status."""
     try:
-        async with XiaoAiClient() as client:
-            result = await client.player_get_status(device_id)
-        return result
+        player = get_player()
+        return await player.get_status(device_id)
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))
+
+
+# ---------------------------------------------------------------------------
+# Playlist loading from different sources
+# ---------------------------------------------------------------------------
+
+
+@router.post("/load-from-search")
+async def load_from_search(req: LoadFromSearchRequest):
+    """Load playlist from search results and optionally start playing.
+
+    This allows users to search for songs and load them into the playlist for voice control.
+
+    Example:
+        POST /api/music/load-from-search
+        {
+            "query": "周杰伦",
+            "device_id": "xxx",
+            "platform": "tx",
+            "auto_play": true
+        }
+    """
+    if not req.query.strip():
+        raise HTTPException(status_code=422, detail="query must not be empty")
+
+    plat = _platform(req.platform)
+
+    # Search for music
+    _log.info("Loading playlist from search: query=%s platform=%s", req.query, plat)
+    search_data = await _proxy(
+        "POST",
+        "/api/v3/search",
+        json={"platform": plat, "query": req.query.strip(), "page": 1, "limit": 50},
+    )
+
+    songs_raw: list[dict] = search_data.get("data", {}).get("list", []) or []
+    if not songs_raw:
+        raise HTTPException(status_code=404, detail=f"没有找到歌曲: {req.query}")
+
+    # Convert to SongItem objects
+    songs = []
+    for s in songs_raw:
+        try:
+            songs.append(
+                SongItem(
+                    id=str(s.get("id", "")),
+                    name=str(s.get("name", "")),
+                    singer=str(s.get("singer", "")),
+                    platform=plat,
+                    qualities=s.get("qualities", []),
+                    interval=s.get("interval", 0),
+                    meta=s.get("meta", {}),
+                )
+            )
+        except Exception as e:
+            _log.warning("Failed to parse song: %s", e)
+            continue
+
+    if not songs:
+        raise HTTPException(status_code=404, detail="Failed to parse search results")
+
+    # Load into playlist
+    player = get_player()
+    player.set_playlist(
+        req.device_id,
+        [s.model_dump() for s in songs],
+        current_index=0,
+    )
+    _log.info(
+        "Loaded %d songs from search into playlist for device %s",
+        len(songs),
+        req.device_id,
+    )
+
+    result = {
+        "action": "load_from_search",
+        "query": req.query,
+        "platform": plat,
+        "device_id": req.device_id,
+        "total": len(songs),
+        "songs": [
+            {"name": s.name, "singer": s.singer} for s in songs[:10]
+        ],  # Preview first 10
+    }
+
+    # Auto play if requested
+    if req.auto_play:
+        _log.info("Auto-playing first song from search results")
+        try:
+            play_result = await player.play_at_index(
+                req.device_id, 0, stop_first=True, action_name="play"
+            )
+            result["play_result"] = play_result
+        except Exception as e:
+            _log.error("Auto-play failed: %s", e, exc_info=True)
+            result["play_error"] = str(e)
+
+    return result
+
+
+@router.post("/load-from-chart")
+async def load_from_chart(req: LoadFromChartRequest):
+    """Load playlist from a music chart and optionally start playing.
+
+    This allows users to load entire charts (rankings) for voice control.
+
+    Example:
+        POST /api/music/load-from-chart
+        {
+            "chart_keyword": "热歌榜",
+            "device_id": "xxx",
+            "platform": "tx",
+            "auto_play": true
+        }
+    """
+    if not req.chart_id and not req.chart_keyword:
+        raise HTTPException(
+            status_code=422,
+            detail="Either chart_id or chart_keyword must be provided",
+        )
+
+    plat = _platform(req.platform)
+
+    # Get chart list
+    _log.info("Loading playlist from chart: platform=%s", plat)
+    charts_data = await _proxy("GET", f"/api/v3/{plat}/ranks")
+    chart_list: list[dict] = charts_data.get("data", {}).get("list", []) or []
+
+    if not chart_list:
+        raise HTTPException(
+            status_code=404, detail=f"No charts available for platform {plat}"
+        )
+
+    # Find the chart
+    matched_chart = None
+    if req.chart_id:
+        # Find by ID
+        for c in chart_list:
+            if str(c.get("id", "")) == req.chart_id:
+                matched_chart = c
+                break
+    else:
+        # Find by keyword
+        matched_chart = _find_chart(chart_list, req.chart_keyword or "")
+
+    if not matched_chart:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Chart not found: {req.chart_id or req.chart_keyword}",
+        )
+
+    rank_id = str(matched_chart.get("id", ""))
+    chart_name = matched_chart.get("name", "")
+
+    # Get chart songs
+    _log.info("Loading songs from chart: %s (id=%s)", chart_name, rank_id)
+    songs_data = await _proxy(
+        "GET",
+        f"/api/v3/{plat}/rank/{rank_id}",
+        params={"page": 1, "limit": 50},
+    )
+
+    songs_raw: list[dict] = songs_data.get("data", {}).get("list", []) or []
+    if not songs_raw:
+        raise HTTPException(status_code=404, detail=f"No songs in chart: {chart_name}")
+
+    # Convert to SongItem objects
+    songs = []
+    for s in songs_raw:
+        try:
+            songs.append(
+                SongItem(
+                    id=str(s.get("id", "")),
+                    name=str(s.get("name", "")),
+                    singer=str(s.get("singer", "")),
+                    platform=plat,
+                    qualities=s.get("qualities", []),
+                    interval=s.get("interval", 0),
+                    meta=s.get("meta", {}),
+                )
+            )
+        except Exception as e:
+            _log.warning("Failed to parse song: %s", e)
+            continue
+
+    if not songs:
+        raise HTTPException(status_code=404, detail="Failed to parse chart songs")
+
+    # Load into playlist
+    player = get_player()
+    player.set_playlist(
+        req.device_id,
+        [s.model_dump() for s in songs],
+        current_index=0,
+    )
+    _log.info(
+        "Loaded %d songs from chart '%s' into playlist for device %s",
+        len(songs),
+        chart_name,
+        req.device_id,
+    )
+
+    result = {
+        "action": "load_from_chart",
+        "chart_name": chart_name,
+        "chart_id": rank_id,
+        "platform": plat,
+        "device_id": req.device_id,
+        "total": len(songs),
+        "songs": [
+            {"name": s.name, "singer": s.singer} for s in songs[:10]
+        ],  # Preview first 10
+    }
+
+    # Auto play if requested
+    if req.auto_play:
+        _log.info("Auto-playing first song from chart")
+        try:
+            play_result = await player.play_at_index(
+                req.device_id, 0, stop_first=True, action_name="play"
+            )
+            result["play_result"] = play_result
+        except Exception as e:
+            _log.error("Auto-play failed: %s", e, exc_info=True)
+            result["play_error"] = str(e)
+
+    return result
+
+
+@router.post("/load-from-playlist")
+async def load_from_playlist(req: LoadFromPlaylistRequest):
+    """Load playlist from a saved playlist (from playlist.py) and optionally start playing.
+
+    This allows users to load their saved playlists for voice control.
+
+    Example:
+        POST /api/music/load-from-playlist
+        {
+            "playlist_id": "音乐_1234567890",
+            "device_id": "xxx",
+            "auto_play": true
+        }
+    """
+    # Import playlist loading functions
+    from xiaoai_media.api.routes.playlist import _load_playlists
+
+    playlists = _load_playlists()
+    if req.playlist_id not in playlists:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Playlist not found: {req.playlist_id}",
+        )
+
+    playlist = playlists[req.playlist_id]
+
+    if not playlist.items:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Playlist is empty: {playlist.name}",
+        )
+
+    _log.info(
+        "Loading playlist '%s' with %d items for device %s",
+        playlist.name,
+        len(playlist.items),
+        req.device_id,
+    )
+
+    # Convert playlist items to SongItem format
+    # Note: Playlist items may not have all song metadata, so we create minimal SongItems
+    songs = []
+    for item in playlist.items:
+        try:
+            # Create a SongItem from PlaylistItem
+            # If item has url, use it directly; otherwise we'll need to fetch it later
+            songs.append(
+                SongItem(
+                    id=item.url
+                    or f"playlist_{playlist.id}_{len(songs)}",  # Use URL as ID or generate one
+                    name=item.title,
+                    singer=item.artist,
+                    platform="custom",  # Mark as custom source
+                    qualities=[],  # No quality info for playlist items
+                    interval=item.duration,
+                    meta=SongMeta(albumName=item.album, picUrl=item.cover_url),
+                )
+            )
+        except Exception as e:
+            _log.warning("Failed to convert playlist item to SongItem: %s", e)
+            continue
+
+    if not songs:
+        raise HTTPException(
+            status_code=400,
+            detail="Failed to convert playlist items",
+        )
+
+    # Load into playlist
+    player = get_player()
+    player.set_playlist(
+        req.device_id,
+        [s.model_dump() for s in songs],
+        current_index=0,
+        source="playlist",
+        source_id=req.playlist_id,
+        source_name=playlist.name,
+    )
+    _log.info(
+        "Loaded %d songs from playlist '%s' for device %s",
+        len(songs),
+        playlist.name,
+        req.device_id,
+    )
+
+    result = {
+        "action": "load_from_playlist",
+        "playlist_name": playlist.name,
+        "playlist_id": req.playlist_id,
+        "device_id": req.device_id,
+        "total": len(songs),
+        "songs": [
+            {"name": s.name, "singer": s.singer} for s in songs[:10]
+        ],  # Preview first 10
+    }
+
+    # Auto play if requested
+    if req.auto_play:
+        _log.info("Auto-playing first item from playlist")
+        try:
+            # For custom playlists, we need to handle URL differently
+            # Since playlist items might use custom_params to get URLs
+            # For now we'll attempt to play, but it might need special handling
+            play_result = await player.play_at_index(
+                req.device_id, 0, stop_first=True, action_name="play"
+            )
+            result["play_result"] = play_result
+        except Exception as e:
+            _log.error("Auto-play failed: %s", e, exc_info=True)
+            result["play_error"] = str(e)
+            result["play_error_note"] = (
+                "Playlist items may require custom URL resolution. "
+                "Please ensure playlist items have valid URLs or implement custom URL fetching."
+            )
+
+    return result
 
 
 @router.post("/voice-command")
 async def voice_command(req: VoiceCommandRequest):
     """Parse and execute a natural-language voice command.
 
-    - "播放/打开 [平台] [排行榜名称]" → load chart and play via voice command
+    Supported patterns:
+    - "播放/打开 [平台] [排行榜名称]" → load chart and play
+    - "播放 [播单名称]" → load saved playlist and play
+    - "搜索 [关键词]" → search and load results
     - Any other text → relay as raw voice command to the speaker
     """
     text = req.text.strip()
     if not text:
         raise HTTPException(status_code=422, detail="text must not be empty")
 
-    # Chart play pattern: contains 榜 or 排行
+    # Pattern 1: Playlist play - "播放音乐播单", "打开我的有声书"
+    # Check for playlist keywords
+    if re.search(r"播单|列表", text):
+        _log.info("VoiceCommand: playlist intent detected for text=%r", text)
+        try:
+            # Extract playlist name/keyword from command
+            playlist_keyword = re.sub(r"^(播放|打开|加载)\s*", "", text)
+            playlist_keyword = re.sub(r"(播单|列表)\s*$", "", playlist_keyword).strip()
+
+            # Load playlists and find matching one
+            from xiaoai_media.api.routes.playlist import _load_playlists
+
+            playlists = _load_playlists()
+            matched_playlist = None
+
+            # Try to match by name or voice keywords
+            for pid, playlist in playlists.items():
+                # Check if playlist name contains keyword
+                if playlist_keyword.lower() in playlist.name.lower():
+                    matched_playlist = (pid, playlist)
+                    break
+                # Check voice keywords
+                for vk in playlist.voice_keywords:
+                    if vk.lower() in text.lower():
+                        matched_playlist = (pid, playlist)
+                        break
+                if matched_playlist:
+                    break
+
+            if not matched_playlist:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"找不到匹配的播单: {playlist_keyword}",
+                )
+
+            playlist_id, playlist = matched_playlist
+
+            # Load the playlist
+            load_result = await load_from_playlist(
+                LoadFromPlaylistRequest(
+                    playlist_id=playlist_id,
+                    device_id=req.device_id,
+                    auto_play=True,
+                )
+            )
+
+            _log.info(
+                "VoiceCommand: loaded playlist %r for device %s",
+                playlist.name,
+                req.device_id,
+            )
+
+            return {
+                "action": "play_playlist",
+                "playlist_name": playlist.name,
+                "playlist_id": playlist_id,
+                "device_id": req.device_id,
+                "result": load_result,
+            }
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            _log.error("Failed to load playlist: %s", e, exc_info=True)
+            raise HTTPException(status_code=502, detail=str(e))
+
+    # Pattern 2: Chart play - contains 榜 or 排行
     if re.search(r"(榜|排行)", text):
         platform_hint, chart_keyword = _parse_chart_command(text)
         plat = platform_hint or config.MUSIC_DEFAULT_PLATFORM
@@ -592,59 +795,61 @@ async def voice_command(req: VoiceCommandRequest):
             plat,
             chart_keyword,
         )
-        charts_data = await _proxy("GET", f"/api/v3/{plat}/ranks")
-        chart_list: list[dict] = charts_data.get("data", {}).get("list", []) or []
-        matched = _find_chart(chart_list, chart_keyword)
-        if not matched:
-            raise HTTPException(
-                status_code=404, detail=f"找不到匹配的排行榜：{chart_keyword!r}"
-            )
-        rank_id = str(matched.get("id", ""))
-        songs_data = await _proxy(
-            "GET", f"/api/v3/{plat}/rank/{rank_id}", params={"page": 1, "limit": 50}
-        )
-        songs_raw: list[dict] = songs_data.get("data", {}).get("list", []) or []
-        if not songs_raw:
-            raise HTTPException(status_code=404, detail="排行榜暂无歌曲")
-        songs = [
-            SongItem(
-                id=str(s.get("id", "")),
-                name=str(s.get("name", "")),
-                singer=str(s.get("singer", "")),
-                platform=plat,
-            )
-            for s in songs_raw
-        ]
-        first = songs[0]
-        cmd = (
-            f"播放{first.singer}的{first.name}" if first.singer else f"播放{first.name}"
-        )
+
         try:
-            async with XiaoAiClient() as client:
-                result = await client.send_command(cmd, req.device_id)
+            # Use the new load_from_chart endpoint
+            load_result = await load_from_chart(
+                LoadFromChartRequest(
+                    chart_keyword=chart_keyword,
+                    device_id=req.device_id,
+                    platform=plat,
+                    auto_play=True,
+                )
+            )
+
+            return {
+                "action": "play_chart",
+                "chart_name": load_result.get("chart_name"),
+                "platform": plat,
+                "device_id": req.device_id,
+                "result": load_result,
+            }
+
+        except HTTPException:
+            raise
         except Exception as e:
+            _log.error("Failed to load chart: %s", e, exc_info=True)
             raise HTTPException(status_code=502, detail=str(e))
-        _playlists[req.device_id] = {
-            "songs": [s.model_dump() for s in songs],
-            "current": 0,
-            "device_id": req.device_id,
-        }
-        _log.info(
-            "VoiceCommand: playing chart %r for device %s (%d songs)",
-            matched.get("name"),
-            req.device_id,
-            len(songs),
-        )
-        return {
-            "action": "play_chart",
-            "chart": matched.get("name"),
-            "platform": plat,
-            "device_id": req.device_id,
-            "command": cmd,
-            "result": result,
-            "index": 0,
-            "total": len(songs),
-        }
+
+    # Pattern 3: Search and play - "搜索周杰伦", "播放周杰伦的歌"
+    # This pattern should be more specific to avoid false positives
+    search_match = re.match(r"^(搜索|查找)(.+)$", text)
+    if search_match:
+        search_query = search_match.group(2).strip()
+        _log.info("VoiceCommand: search intent detected, query=%r", search_query)
+
+        try:
+            # Use the new load_from_search endpoint
+            load_result = await load_from_search(
+                LoadFromSearchRequest(
+                    query=search_query,
+                    device_id=req.device_id,
+                    auto_play=True,
+                )
+            )
+
+            return {
+                "action": "search_and_play",
+                "query": search_query,
+                "device_id": req.device_id,
+                "result": load_result,
+            }
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            _log.error("Failed to search and load: %s", e, exc_info=True)
+            raise HTTPException(status_code=502, detail=str(e))
 
     # Fallback: relay as raw voice command to the speaker
     _log.info("VoiceCommand: relaying raw command %r", text)
@@ -674,7 +879,8 @@ async def announce_search(req: AnnounceSearchRequest):
 @router.get("/playlist")
 async def get_playlist(device_id: str | None = None):
     """Return the current playlist state for a device."""
-    pl = _playlists.get(device_id)
+    player = get_player()
+    pl = player.get_playlist(device_id)
     if not pl:
         return {"device_id": device_id, "songs": [], "current": -1, "total": 0}
     return {

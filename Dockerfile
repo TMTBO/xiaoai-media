@@ -15,6 +15,9 @@ FROM python:3.11-slim AS runtime
 # Create non-root user
 RUN groupadd -r appuser && useradd -r -g appuser appuser
 
+# Create data directory
+RUN mkdir -p /data/.xiaoai-media && chown -R appuser:appuser /data
+
 WORKDIR /app
 
 # Install Python dependencies
@@ -30,9 +33,14 @@ COPY --from=frontend-builder /build/frontend/dist ./static/
 ENV MI_REGION=cn \
     MI_USER="" \
     MI_PASS="" \
-    MI_DID=""
+    MI_DID="" \
+    HOME=/data
 
+# Expose port
 EXPOSE 8000
+
+# Volume for persistent data (playlists, config, etc.)
+VOLUME ["/data/.xiaoai-media"]
 
 USER appuser
 

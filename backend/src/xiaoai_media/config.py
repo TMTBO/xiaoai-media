@@ -2,14 +2,44 @@ from __future__ import annotations
 
 import importlib.util
 import logging
+import os
 import sys
 from pathlib import Path
 from typing import Any
 
 _log = logging.getLogger(__name__)
 
-# 用户配置文件路径（项目根目录）
-_user_config_path = Path(__file__).resolve().parents[3] / "user_config.py"
+# 数据存储根目录
+DATA_DIR = Path.home() / ".xiaoai-media"
+
+
+def _find_config_file() -> Path | None:
+    """查找用户配置文件
+
+    按以下顺序查找：
+    1. 项目根目录的 user_config.py（开发环境）
+    2. ~/.xiaoai-media/user_config.py（生产环境/Docker）
+
+    Returns:
+        配置文件路径，如果都不存在则返回 None
+    """
+    # 1. 检查项目根目录（开发环境）
+    project_config = Path(__file__).resolve().parents[3] / "user_config.py"
+    if project_config.exists():
+        _log.info("使用项目根目录的配置文件: %s", project_config)
+        return project_config
+
+    # 2. 检查数据目录（生产环境/Docker）
+    data_config = DATA_DIR / "user_config.py"
+    if data_config.exists():
+        _log.info("使用数据目录的配置文件: %s", data_config)
+        return data_config
+
+    _log.warning("未找到用户配置文件，将使用默认配置")
+    _log.info("配置文件搜索路径：")
+    _log.info("  1. 项目根目录: %s (不存在)", project_config)
+    _log.info("  2. 数据目录: %s (不存在)", data_config)
+    return None
 
 
 def _load_user_config() -> Any | None:
@@ -18,25 +48,24 @@ def _load_user_config() -> Any | None:
     Returns:
         用户配置模块，如果不存在则返回 None
     """
-    if not _user_config_path.exists():
-        _log.error("未找到用户配置文件 user_config.py，请创建配置文件")
-        _log.error("运行: cp user_config_template.py user_config.py")
-        raise FileNotFoundError(
-            f"配置文件不存在: {_user_config_path}\n"
-            f"请运行: cp user_config_template.py user_config.py"
-        )
+    config_path = _find_config_file()
+
+    if config_path is None:
+        _log.info("使用默认配置运行")
+        return None
 
     try:
-        spec = importlib.util.spec_from_file_location("user_config", _user_config_path)
+        spec = importlib.util.spec_from_file_location("user_config", config_path)
         if spec and spec.loader:
             user_config = importlib.util.module_from_spec(spec)
             sys.modules["user_config"] = user_config
             spec.loader.exec_module(user_config)
-            _log.info("成功加载用户配置文件: %s", _user_config_path)
+            _log.info("成功加载用户配置文件: %s", config_path)
             return user_config
     except Exception as e:
         _log.error("加载用户配置文件失败: %s", e, exc_info=True)
-        raise
+        _log.warning("将使用默认配置继续运行")
+        return None
 
     return None
 
@@ -105,7 +134,7 @@ ENABLE_WAKE_WORD_FILTER: bool = _get_config("ENABLE_WAKE_WORD_FILTER", True)
 # 播单管理配置
 # ============================================
 
-PLAYLIST_STORAGE_DIR: str = _get_config("PLAYLIST_STORAGE_DIR", "~/.xiaoai-media")
+PLAYLIST_STORAGE_DIR: str = _get_config("PLAYLIST_STORAGE_DIR", "./.xiaoai-media")
 
 # ============================================
 # 日志配置

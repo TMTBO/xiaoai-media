@@ -13,7 +13,35 @@
 
 ## 快速开始
 
-### 环境配置
+### 方式 1：Docker 部署（推荐）
+
+使用 Docker 部署最简单快捷：
+
+```bash
+# 1. 创建数据目录和配置文件
+mkdir -p ~/.xiaoai-media
+cp user_config_template.py ~/.xiaoai-media/user_config.py
+vim ~/.xiaoai-media/user_config.py  # 编辑配置
+
+# 2. 使用 Docker Compose 启动
+docker-compose up -d
+
+# 或使用 docker run
+docker build -t xiaoai-media .
+docker run -d \
+  --name xiaoai-media \
+  -p 8000:8000 \
+  -v ~/.xiaoai-media:/data/.xiaoai-media \
+  xiaoai-media
+```
+
+访问 http://localhost:8000 即可使用。
+
+详细说明请查看：[Docker 部署指南](docs/deployment/DOCKER_GUIDE.md)
+
+### 方式 2：本地开发
+
+#### 环境配置
 
 本项目使用 Python 配置文件进行配置。
 
@@ -34,22 +62,22 @@ WAKE_WORDS = ["小爱同学", "小爱"]
 ENABLE_WAKE_WORD_FILTER = True
 ```
 
-详细配置说明请查看：[用户配置指南](docs/USER_CONFIG_GUIDE.md)
+详细配置说明请查看：[用户配置指南](docs/config/USER_CONFIG_GUIDE.md)
 
-### 验证配置
+#### 验证配置
 
 ```bash
 make verify-config
 ```
 
-### 启动后端服务
+#### 启动后端服务
 
 ```bash
 cd backend
 python3 -m uvicorn xiaoai_media.api.main:app --reload
 ```
 
-### 启动前端服务
+#### 启动前端服务
 
 ```bash
 cd frontend
@@ -57,24 +85,46 @@ npm install
 npm run dev
 ```
 
+## 数据存储
+
+**开发环境**：`./.xiaoai-media`（项目根目录，已加入 .gitignore）
+**生产环境**：`~/.xiaoai-media`（用户主目录）
+
+```
+.xiaoai-media/
+├── user_config.py          # 用户配置文件（可选）
+├── playlists.json          # 播单数据（自动生成）
+└── logs/                   # 日志文件（未来功能）
+```
+
+详见：[数据存储说明](docs/config/DATA_STORAGE.md)
+
 ## 文档
 
 完整文档请查看：**[docs/](docs/)**
 
 ### 快速链接
 - 📖 [文档中心](docs/README.md) - 所有文档的入口
-- ⚙️ [用户配置指南](docs/USER_CONFIG_GUIDE.md) - 配置说明和唤醒词设置
-- 🔄 [配置迁移指南](docs/migration/MIGRATION_TO_USER_CONFIG.md) - 从 .env 迁移到 user_config.py
+- 🐳 [Docker 部署指南](docs/deployment/DOCKER_GUIDE.md) - 容器化部署
+- 💾 [数据存储说明](docs/config/DATA_STORAGE.md) - 数据目录和备份
+- ⚙️ [用户配置指南](docs/config/USER_CONFIG_GUIDE.md) - 配置说明和唤醒词设置
+- 🎵 [播放列表管理](docs/playlist/PLAYLIST_PLAYER_GUIDE.md) - 播放器使用指南
 - 🎤 [TTS功能文档](docs/tts/) - TTS完整使用指南
-- 🎧 [对话监听功能](docs/conversation_monitoring.md) - 自动拦截播放指令
+- 🎧 [对话监听功能](docs/conversation/) - 自动拦截播放指令
 - 🧭 [文档导航](docs/NAVIGATION.md) - 快速找到你需要的文档
+
+### 部署相关
+- [Docker 部署指南](docs/deployment/DOCKER_GUIDE.md) - Docker 和 Docker Compose 使用
+- [数据存储说明](docs/config/DATA_STORAGE.md) - 配置文件和数据目录管理
 
 ### TTS功能文档
 - [快速开始](docs/tts/README_TTS.md) - 5分钟上手
 - [完整指南](docs/tts/TTS_完整解决方案.md) - 深入了解
 - [测试指南](docs/tts/QUICK_TEST.md) - 测试和故障排查
-- [技术文档](docs/tts/TTS修复说明.md) - 实现细节
-- [验证报告](docs/tts/功能验证报告.md) - 测试结果
+
+### 播放器功能
+- [播放列表管理器](docs/playlist/PLAYLIST_PLAYER_GUIDE.md) - 完整使用指南
+- [快速参考](docs/playlist/QUICK_REFERENCE.md) - API 速查表
 
 ## TTS功能
 
