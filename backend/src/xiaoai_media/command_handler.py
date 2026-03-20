@@ -33,14 +33,23 @@ class CommandHandler:
         """
         _log.info("收到设备 %s 的指令: %s", device_id, query)
         
+        # 检查是否应该处理该指令（唤醒词过滤）
+        if not config.should_handle_command(query):
+            _log.debug("指令未包含唤醒词，忽略: %s", query)
+            return
+        
+        # 预处理指令（移除唤醒词等）
+        processed_query = config.preprocess_command(query)
+        _log.debug("预处理后的指令: %s", processed_query)
+        
         # Parse play command
-        play_info = self._parse_play_command(query)
+        play_info = self._parse_play_command(processed_query)
         if play_info:
             _log.info("检测到播放指令: %s", play_info["query"])
             await self._handle_play_command(device_id, play_info["query"])
             return
         
-        _log.debug("未匹配到播放指令: %s", query)
+        _log.debug("未匹配到播放指令: %s", processed_query)
 
     def _parse_play_command(self, query: str) -> dict | None:
         """Parse a play command from natural language query.

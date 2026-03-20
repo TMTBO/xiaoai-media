@@ -47,6 +47,22 @@
 - [功能说明](conversation/功能说明.md)
 - [使用说明](conversation/使用说明.md)
 
+### ⚙️ 配置系统文档
+**配置系统** - 用户配置和唤醒词功能
+
+配置系统的完整文档，包括：
+- 快速配置指南
+- 完整配置说明
+- 常见问题解答
+- 迁移指南
+
+**快速链接**：
+- [快速配置指南](QUICK_CONFIG.md)
+- [完整配置指南](USER_CONFIG_GUIDE.md)
+- [配置常见问题](CONFIG_FAQ.md)
+- [配置问题解答](CONFIG_ANSWERS.md)
+- [迁移文档](migration/) - 从 .env 迁移到 user_config.py
+
 ## 🚀 快速开始
 
 ### 安装和配置
@@ -57,11 +73,16 @@ git clone <repository-url>
 cd xiaoai-media
 ```
 
-2. 配置环境变量：
+2. 配置环境：
 ```bash
-cp .env.example .env
-# 编辑 .env 文件，填入小米账号信息
+# 复制配置模板
+cp user_config_template.py user_config.py
+
+# 编辑配置文件
+vim user_config.py
 ```
+
+详细配置说明：[快速配置指南](QUICK_CONFIG.md)
 
 3. 启动服务：
 ```bash

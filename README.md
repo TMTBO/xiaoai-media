@@ -15,17 +15,31 @@
 
 ### 环境配置
 
-1. 复制环境变量配置文件：
+本项目使用 Python 配置文件进行配置。
+
+1. 复制配置模板：
 ```bash
-cp .env.example .env
+cp user_config_template.py user_config.py
 ```
 
-2. 编辑`.env`文件，填入小米账号信息：
-```env
-MI_USER=你的小米账号
-MI_PASS_TOKEN=你的PassToken
-MI_DID=设备ID（可选）
-MI_REGION=cn
+2. 编辑 `user_config.py`，填入配置信息：
+```python
+MI_USER = "你的小米账号"
+MI_PASS = "你的密码"
+MI_DID = ""  # 设备ID（可选）
+MI_REGION = "cn"
+
+# 唤醒词配置
+WAKE_WORDS = ["小爱同学", "小爱"]
+ENABLE_WAKE_WORD_FILTER = True
+```
+
+详细配置说明请查看：[用户配置指南](docs/USER_CONFIG_GUIDE.md)
+
+### 验证配置
+
+```bash
+make verify-config
 ```
 
 ### 启动后端服务
@@ -49,6 +63,8 @@ npm run dev
 
 ### 快速链接
 - 📖 [文档中心](docs/README.md) - 所有文档的入口
+- ⚙️ [用户配置指南](docs/USER_CONFIG_GUIDE.md) - 配置说明和唤醒词设置
+- 🔄 [配置迁移指南](docs/migration/MIGRATION_TO_USER_CONFIG.md) - 从 .env 迁移到 user_config.py
 - 🎤 [TTS功能文档](docs/tts/) - TTS完整使用指南
 - 🎧 [对话监听功能](docs/conversation_monitoring.md) - 自动拦截播放指令
 - 🧭 [文档导航](docs/NAVIGATION.md) - 快速找到你需要的文档

@@ -28,6 +28,8 @@ help:
 	@echo ""
 	@echo "  Utils"
 	@echo "    make list-devices       List connected Xiaomi AI speaker devices"
+	@echo "    make test-config        Test user configuration loading"
+	@echo "    make verify-config      Verify configuration setup"
 	@echo "    make clean              Remove build artifacts and caches"
 	@echo ""
 
@@ -81,7 +83,7 @@ docker-run:
 	docker run --rm -p 8000:8000 --env-file .env $(IMAGE_TAG)
 
 # ── Utils ──────────────────────────────────────────────────────────────────────
-.PHONY: list-devices clean
+.PHONY: list-devices test-config verify-config clean
 
 list-devices: $(VENV)
 	PYTHONPATH=backend/src $(PYTHON) -c "\
@@ -91,6 +93,12 @@ async def run(): \
     async with XiaoAiClient() as c: \
         for d in await c.list_devices(): print(d); \
 asyncio.run(run())"
+
+test-config: $(VENV)
+	$(PYTHON) test/test_user_config.py
+
+verify-config:
+	@bash scripts/verify_config.sh
 
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true

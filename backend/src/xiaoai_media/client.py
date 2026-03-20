@@ -277,12 +277,14 @@ class XiaoAiClient:
                     device_id,
                 )
             else:
-                siid = int(TTS_COMMAND[hardware].split("-")[0])
+                tts_cmd = TTS_COMMAND[hardware]  # e.g. "5-1" or "7-3"
+                siid, aiid = map(int, tts_cmd.split("-"))
                 aiid = 4
-                # According to MiService docs:
-                # micli.py 5-4 查询天气 1  # 1 = voice response enabled
-                # micli.py 5-4 关灯 0     # 0 = silent execution
-                response_flag = 0 if silent else 1
+                # According to actual behavior (REVERSED from original docs):
+                # response_flag = 0 → XiaoAi provides detailed voice response and answer
+                # response_flag = 1 → XiaoAi executes silently without answer
+                # Note: The parameter meaning is opposite to the original assumption
+                response_flag = 1 if silent else 0
                 _log.debug(
                     "MiService: miot_action execute command on device %s (siid=%d, aiid=%d, response=%d): %r",
                     miot_did,
@@ -353,10 +355,15 @@ class XiaoAiClient:
         try:
             result = await self._na_service.player_set_volume(did, volume)
             _log.info("MiService: set volume result: %s", result)
-            return {"device": f"{device_name}({did})", "volume": volume, "result": result}
+            return {
+                "device": f"{device_name}({did})",
+                "volume": volume,
+                "result": result,
+            }
         except Exception as e:
             _log.error("Failed to set volume: %s", e, exc_info=True)
             raise
+
     async def get_volume(self, device_id: str | None = None) -> dict:
         """Get current speaker volume."""
         assert self._io_service is not None
@@ -419,45 +426,62 @@ class XiaoAiClient:
         hardware = device.get("hardware", "")
 
         _log.info(
-            "MiService: play URL on device %s (hardware=%s, type=%d)", 
-            did, hardware, _type
+            "MiService: play URL on device %s (hardware=%s, type=%d)",
+            did,
+            hardware,
+            _type,
         )
         _log.debug("Full URL: %s", url)
 
         try:
             # Ensure device hardware mapping is initialized
-            if not hasattr(self._na_service, 'device2hardware') or not self._na_service.device2hardware:
+            if (
+                not hasattr(self._na_service, "device2hardware")
+                or not self._na_service.device2hardware
+            ):
                 _log.debug("Initializing device hardware mapping...")
-                if not hasattr(self._na_service, 'device2hardware'):
+                if not hasattr(self._na_service, "device2hardware"):
                     self._na_service.device2hardware = {}
                 for d in devices:
                     dev_id = d.get("deviceID")
                     hw = d.get("hardware")
                     if dev_id and hw:
                         self._na_service.device2hardware[dev_id] = hw
-                _log.debug("Device hardware mapping: %s", self._na_service.device2hardware)
+                _log.debug(
+                    "Device hardware mapping: %s", self._na_service.device2hardware
+                )
 
             # Use play_by_music_url for better compatibility
             audio_id = "1582971365183456177"
             cp_id = "355454500"
-            
-            _log.info("Calling play_by_music_url with audio_id=%s, cp_id=%s", audio_id, cp_id)
-            
+
+            _log.info(
+                "Calling play_by_music_url with audio_id=%s, cp_id=%s", audio_id, cp_id
+            )
+
             result = await self._na_service.play_by_music_url(
                 did, url, _type, audio_id, cp_id
             )
             _log.info("MiService: play_by_music_url result: %s", result)
-            
+
             # Check if the result indicates success
             success = False
             if isinstance(result, dict):
                 # Check nested code structure: result.data.code or result.code
-                data_code = result.get("data", {}).get("code") if isinstance(result.get("data"), dict) else None
+                data_code = (
+                    result.get("data", {}).get("code")
+                    if isinstance(result.get("data"), dict)
+                    else None
+                )
                 result_code = result.get("code")
                 success = (data_code == 0) or (result_code == 0)
-                _log.info("Result codes: result.code=%s, result.data.code=%s, success=%s", 
-                          result_code, data_code, success)
-            
+                _log.info(
+                    "Result codes: result.code=%s, result.data.code=%s, success=%s",
+                    result_code,
+                    data_code,
+                    success,
+                )
+
             return {
                 "device": f"{device_name}({did})",
                 "url": url,
@@ -469,7 +493,9 @@ class XiaoAiClient:
             _log.error("MiService: play_url failed: %s", e, exc_info=True)
             raise
 
-    async def get_latest_ask(self, device_id: str | None = None, limit: int = 2) -> list[dict]:
+    async def get_latest_ask(
+        self, device_id: str | None = None, limit: int = 2
+    ) -> list[dict]:
         """Get latest conversation records from the speaker.
 
         Args:
@@ -497,22 +523,27 @@ class XiaoAiClient:
         # Ensure we're logged in first
         assert self._na_service is not None
         await self._na_service.device_list()  # This triggers login if needed
-        
+
         service_token = None
         user_id = None
-        
+
         # Try to get from MiAccount first
         if self._account and self._account.token:
             token_data = self._account.token
             service_token = token_data.get("serviceToken")
             user_id = token_data.get("userId")
-        
+
         # If serviceToken not in MiAccount, read from .mi.token file
         if not service_token:
             import os
-            project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+            project_root = os.path.dirname(
+                os.path.dirname(
+                    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                )
+            )
             token_file = os.path.join(project_root, ".mi.token")
-            
+
             try:
                 if os.path.exists(token_file):
                     with open(token_file, "r") as f:
@@ -525,18 +556,24 @@ class XiaoAiClient:
                             _log.debug("Loaded serviceToken from .mi.token file")
             except Exception as e:
                 _log.warning("Failed to read .mi.token: %s", e)
-        
-        _log.debug("Auth info: userId=%s, has_serviceToken=%s", user_id, bool(service_token))
-        
+
+        _log.debug(
+            "Auth info: userId=%s, has_serviceToken=%s", user_id, bool(service_token)
+        )
+
         if not service_token or not user_id:
-            _log.warning("No valid serviceToken or userId available for conversation API")
+            _log.warning(
+                "No valid serviceToken or userId available for conversation API"
+            )
             return []
 
         # Use Xiaomi conversation API
         timestamp = int(time.time() * 1000)
         url = f"https://userprofile.mina.mi.com/device_profile/v2/conversation?source=dialogu&hardware={hardware}&timestamp={timestamp}&limit={limit}"
 
-        _log.debug("MiService: get latest ask from device %s (hardware: %s)", did, hardware)
+        _log.debug(
+            "MiService: get latest ask from device %s (hardware: %s)", did, hardware
+        )
 
         try:
             assert self._session is not None
@@ -548,8 +585,12 @@ class XiaoAiClient:
             if user_id:
                 cookies["userId"] = str(user_id)
 
-            _log.debug("Request cookies: deviceId=%s, has_serviceToken=%s, userId=%s", 
-                      did, bool(service_token), user_id)
+            _log.debug(
+                "Request cookies: deviceId=%s, has_serviceToken=%s, userId=%s",
+                did,
+                bool(service_token),
+                user_id,
+            )
 
             async with self._session.get(url, cookies=cookies, timeout=15) as resp:
                 if resp.status != 200:
@@ -557,7 +598,9 @@ class XiaoAiClient:
                     if resp.status == 401:
                         _log.debug("Authentication failed, serviceToken may be invalid")
                     elif resp.status == 400:
-                        _log.debug("Bad request, check deviceId and hardware parameters")
+                        _log.debug(
+                            "Bad request, check deviceId and hardware parameters"
+                        )
                     return []
 
                 data = await resp.json()
@@ -572,9 +615,14 @@ class XiaoAiClient:
                             answers = record.get("answers", [{}])
                             answer = ""
                             if answers:
-                                answer = (
-                                    answers[0].get("tts", {}).get("text", "").strip()
-                                )
+                                # Try to extract answer from different types
+                                first_answer = answers[0]
+                                # Type 1: TTS response
+                                if tts := first_answer.get("tts"):
+                                    answer = tts.get("text", "").strip()
+                                # Type 2: LLM response (for queries like weather, time)
+                                elif llm := first_answer.get("llm"):
+                                    answer = llm.get("text", "").strip()
 
                             result.append(
                                 {
@@ -657,7 +705,9 @@ class XiaoAiClient:
         _log.info("MiService: player status result: %s", result)
         return {"device": f"{device_name}({did})", "status": result}
 
-    async def player_set_loop(self, device_id: str | None = None, loop_type: int = 1) -> dict:
+    async def player_set_loop(
+        self, device_id: str | None = None, loop_type: int = 1
+    ) -> dict:
         """Set loop mode for playback.
 
         Args:
@@ -673,8 +723,8 @@ class XiaoAiClient:
         _log.info("MiService: set loop mode %d on device %s", loop_type, did)
         result = await self._na_service.player_set_loop(did, loop_type)
         _log.info("MiService: set loop result: %s", result)
-        return {"device": f"{device_name}({did})", "loop_type": loop_type, "result": result}
-
-
-
-
+        return {
+            "device": f"{device_name}({did})",
+            "loop_type": loop_type,
+            "result": result,
+        }

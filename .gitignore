@@ -13,8 +13,8 @@ venv/
 *.egg
 
 # Environment & secrets
-.env
 .mi.token
+user_config.py
 
 # Node.js
 node_modules/

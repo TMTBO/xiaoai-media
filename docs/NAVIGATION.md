@@ -4,6 +4,32 @@
 
 ## 🎯 我想...
 
+### ⚙️ 配置系统
+
+#### 快速配置项目
+→ [QUICK_CONFIG.md](QUICK_CONFIG.md)  
+5分钟快速配置指南
+
+#### 了解用户配置系统
+→ [USER_CONFIG_GUIDE.md](USER_CONFIG_GUIDE.md)  
+完整的配置指南，包括唤醒词和自定义处理
+
+#### 配置常见问题
+→ [CONFIG_FAQ.md](CONFIG_FAQ.md)  
+配置系统常见问题解答
+
+#### 配置问题解答
+→ [CONFIG_ANSWERS.md](CONFIG_ANSWERS.md)  
+详细的配置问题解答
+
+#### 配置迁移指南
+→ [migration/MIGRATION_TO_USER_CONFIG.md](migration/MIGRATION_TO_USER_CONFIG.md)  
+从 .env 迁移到 user_config.py
+
+#### 查看配置模板
+→ [../user_config_template.py](../user_config_template.py)  
+完整的配置模板文件
+
 ### 🎵 播放功能
 
 #### 快速修复播放错误
@@ -86,6 +112,26 @@ TTS文档索引和概览
 
 ## 📚 按主题浏览
 
+### ⚙️ 配置系统
+```
+├── QUICK_CONFIG.md              # 快速配置指南
+├── USER_CONFIG_GUIDE.md         # 完整配置指南
+├── CONFIG_FAQ.md                # 常见问题解答
+├── CONFIG_ANSWERS.md            # 配置问题解答
+├── CONFIG_CHEATSHEET.md         # 配置速查表
+├── USER_CONFIG_SUMMARY.md       # 技术总结
+├── USER_CONFIG_IMPLEMENTATION.md # 实现总结
+├── migration/                   # 迁移文档
+│   ├── MIGRATION_TO_USER_CONFIG.md    # 迁移指南
+│   ├── MIGRATION_COMPLETE.md          # 迁移完成报告
+│   ├── CLEANUP_SUMMARY.md             # 清理总结
+│   ├── FINAL_SUMMARY.md               # 最终总结
+│   ├── IMPLEMENTATION_COMPLETE.md     # 实现完成报告
+│   └── MIGRATION_SUMMARY.md           # 迁移总结
+├── user_config_template.py      # 配置模板（完整）
+└── user_config.example.py       # 配置示例（简化）
+```
+
 ### 🎵 播放功能
 ```
 playback/
@@ -134,6 +180,12 @@ conversation/
 
 ### 我是开发者
 
+#### 配置系统
+1. [用户配置指南](USER_CONFIG_GUIDE.md) - 了解配置系统
+2. [配置模板](../user_config_template.py) - 查看所有配置项
+3. [测试配置](../test/test_user_config.py) - 测试配置加载
+4. [迁移指南](migration/MIGRATION_TO_USER_CONFIG.md) - 从 .env 迁移
+
 #### 播放功能
 1. [代理URL使用指南](playback/代理URL使用指南.md) - 了解如何使用代理
 2. [代理URL封装说明](playback/代理URL封装说明.md) - 了解技术实现
@@ -149,6 +201,11 @@ conversation/
 2. [功能说明](conversation/功能说明.md) - 了解功能细节
 
 ### 我是用户
+
+#### 配置系统
+1. [快速配置](QUICK_CONFIG.md) - 5分钟快速配置
+2. [配置示例](../user_config.example.py) - 简化的配置示例
+3. [迁移指南](migration/MIGRATION_TO_USER_CONFIG.md) - 从 .env 迁移
 
 #### 播放功能
 1. [快速修复](playback/播放错误快速修复.md) - 解决播放问题
@@ -179,6 +236,29 @@ conversation/
 2. [测试报告](conversation/TEST_REPORT.md) - 测试结果
 
 ## 🆘 常见问题快速链接
+
+### 配置相关
+
+#### 如何配置项目？
+→ [QUICK_CONFIG.md](QUICK_CONFIG.md)
+
+#### 使用 user_config.py 后还需要 .env 吗？
+→ [CONFIG_FAQ.md#q1](CONFIG_FAQ.md#q1-使用-userconfigpy-后还需要-env-文件吗)
+
+#### Makefile 启动时如何加载配置？
+→ [CONFIG_FAQ.md#q2](CONFIG_FAQ.md#q2-使用-makefile-启动时配置如何加载)
+
+#### 如何设置唤醒词？
+→ [USER_CONFIG_GUIDE.md#唤醒词配置](USER_CONFIG_GUIDE.md#唤醒词配置)
+
+#### 配置文件未生效？
+→ [CONFIG_FAQ.md#q3](CONFIG_FAQ.md#q3-如何验证配置是否生效)
+
+#### 如何自定义处理逻辑？
+→ [USER_CONFIG_GUIDE.md#高级功能](USER_CONFIG_GUIDE.md#高级功能自定义处理函数)
+
+#### 如何从 .env 迁移？
+→ [migration/MIGRATION_TO_USER_CONFIG.md](migration/MIGRATION_TO_USER_CONFIG.md)
 
 ### 播放相关
 
@@ -219,6 +299,10 @@ conversation/
 ## 📱 快速命令
 
 ```bash
+# 配置测试
+make test-config                # 测试配置加载
+cp user_config_template.py user_config.py  # 创建配置文件
+
 # 查看所有文档
 ls -R docs/
 
