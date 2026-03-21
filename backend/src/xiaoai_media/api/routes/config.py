@@ -104,40 +104,44 @@ def _write_user_config(data: dict[str, str | bool | int | float | list]) -> None
                 formatted_items = ",\n    ".join(f'"{item}"' for item in val)
                 val_str = f"[\n    {formatted_items},\n]"
 
-            # 对于多行列表，需要特殊处理
-            if "\n" in val_str:
-                # 查找列表的开始行和结束行
-                lines = content.splitlines()
-                new_lines = []
-                skip_until_bracket = False
-                found = False
+            # 查找列表的开始行和结束行
+            lines = content.splitlines()
+            new_lines = []
+            skip_until_bracket = False
+            found = False
 
-                for i, line in enumerate(lines):
-                    if skip_until_bracket:
-                        # 跳过列表内容行，直到找到结束括号
-                        if "]" in line:
-                            skip_until_bracket = False
-                        continue
+            for i, line in enumerate(lines):
+                if skip_until_bracket:
+                    # 跳过列表内容行，直到找到结束括号
+                    if "]" in line:
+                        skip_until_bracket = False
+                    continue
 
-                    if re.match(rf"^{key}\s*=\s*\[", line):
-                        # 找到列表开始
-                        found = True
-                        # 添加格式化后的完整列表
-                        indent = len(line) - len(line.lstrip())
+                if re.match(rf"^(\s*){key}\s*=\s*\[", line):
+                    # 找到列表开始
+                    found = True
+                    # 添加格式化后的完整列表
+                    indent = len(line) - len(line.lstrip())
+                    
+                    if "\n" in val_str:
+                        # 多行列表
                         formatted_lines = val_str.split("\n")
                         new_lines.append(" " * indent + f"{key} = {formatted_lines[0]}")
                         for fl in formatted_lines[1:]:
                             new_lines.append(" " * indent + fl)
-
-                        # 如果当前行没有结束括号，标记跳过后续行
-                        if "]" not in line:
-                            skip_until_bracket = True
                     else:
-                        new_lines.append(line)
+                        # 单行列表
+                        new_lines.append(" " * indent + f"{key} = {val_str}")
 
-                if found:
-                    content = "\n".join(new_lines)
-                continue
+                    # 如果当前行没有结束括号，标记跳过后续行
+                    if "]" not in line:
+                        skip_until_bracket = True
+                else:
+                    new_lines.append(line)
+
+            if found:
+                content = "\n".join(new_lines)
+            continue
         else:
             val_str = f'"{val}"'
 

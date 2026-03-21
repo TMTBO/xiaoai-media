@@ -11,7 +11,7 @@ on:
 env:
   GHCR_REGISTRY: ghcr.io
   GHCR_IMAGE: ${{ github.repository }}
-  DOCKERHUB_IMAGE: toto/xiaoai-media  # 修改为你的用户名
+  DOCKERHUB_IMAGE: thrillerone/xiaoai-media  # 修改为你的用户名
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
