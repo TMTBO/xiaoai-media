@@ -12,7 +12,6 @@ from xiaoai_media import config
 
 router = APIRouter(prefix="/config", tags=["config"])
 
-_USER_CONFIG_PATH = Path(__file__).resolve().parents[5] / "user_config.py"
 _ALLOWED_KEYS = {
     "MI_USER",
     "MI_PASS",
@@ -35,10 +34,11 @@ _ALLOWED_KEYS = {
 def _read_user_config() -> dict[str, str | bool | int | float]:
     """读取 user_config.py 中的配置变量"""
     result: dict[str, str | bool | int | float] = {}
-    if not _USER_CONFIG_PATH.exists():
+    config_path = config.get_config_file_path(required=False)
+    if not config_path or not config_path.exists():
         return result
 
-    content = _USER_CONFIG_PATH.read_text(encoding="utf-8")
+    content = config_path.read_text(encoding="utf-8")
 
     # 只匹配简单的变量赋值（不包含列表、字典等复杂类型）
     for line in content.splitlines():
@@ -79,10 +79,11 @@ def _read_user_config() -> dict[str, str | bool | int | float]:
 
 def _write_user_config(data: dict[str, str | bool | int | float | list]) -> None:
     """更新 user_config.py 中的配置变量"""
-    if not _USER_CONFIG_PATH.exists():
+    config_path = config.get_config_file_path(required=True)
+    if not config_path or not config_path.exists():
         raise HTTPException(status_code=404, detail="user_config.py not found")
 
-    content = _USER_CONFIG_PATH.read_text(encoding="utf-8")
+    content = config_path.read_text(encoding="utf-8")
 
     for key, val in data.items():
         # 格式化值
@@ -122,7 +123,7 @@ def _write_user_config(data: dict[str, str | bool | int | float | list]) -> None
                     found = True
                     # 添加格式化后的完整列表
                     indent = len(line) - len(line.lstrip())
-                    
+
                     if "\n" in val_str:
                         # 多行列表
                         formatted_lines = val_str.split("\n")
@@ -165,7 +166,7 @@ def _write_user_config(data: dict[str, str | bool | int | float | list]) -> None
         if found:
             content = "\n".join(new_content)
 
-    _USER_CONFIG_PATH.write_text(content, encoding="utf-8")
+    config_path.write_text(content, encoding="utf-8")
 
 
 @router.get("")

@@ -13,32 +13,56 @@ _log = logging.getLogger(__name__)
 DATA_DIR = Path.home() / ".xiaoai-media"
 
 
-def _find_config_file() -> Path | None:
-    """查找用户配置文件
+def get_config_file_path(required: bool = False) -> Path | None:
+    """获取用户配置文件路径（公共接口）
 
     按以下顺序查找：
     1. 项目根目录的 user_config.py（开发环境）
     2. ~/.xiaoai-media/user_config.py（生产环境/Docker）
 
+    Args:
+        required: 如果为 True，则在未找到配置文件时返回默认路径（数据目录），
+                 如果为 False，则在未找到时返回 None
+
     Returns:
-        配置文件路径，如果都不存在则返回 None
+        配置文件路径
     """
     # 1. 检查项目根目录（开发环境）
     project_config = Path(__file__).resolve().parents[3] / "user_config.py"
     if project_config.exists():
-        _log.info("使用项目根目录的配置文件: %s", project_config)
         return project_config
 
     # 2. 检查数据目录（生产环境/Docker）
     data_config = DATA_DIR / "user_config.py"
     if data_config.exists():
-        _log.info("使用数据目录的配置文件: %s", data_config)
         return data_config
+
+    # 如果需要路径（用于写入），返回数据目录路径
+    if required:
+        return data_config
+
+    return None
+
+
+def _find_config_file() -> Path | None:
+    """查找用户配置文件（内部使用，带日志输出）
+
+    Returns:
+        配置文件路径，如果都不存在则返回 None
+    """
+    config_path = get_config_file_path(required=False)
+
+    if config_path:
+        _log.info("使用配置文件: %s", config_path)
+        return config_path
 
     _log.warning("未找到用户配置文件，将使用默认配置")
     _log.info("配置文件搜索路径：")
-    _log.info("  1. 项目根目录: %s (不存在)", project_config)
-    _log.info("  2. 数据目录: %s (不存在)", data_config)
+    _log.info(
+        "  1. 项目根目录: %s (不存在)",
+        Path(__file__).resolve().parents[3] / "user_config.py",
+    )
+    _log.info("  2. 数据目录: %s (不存在)", DATA_DIR / "user_config.py")
     return None
 
 
