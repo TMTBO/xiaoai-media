@@ -150,13 +150,18 @@ watch(showWakeWordInput, (show) => {
   }
 })
 
-function addWakeWord() {
+async function addWakeWord() {
   const word = newWakeWord.value.trim()
   if (word && !form.value.WAKE_WORDS.includes(word)) {
     form.value.WAKE_WORDS.push(word)
+    newWakeWord.value = ''
+    showWakeWordInput.value = false
+    // 自动保存配置
+    await save()
+  } else {
+    newWakeWord.value = ''
+    showWakeWordInput.value = false
   }
-  newWakeWord.value = ''
-  showWakeWordInput.value = false
 }
 
 function removeWakeWord(index: number) {
