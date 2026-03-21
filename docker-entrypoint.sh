@@ -16,8 +16,8 @@ fi
 
 # 如果不是 root，或者已经是 appuser，直接执行命令
 if [ "$(id -u)" = "0" ]; then
-    # 以 appuser 身份执行应用
-    exec gosu appuser "$@"
+    # 以 appuser 身份执行应用，显式设置 HOME
+    exec gosu appuser env HOME=/data "$@"
 else
     exec "$@"
 fi

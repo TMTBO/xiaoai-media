@@ -17,8 +17,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gosu \
     && rm -rf /var/lib/apt/lists/*
 
-# Create non-root user
-RUN groupadd -r appuser && useradd -r -g appuser appuser
+# Create non-root user with HOME=/data
+RUN groupadd -r appuser && useradd -r -g appuser -d /data appuser
 
 # Create data directory
 RUN mkdir -p /data/.xiaoai-media && chown -R appuser:appuser /data
@@ -38,12 +38,8 @@ COPY --from=frontend-builder /build/frontend/dist ./static/
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Runtime environment defaults (real values come from --env-file or -e flags)
-ENV MI_REGION=cn \
-    MI_USER="" \
-    MI_PASS="" \
-    MI_DID="" \
-    HOME=/data
+# Set HOME to data directory (affects Path.home() used by config.py)
+ENV HOME=/data
 
 # Expose port
 EXPOSE 8000
