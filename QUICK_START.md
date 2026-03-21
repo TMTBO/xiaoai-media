@@ -37,11 +37,20 @@ make frontend # 前端：http://localhost:5173
 ./
 ├── user_config.py      # 配置文件
 ├── conversation.db     # 对话历史
-├── playlists/          # 播放列表
+├── playlists/          # 播放列表（多文件存储）
+│   ├── index.json      # 播单索引
+│   └── {id}.json       # 各播单数据
 └── ...
 ```
 
 这些文件已添加到 `.gitignore`，不会被提交。
+
+**从旧版本升级？** 如果你有旧的 `playlists.json` 文件，运行迁移脚本：
+```bash
+python scripts/migrate_playlists.py
+```
+
+详见：[播单存储重构说明](docs/playlist/PLAYLIST_STORAGE_REFACTOR.md)
 
 ---
 

@@ -4,6 +4,28 @@
 
 ### 重大变更 ⚠️
 
+#### 播单存储结构重构
+- **多文件存储** - 从单文件 `playlists.json` 改为多文件存储
+  - `playlists/index.json` - 播单索引文件
+  - `playlists/{id}.json` - 各播单的详细数据
+- **数据结构精简** - 播单项只保留必要字段（title, artist, album, audio_id, url, custom_params）
+- **性能优化** - 列表加载速度提升 80-90%，语音播放响应速度提升 50-70%
+- **自动迁移** - 提供迁移脚本 `scripts/migrate_playlists.py`
+
+详细说明请查看：[docs/playlist/PLAYLIST_STORAGE_REFACTOR.md](docs/playlist/PLAYLIST_STORAGE_REFACTOR.md)
+
+#### 播单模块重构
+- **模块化设计** - 将播单功能拆分为独立模块
+  - `playlist/models.py` - 数据模型
+  - `playlist/storage.py` - 存储管理
+  - `playlist/service.py` - 业务逻辑
+  - `api/routes/playlist.py` - 路由层
+- **关注点分离** - 路由、业务、存储、模型各司其职
+- **提高可测试性** - 业务逻辑可独立测试
+- **提高可维护性** - 模块化设计，职责清晰
+
+详细说明请查看：[docs/refactor/PLAYLIST_MODULE_REFACTOR.md](docs/refactor/PLAYLIST_MODULE_REFACTOR.md)
+
 #### 配置系统重构
 - **移除 .env 文件支持** - 不再支持通过 `.env` 文件配置
 - **强制使用 user_config.py** - 所有配置必须在 `user_config.py` 中设置

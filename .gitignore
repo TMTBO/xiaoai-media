@@ -16,6 +16,7 @@ venv/
 .mi.token
 user_config.py
 playlists/
+playlists.json
 conversation.db
 *.db
 

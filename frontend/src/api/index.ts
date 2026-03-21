@@ -69,13 +69,23 @@ export interface PlaylistState {
 }
 
 export interface PlaylistItem {
-  title: string
-  url?: string
-  artist: string
-  album: string
-  duration: number
-  cover_url: string
+  title: string          // 歌曲名
+  artist: string         // 艺术家
+  album: string          // 专辑名
+  audio_id: string       // 音频ID
+  url?: string           // 音频URL
   custom_params: Record<string, any>
+}
+
+export interface PlaylistIndex {
+  id: string
+  name: string
+  type: string
+  description: string
+  voice_keywords: string[]
+  item_count: number
+  created_at: string
+  updated_at: string
 }
 
 export interface Playlist {
@@ -172,7 +182,7 @@ export const api = {
 
   // Playlists
   listPlaylists: () =>
-    http.get<{ playlists: Playlist[], total: number }>('/playlists').then(r => r.data),
+    http.get<{ playlists: PlaylistIndex[], total: number }>('/playlists').then(r => r.data),
   createPlaylist: (data: CreatePlaylistRequest) =>
     http.post<Playlist>('/playlists', data).then(r => r.data),
   getPlaylistById: (playlistId: string) =>

@@ -9,6 +9,26 @@ XiaoAI Media 播放列表功能的完整文档。
   - 语音命令控制
   - 自定义音频源集成
 
+- **[PLAYLIST_STORAGE_REFACTOR.md](PLAYLIST_STORAGE_REFACTOR.md)** - 存储结构重构说明
+  - 多文件存储格式
+  - 性能优化
+  - 数据迁移指南
+
+- **[PLAYLIST_REFACTOR_SUMMARY.md](PLAYLIST_REFACTOR_SUMMARY.md)** - 重构完成总结
+  - 已完成的工作
+  - 性能优化效果
+  - 使用说明
+
+- **[CHANGELOG_PLAYLIST_REFACTOR.md](CHANGELOG_PLAYLIST_REFACTOR.md)** - 重构更新日志
+  - 版本变更记录
+  - 破坏性变更说明
+  - 向后兼容性
+
+- **[REFACTOR_CHECKLIST.md](REFACTOR_CHECKLIST.md)** - 重构检查清单
+  - 代码变更清单
+  - 部署步骤
+  - 验证清单
+
 - **[PLAYLIST_FEATURE_UPDATE.md](PLAYLIST_FEATURE_UPDATE.md)** - 功能更新说明
   - 最新功能介绍
   - API 变更说明
@@ -16,6 +36,8 @@ XiaoAI Media 播放列表功能的完整文档。
 - **[PLAYLIST_IMPROVEMENTS.md](PLAYLIST_IMPROVEMENTS.md)** - 功能改进记录
   - 历史改进记录
   - 优化说明
+
+- **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - 快速参考指南
 
 ## 🎯 功能概览
 
@@ -43,6 +65,24 @@ XiaoAI Media 播放列表功能的完整文档。
    - 可集成任意音频源
 
 ## 🚀 快速开始
+
+### 存储结构
+
+播单数据采用多文件存储格式（v1.0+ 新特性）：
+
+```
+playlists/
+├── index.json           # 播单索引文件
+├── {playlist_id_1}.json # 播单1的详细数据
+└── {playlist_id_2}.json # 播单2的详细数据
+```
+
+**数据迁移**：如果你之前使用旧版本，请运行：
+```bash
+python scripts/migrate_playlists.py
+```
+
+详见：[存储结构重构说明](PLAYLIST_STORAGE_REFACTOR.md)
 
 ### 1. 创建播放列表
 

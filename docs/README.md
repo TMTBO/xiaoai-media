@@ -49,6 +49,7 @@
 ### 开发相关
 - **api/** - API 接口文档
 - **migration/** - 迁移和升级指南
+- **refactor/** - 代码重构文档
 
 ---
 
@@ -63,6 +64,7 @@
 1. [开发环境配置](config/DEV_ENVIRONMENT.md)
 2. [API 文档](api/README.md)
 3. [项目结构](STRUCTURE.md)
+4. [代码重构文档](refactor/)
 
 ### 我遇到了问题
 1. [配置 FAQ](config/CONFIG_FAQ.md)
@@ -71,8 +73,9 @@
 
 ### 我想了解功能
 1. [播放列表管理](playlist/README.md)
-2. [对话监听](conversation/README.md)
-3. [TTS 语音](tts/README.md)
+2. [播单存储重构](playlist/PLAYLIST_STORAGE_REFACTOR.md) - v1.0 新特性
+3. [对话监听](conversation/README.md)
+4. [TTS 语音](tts/README.md)
 
 ---
 

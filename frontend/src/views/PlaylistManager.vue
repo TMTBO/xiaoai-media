@@ -40,7 +40,7 @@
                 <el-table-column prop="type" label="类型" width="120" />
                 <el-table-column label="项目数" width="100">
                     <template #default="{ row }">
-                        {{ row.items.length }}
+                        {{ row.item_count }}
                     </template>
                 </el-table-column>
                 <el-table-column prop="voice_keywords" label="语音关键词" min-width="200">
@@ -53,7 +53,7 @@
                 </el-table-column>
                 <el-table-column label="操作" width="300" fixed="right">
                     <template #default="{ row }">
-                        <el-button size="small" type="success" :disabled="!row.items.length" @click="handlePlay(row)">
+                        <el-button size="small" type="success" :disabled="!row.item_count" @click="handlePlay(row)">
                             <el-icon style="margin-right: 4px">
                                 <VideoPlay />
                             </el-icon>播放
@@ -132,29 +132,26 @@
         <el-dialog v-model="showAddItemDialog" title="添加项目" width="600px">
             <el-form :model="itemForm" label-width="100px">
                 <el-form-item label="标题" required>
-                    <el-input v-model="itemForm.title" placeholder="音频标题" />
+                    <el-input v-model="itemForm.title" placeholder="歌曲名" />
                 </el-form-item>
                 <el-form-item label="艺术家">
-                    <el-input v-model="itemForm.artist" placeholder="艺术家/作者" />
+                    <el-input v-model="itemForm.artist" placeholder="艺术家" />
                 </el-form-item>
                 <el-form-item label="专辑">
-                    <el-input v-model="itemForm.album" placeholder="专辑/系列" />
+                    <el-input v-model="itemForm.album" placeholder="专辑名" />
                 </el-form-item>
-                <el-form-item label="播放 URL">
+                <el-form-item label="音频ID">
+                    <el-input v-model="itemForm.audio_id" placeholder="音频ID（可选）" />
+                </el-form-item>
+                <el-form-item label="音频 URL">
                     <el-input v-model="itemForm.url" type="textarea" :rows="2"
-                        placeholder="如果留空，则需要配置自定义参数通过 user_config.py 动态获取" />
-                </el-form-item>
-                <el-form-item label="封面 URL">
-                    <el-input v-model="itemForm.cover_url" placeholder="封面图片 URL（可选）" />
-                </el-form-item>
-                <el-form-item label="时长（秒）">
-                    <el-input-number v-model="itemForm.duration" :min="0" />
+                        placeholder="如果留空，则需要配置音频ID或自定义参数通过 user_config.py 动态获取" />
                 </el-form-item>
                 <el-form-item label="自定义参数">
                     <el-input v-model="customParamsText" type="textarea" :rows="4"
                         placeholder='JSON 格式，例如：{"type": "music", "platform": "tx", "song_id": "123"}' />
                     <div style="font-size: 12px; color: #909399; margin-top: 4px">
-                        当播放 URL 为空时，会将此参数传递给 user_config.py 中的 get_audio_url 函数
+                        当音频 URL 为空时，会将此参数传递给 user_config.py 中的 get_audio_url 函数
                     </div>
                 </el-form-item>
             </el-form>
@@ -170,15 +167,15 @@
 import { ref, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Refresh, List, Plus, VideoPlay } from '@element-plus/icons-vue'
-import { api, type Device, type Playlist, type PlaylistItem } from '@/api'
+import { api, type Device, type Playlist, type PlaylistIndex, type PlaylistItem } from '@/api'
 
 // 设备相关
 const devices = ref<Device[]>([])
 const deviceId = ref<string>('')
 const devicesLoading = ref(false)
 
-// 播单列表
-const playlists = ref<Playlist[]>([])
+// 播单列表（索引信息）
+const playlists = ref<PlaylistIndex[]>([])
 const playlistsLoading = ref(false)
 
 // 对话框状态
@@ -188,7 +185,7 @@ const showAddItemDialog = ref(false)
 const saving = ref(false)
 
 // 编辑状态
-const editingPlaylist = ref<Playlist | null>(null)
+const editingPlaylist = ref<PlaylistIndex | null>(null)
 const currentPlaylist = ref<Playlist | null>(null)
 
 // 表单数据
@@ -201,11 +198,10 @@ const playlistForm = ref({
 
 const itemForm = ref<PlaylistItem>({
     title: '',
-    url: '',
     artist: '',
     album: '',
-    duration: 0,
-    cover_url: '',
+    audio_id: '',
+    url: '',
     custom_params: {},
 })
 
@@ -282,7 +278,7 @@ async function handleSavePlaylist() {
 }
 
 // 编辑播单基本信息
-function handleEdit(playlist: Playlist) {
+function handleEdit(playlist: PlaylistIndex) {
     editingPlaylist.value = playlist
     playlistForm.value = {
         name: playlist.name,
@@ -294,13 +290,19 @@ function handleEdit(playlist: Playlist) {
 }
 
 // 管理播单项
-function handleManageItems(playlist: Playlist) {
-    currentPlaylist.value = playlist
-    showItemsDialog.value = true
+async function handleManageItems(playlist: PlaylistIndex) {
+    try {
+        // 加载完整的播单数据
+        const fullPlaylist = await api.getPlaylistById(playlist.id)
+        currentPlaylist.value = fullPlaylist
+        showItemsDialog.value = true
+    } catch (error: any) {
+        ElMessage.error(`加载播单失败: ${error.message}`)
+    }
 }
 
 // 删除播单
-async function handleDelete(playlist: Playlist) {
+async function handleDelete(playlist: PlaylistIndex) {
     try {
         await ElMessageBox.confirm(`确定要删除播单"${playlist.name}"吗？`, '确认删除', {
             confirmButtonText: '删除',
@@ -319,7 +321,7 @@ async function handleDelete(playlist: Playlist) {
 }
 
 // 播放播单
-async function handlePlay(playlist: Playlist) {
+async function handlePlay(playlist: PlaylistIndex) {
     try {
         await api.playPlaylist(playlist.id, {
             device_id: deviceId.value || undefined,
@@ -375,11 +377,10 @@ async function handleAddItem() {
         // 重置表单
         itemForm.value = {
             title: '',
-            url: '',
             artist: '',
             album: '',
-            duration: 0,
-            cover_url: '',
+            audio_id: '',
+            url: '',
             custom_params: {},
         }
         customParamsText.value = ''
@@ -387,11 +388,9 @@ async function handleAddItem() {
         // 重新加载播单
         await loadPlaylists()
 
-        // 更新当前播单
-        const updated = playlists.value.find(p => p.id === currentPlaylist.value!.id)
-        if (updated) {
-            currentPlaylist.value = updated
-        }
+        // 更新当前播单（需要重新加载完整数据）
+        const fullPlaylist = await api.getPlaylistById(currentPlaylist.value!.id)
+        currentPlaylist.value = fullPlaylist
     } catch (error: any) {
         ElMessage.error(`添加失败: ${error.message}`)
     } finally {
@@ -414,11 +413,9 @@ async function handleDeleteItem(index: number) {
         // 重新加载播单
         await loadPlaylists()
 
-        // 更新当前播单
-        const updated = playlists.value.find(p => p.id === currentPlaylist.value!.id)
-        if (updated) {
-            currentPlaylist.value = updated
-        }
+        // 更新当前播单（需要重新加载完整数据）
+        const fullPlaylist = await api.getPlaylistById(currentPlaylist.value!.id)
+        currentPlaylist.value = fullPlaylist
     } catch (error: any) {
         if (error !== 'cancel') {
             ElMessage.error(`删除失败: ${error.message}`)

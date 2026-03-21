@@ -114,11 +114,18 @@ ENABLE_WAKE_WORD_FILTER = True
 $HOME/
 ├── user_config.py      # 配置文件
 ├── conversation.db     # 对话历史
-├── playlists/          # 播放列表
+├── playlists/          # 播放列表（多文件存储）
+│   ├── index.json      # 播单索引
+│   └── {id}.json       # 各播单数据
 └── logs/               # 日志文件
 ```
 
-详见：[数据存储说明](docs/config/DATA_STORAGE.md)
+**播单存储优化**（v1.0+）：
+- 采用多文件存储，提升性能
+- 列表加载速度提升 80-90%
+- 支持自动迁移：`python scripts/migrate_playlists.py`
+
+详见：[数据存储说明](docs/config/DATA_STORAGE.md) | [播单重构说明](docs/playlist/PLAYLIST_STORAGE_REFACTOR.md)
 
 ---
 

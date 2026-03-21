@@ -622,8 +622,7 @@ async function confirmCreatePlaylist() {
             title: song.name,
             artist: song.singer,
             album: song.meta.albumName,
-            duration: song.interval,
-            cover_url: song.meta.picUrl,
+            audio_id: String(song.id),
             url: '', // 留空，由动态获取
             custom_params: {
                 type: 'music',

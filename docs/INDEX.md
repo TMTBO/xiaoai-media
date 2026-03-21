@@ -44,6 +44,8 @@
 |------|------|------|
 | 播放列表总览 | 功能介绍 | [playlist/README.md](playlist/README.md) |
 | 播放列表指南 | 使用指南 | [playlist/PLAYLIST_GUIDE.md](playlist/PLAYLIST_GUIDE.md) |
+| 存储结构重构 | v1.0 重构说明 | [playlist/PLAYLIST_STORAGE_REFACTOR.md](playlist/PLAYLIST_STORAGE_REFACTOR.md) |
+| 重构总结 | 完成总结 | [playlist/PLAYLIST_REFACTOR_SUMMARY.md](playlist/PLAYLIST_REFACTOR_SUMMARY.md) |
 | 快速参考 | 快速查询 | [playlist/QUICK_REFERENCE.md](playlist/QUICK_REFERENCE.md) |
 
 ### 对话监听
@@ -75,6 +77,7 @@
 |------|------|------|
 | API 参考 | REST API 文档 | [api/README.md](api/README.md) |
 | API 详细说明 | API 实现细节 | [api/API_REFERENCE.md](api/API_REFERENCE.md) |
+| 代码重构 | 重构文档 | [refactor/](refactor/) |
 
 ---
 
@@ -109,3 +112,4 @@
 1. [迁移指南](migration/README.md)
 2. [更新日志](../CHANGELOG.md)
 3. [HOME 目录迁移](migration/HOME_DIR_MIGRATION.md)
+4. [播单存储迁移](playlist/PLAYLIST_STORAGE_REFACTOR.md) - v1.0 新增
