@@ -24,6 +24,8 @@
 ### 开发文档
 - [API 参考](api/README.md) - REST API 文档
 - [迁移指南](migration/README.md) - 版本升级说明
+- [重构文档](refactor/README.md) - 代码重构文档 ✨
+- [重构总结](../REFACTOR_SUMMARY.md) - 架构重构总览 ✨
 
 ---
 
@@ -49,7 +51,7 @@
 ### 开发相关
 - **api/** - API 接口文档
 - **migration/** - 迁移和升级指南
-- **refactor/** - 代码重构文档
+- **refactor/** - 代码重构文档 ✨
 
 ---
 
@@ -64,7 +66,8 @@
 1. [开发环境配置](config/DEV_ENVIRONMENT.md)
 2. [API 文档](api/README.md)
 3. [项目结构](STRUCTURE.md)
-4. [代码重构文档](refactor/)
+4. [代码重构文档](refactor/README.md) ✨
+5. [服务层架构](../backend/src/xiaoai_media/services/README.md) ✨
 
 ### 我遇到了问题
 1. [配置 FAQ](config/CONFIG_FAQ.md)
@@ -98,7 +101,8 @@ docs/
 ├── conversation/          # 对话监听文档
 ├── playback/              # 音乐播放文档
 ├── tts/                   # TTS 文档
-└── migration/             # 迁移指南
+├── migration/             # 迁移指南
+└── refactor/              # 重构文档 ✨
 ```
 
 ---

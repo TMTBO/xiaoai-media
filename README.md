@@ -150,6 +150,8 @@ $HOME/
 ### 开发文档
 - [API 参考](docs/api/README.md) - REST API 文档
 - [迁移指南](docs/migration/README.md) - 版本升级说明
+- [重构总结](REFACTOR_SUMMARY.md) - 架构重构说明 ✨
+- [重构文档](docs/refactor/README.md) - 详细重构文档
 
 ---
 

@@ -4,6 +4,36 @@
 
 ## 📚 文档列表
 
+### API服务层重构
+- **[API_SERVICES_REFACTOR.md](API_SERVICES_REFACTOR.md)** - API服务层重构完整文档
+  - 重构目标和架构
+  - 服务层模块详解
+  - 使用示例和最佳实践
+  - 测试建议
+
+- **[API_REFACTOR_SUMMARY.md](API_REFACTOR_SUMMARY.md)** - API重构总结
+  - 变更概览
+  - 代码统计
+  - 向后兼容性
+  - 使用示例
+
+- **[SERVICES_QUICK_REFERENCE.md](SERVICES_QUICK_REFERENCE.md)** - 服务层快速参考
+  - 常用API速查
+  - 代码示例
+  - 数据模型说明
+
+### 播放列表服务迁移
+- **[PLAYLIST_SERVICES_MIGRATION.md](PLAYLIST_SERVICES_MIGRATION.md)** - 播放列表服务迁移文档
+  - 迁移内容和步骤
+  - 导入路径变更
+  - 向后兼容性说明
+  - 服务模块详解
+
+- **[PLAYLIST_MIGRATION_COMPLETE.md](PLAYLIST_MIGRATION_COMPLETE.md)** - 播放列表迁移完成总结
+  - 迁移完成状态
+  - 功能验证
+  - 使用示例
+
 ### 播单模块重构
 - **[PLAYLIST_MODULE_REFACTOR.md](PLAYLIST_MODULE_REFACTOR.md)** - 播单模块重构详细说明
   - 模块拆分策略

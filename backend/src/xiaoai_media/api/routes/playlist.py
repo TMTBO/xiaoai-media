@@ -11,7 +11,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException
 
-from xiaoai_media.playlist import (
+from xiaoai_media.services import (
     AddItemRequest,
     CreatePlaylistRequest,
     Playlist,

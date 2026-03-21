@@ -14,7 +14,7 @@ from urllib.parse import quote
 
 from xiaoai_media import config
 from xiaoai_media.client import XiaoAiClient
-from xiaoai_media.playlist.models import (
+from xiaoai_media.services.playlist_models import (
     AddItemRequest,
     CreatePlaylistRequest,
     Playlist,
@@ -23,7 +23,7 @@ from xiaoai_media.playlist.models import (
     PlayPlaylistRequest,
     UpdatePlaylistRequest,
 )
-from xiaoai_media.playlist.storage import PlaylistStorage
+from xiaoai_media.services.playlist_storage import PlaylistStorage
 
 _log = logging.getLogger(__name__)
 

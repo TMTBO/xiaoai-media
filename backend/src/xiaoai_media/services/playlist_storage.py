@@ -9,7 +9,7 @@ import logging
 from pathlib import Path
 
 from xiaoai_media import config
-from xiaoai_media.playlist.models import Playlist, PlaylistIndex, PlaylistItem
+from xiaoai_media.services.playlist_models import Playlist, PlaylistIndex, PlaylistItem
 
 _log = logging.getLogger(__name__)
 
