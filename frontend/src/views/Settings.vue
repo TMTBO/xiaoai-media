@@ -58,7 +58,7 @@
         <div class="el-form-item__explain">持续监听音箱对话，自动拦截播放指令</div>
       </el-form-item>
       <el-form-item label="轮询间隔">
-        <el-input-number v-model="form.CONVERSATION_POLL_INTERVAL" :min="0.1" :max="60" :step="0.5" :precision="1" />
+        <el-input-number v-model="form.CONVERSATION_POLL_INTERVAL" :min="0.1" :max="60" :step="0.1" :precision="1" />
         <span style="margin-left: 8px">秒</span>
         <div class="el-form-item__explain">对话监听的轮询间隔时间</div>
       </el-form-item>
