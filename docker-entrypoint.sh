@@ -17,7 +17,7 @@ fi
 # 如果不是 root，或者已经是 appuser，直接执行命令
 if [ "$(id -u)" = "0" ]; then
     # 以 appuser 身份执行应用
-    exec su-exec appuser "$@"
+    exec gosu appuser "$@"
 else
     exec "$@"
 fi

@@ -12,9 +12,9 @@ RUN npm run build:prod
 # ── Stage 2: Python runtime ───────────────────────────────────────────────────
 FROM python:3.11-slim AS runtime
 
-# Install su-exec for safe user switching
+# Install gosu for safe user switching
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    su-exec \
+    gosu \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user
