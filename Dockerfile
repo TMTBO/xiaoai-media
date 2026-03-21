@@ -12,6 +12,11 @@ RUN npm run build:prod
 # ── Stage 2: Python runtime ───────────────────────────────────────────────────
 FROM python:3.11-slim AS runtime
 
+# Install su-exec for safe user switching
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    su-exec \
+    && rm -rf /var/lib/apt/lists/*
+
 # Create non-root user
 RUN groupadd -r appuser && useradd -r -g appuser appuser
 
@@ -29,6 +34,10 @@ RUN pip install --no-cache-dir -e backend/
 # Copy built frontend into static/ so FastAPI can serve it
 COPY --from=frontend-builder /build/frontend/dist ./static/
 
+# Copy entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Runtime environment defaults (real values come from --env-file or -e flags)
 ENV MI_REGION=cn \
     MI_USER="" \
@@ -42,6 +51,7 @@ EXPOSE 8000
 # Volume for persistent data (playlists, config, etc.)
 VOLUME ["/data/.xiaoai-media"]
 
-USER appuser
+# Start as root to fix permissions, then switch to appuser
+ENTRYPOINT ["docker-entrypoint.sh"]
 
 CMD ["uvicorn", "xiaoai_media.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
