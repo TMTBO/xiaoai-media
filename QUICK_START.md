@@ -1,69 +1,167 @@
 # 快速开始
 
-5 分钟快速启动 XiaoAi Media
+## 开发环境
 
-## 1. 配置
+### 1. 安装依赖
+
+```bash
+make install
+```
+
+### 2. 配置服务
 
 ```bash
 # 复制配置模板
 cp user_config_template.py user_config.py
 
-# 编辑配置
+# 编辑配置（填入小米账号信息）
 vim user_config.py
 ```
 
-最小配置：
-```python
-# user_config.py
-MI_USER = "your_account@example.com"
-MI_PASS = "your_password"
-MUSIC_API_BASE_URL = "http://192.168.1.100:5050"  # 改为你的局域网IP
-WAKE_WORDS = ["小爱同学", "小爱"]
-```
-
-## 2. 验证配置
+### 3. 启动服务
 
 ```bash
-make verify-config
-```
-
-## 3. 启动服务
-
-```bash
+# 启动后端和前端
 make dev
+
+# 或者分别启动
+make backend  # 后端：http://localhost:8000
+make frontend # 前端：http://localhost:5173
 ```
 
-访问：
-- 前端：http://localhost:5173
-- 后端：http://localhost:8000
+### 数据文件位置
 
-## 常见问题
+开发环境的数据文件存储在项目根目录：
 
-### Q: 配置文件在哪里？
-A: 项目根目录的 `user_config.py`
+```
+./
+├── user_config.py      # 配置文件
+├── conversation.db     # 对话历史
+├── playlists/          # 播放列表
+└── ...
+```
 
-### Q: 配置如何加载？
-A: 使用 `make dev` 启动时会自动加载配置。
+这些文件已添加到 `.gitignore`，不会被提交。
 
-### Q: 音箱播放失败？
-A: 将 `MUSIC_API_BASE_URL` 中的 `localhost` 改为本机局域网 IP。
+---
 
-## 完整文档
+## Docker 部署
 
-- [配置指南](docs/QUICK_CONFIG.md)
-- [常见问题](docs/CONFIG_FAQ.md)
-- [配置问题解答](docs/CONFIG_ANSWERS.md)
-- [迁移指南](docs/migration/MIGRATION_TO_USER_CONFIG.md)
-- [完整文档](docs/README.md)
-
-## 命令速查
+### 使用 Docker Compose（推荐）
 
 ```bash
-make install        # 安装依赖
-make dev            # 启动前后端
-make backend        # 只启动后端
-make frontend       # 只启动前端
-make test-config    # 测试配置
-make verify-config  # 验证配置
-make list-devices   # 查看设备列表
+# 1. 创建数据目录和配置文件
+mkdir -p ./data
+cp user_config_template.py ./data/user_config.py
+vim ./data/user_config.py
+
+# 2. 启动服务（自动拉取镜像）
+docker-compose up -d
+
+# 查看日志
+docker-compose logs -f
+
+# 停止服务
+docker-compose down
 ```
+
+### 使用 Docker 命令
+
+```bash
+# 1. 创建数据目录和配置文件
+mkdir -p ./data
+cp user_config_template.py ./data/user_config.py
+vim ./data/user_config.py
+
+# 2. 拉取并运行镜像
+docker run -d \
+  --name xiaoai-media \
+  -p 8000:8000 \
+  -v $(pwd)/data:/data \
+  ghcr.io/tmtbo/xiaoai-media:latest
+```
+
+### 可用镜像
+
+- `ghcr.io/tmtbo/xiaoai-media:latest` (GitHub Container Registry)
+- `thrillerone/xiaoai-media:latest` (Docker Hub)
+
+### 数据文件位置
+
+```bash
+# 创建数据目录
+mkdir -p ./data
+
+# 复制配置文件
+cp user_config_template.py ./data/user_config.py
+
+# 编辑配置
+vim ./data/user_config.py
+```
+
+### 2. 使用 Docker Compose
+
+```bash
+# 启动服务
+docker-compose up -d
+
+# 查看日志
+docker-compose logs -f
+
+# 停止服务
+docker-compose down
+```
+
+### 数据文件位置
+
+Docker 环境的数据文件存储在挂载的 `/data` 目录：
+
+```
+./data/              # 宿主机目录
+├── user_config.py   # 配置文件
+├── conversation.db  # 对话历史
+├── playlists/       # 播放列表
+└── ...
+```
+
+---
+
+## 常用命令
+
+```bash
+# 列出小爱音箱设备
+make list-devices
+
+# 验证配置
+make verify-config
+
+# 清理缓存
+make clean
+
+# 构建 Docker 镜像
+make docker-build
+
+# 运行 Docker 容器
+make docker-run
+```
+
+---
+
+## 环境说明
+
+| 环境 | HOME 设置 | 数据目录 |
+|------|-----------|---------|
+| 开发 | `HOME=.` | `./` |
+| Docker | `HOME=/data` | `/data/` |
+
+开发环境通过 Makefile 自动设置 `HOME=.`，使数据文件存储在项目根目录。
+
+---
+
+## 更多文档
+
+- [完整 README](README.md)
+- [配置指南](docs/config/README.md)
+- [Docker 部署](docs/deployment/DOCKER_GUIDE.md)
+- [开发环境配置](docs/config/DEV_ENVIRONMENT.md)
+- [API 文档](docs/api/README.md)

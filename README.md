@@ -1,174 +1,156 @@
-# XiaoAi Media
+# XiaoAI Media
 
-小爱音箱媒体控制系统
+小爱音箱媒体控制系统 - 让你的小爱音箱更智能
 
-## 功能特性
+---
+
+## ✨ 功能特性
 
 - 🎵 音乐播放控制
 - 🔊 音量控制
-- 💬 TTS文本转语音
+- 💬 TTS 文本转语音
 - 🎤 语音命令执行
 - 📱 设备管理
-- 🎧 **对话监听** - 自动拦截音箱播放指令，通过本服务获取音乐 URL
+- 🎧 对话监听 - 自动拦截音箱播放指令
+- 📋 播放列表管理
 
-## 快速开始
+---
 
-### 方式 1：Docker 部署（推荐）
+## 🚀 快速开始
 
-使用 Docker 部署最简单快捷：
+### Docker 部署（推荐）
+
+#### 方式 1：使用预构建镜像
 
 ```bash
 # 1. 创建数据目录和配置文件
-mkdir -p ~/.xiaoai-media
-cp user_config_template.py ~/.xiaoai-media/user_config.py
-vim ~/.xiaoai-media/user_config.py  # 编辑配置
+mkdir -p ./data
+cp user_config_template.py ./data/user_config.py
+vim ./data/user_config.py  # 编辑配置
 
-# 2. 使用 Docker Compose 启动
-docker-compose up -d
-
-# 或使用 docker run
-docker build -t xiaoai-media .
+# 2. 拉取并运行镜像
 docker run -d \
   --name xiaoai-media \
   -p 8000:8000 \
-  -v ~/.xiaoai-media:/data/.xiaoai-media \
-  xiaoai-media
+  -v $(pwd)/data:/data \
+  ghcr.io/tmtbo/xiaoai-media:latest
+```
+
+可用镜像：
+- `ghcr.io/tmtbo/xiaoai-media:latest` (GitHub Container Registry)
+- `thrillerone/xiaoai-media:latest` (Docker Hub)
+
+#### 方式 2：使用 Docker Compose
+
+```bash
+# 1. 创建数据目录和配置文件
+mkdir -p ./data
+cp user_config_template.py ./data/user_config.py
+vim ./data/user_config.py  # 编辑配置
+
+# 2. 启动服务
+docker-compose up -d
 ```
 
 访问 http://localhost:8000 即可使用。
 
-详细说明请查看：[Docker 部署指南](docs/deployment/DOCKER_GUIDE.md)
+详见：[Docker 部署指南](docs/deployment/DOCKER_GUIDE.md)
 
-### 方式 2：本地开发
+### 本地开发
 
-#### 环境配置
-
-本项目使用 Python 配置文件进行配置。
-
-1. 复制配置模板：
 ```bash
+# 1. 安装依赖
+make install
+
+# 2. 配置服务
 cp user_config_template.py user_config.py
+vim user_config.py  # 编辑配置
+
+# 3. 启动服务
+make dev
 ```
 
-2. 编辑 `user_config.py`，填入配置信息：
+详见：[快速开始指南](QUICK_START.md)
+
+---
+
+## ⚙️ 配置说明
+
+### 必填配置
+
 ```python
+# user_config.py
 MI_USER = "你的小米账号"
 MI_PASS = "你的密码"
-MI_DID = ""  # 设备ID（可选）
-MI_REGION = "cn"
+MI_DID = "设备ID"  # 可选
+```
+
+### 可选配置
+
+```python
+# 音乐 API 地址
+MUSIC_API_BASE_URL = "http://localhost:5050"
+
+# 本服务地址（必须使用音箱可访问的局域网 IP）
+SERVER_BASE_URL = "http://192.168.1.100:8000"
 
 # 唤醒词配置
-WAKE_WORDS = ["小爱同学", "小爱"]
+WAKE_WORDS = ["小爱", "播放"]
 ENABLE_WAKE_WORD_FILTER = True
 ```
 
-详细配置说明请查看：[用户配置指南](docs/config/USER_CONFIG_GUIDE.md)
+详见：[配置指南](docs/config/README.md)
 
-#### 验证配置
+---
 
-```bash
-make verify-config
-```
+## 📊 数据存储
 
-#### 启动后端服务
-
-```bash
-cd backend
-python3 -m uvicorn xiaoai_media.api.main:app --reload
-```
-
-#### 启动前端服务
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-## 数据存储
-
-**开发环境**：`./.xiaoai-media`（项目根目录，已加入 .gitignore）
-**生产环境**：`~/.xiaoai-media`（用户主目录）
+| 环境 | HOME 设置 | 数据目录 |
+|------|-----------|---------|
+| 开发 | `HOME=.` | `./` |
+| Docker | `HOME=/data` | `/data/` |
 
 ```
-.xiaoai-media/
-├── user_config.py          # 用户配置文件（可选）
-├── playlists.json          # 播单数据（自动生成）
-└── logs/                   # 日志文件（未来功能）
+$HOME/
+├── user_config.py      # 配置文件
+├── conversation.db     # 对话历史
+├── playlists/          # 播放列表
+└── logs/               # 日志文件
 ```
 
 详见：[数据存储说明](docs/config/DATA_STORAGE.md)
 
-## 文档
+---
 
-完整文档请查看：**[docs/](docs/)**
+## 📚 文档
 
-### 快速链接
-- 📖 [文档中心](docs/README.md) - 所有文档的入口
-- 🐳 [Docker 部署指南](docs/deployment/DOCKER_GUIDE.md) - 容器化部署
-- 💾 [数据存储说明](docs/config/DATA_STORAGE.md) - 数据目录和备份
-- ⚙️ [用户配置指南](docs/config/USER_CONFIG_GUIDE.md) - 配置说明和唤醒词设置
-- 🎵 [播放列表管理](docs/playlist/PLAYLIST_PLAYER_GUIDE.md) - 播放器使用指南
-- 🎤 [TTS功能文档](docs/tts/) - TTS完整使用指南
-- 🎧 [对话监听功能](docs/conversation/) - 自动拦截播放指令
-- 🧭 [文档导航](docs/NAVIGATION.md) - 快速找到你需要的文档
+### 核心文档
+- [快速开始](QUICK_START.md) - 5 分钟快速上手
+- [文档中心](docs/README.md) - 完整文档索引
+- [配置指南](docs/config/README.md) - 配置文件详解
+- [项目结构](docs/STRUCTURE.md) - 代码结构说明
 
-### 部署相关
-- [Docker 部署指南](docs/deployment/DOCKER_GUIDE.md) - Docker 和 Docker Compose 使用
-- [数据存储说明](docs/config/DATA_STORAGE.md) - 配置文件和数据目录管理
+### 功能文档
+- [播放列表管理](docs/playlist/README.md) - 播放列表功能
+- [对话监听](docs/conversation/README.md) - 对话监听功能
+- [TTS 语音](docs/tts/README.md) - 文字转语音
+- [音乐播放](docs/playback/README.md) - 音乐播放功能
 
-### TTS功能文档
-- [快速开始](docs/tts/README_TTS.md) - 5分钟上手
-- [完整指南](docs/tts/TTS_完整解决方案.md) - 深入了解
-- [测试指南](docs/tts/QUICK_TEST.md) - 测试和故障排查
+### 部署文档
+- [Docker 部署](docs/deployment/DOCKER_GUIDE.md) - Docker 完整指南
+- [开发环境](docs/config/DEV_ENVIRONMENT.md) - 本地开发配置
 
-### 播放器功能
-- [播放列表管理器](docs/playlist/PLAYLIST_PLAYER_GUIDE.md) - 完整使用指南
-- [快速参考](docs/playlist/QUICK_REFERENCE.md) - API 速查表
+### 开发文档
+- [API 参考](docs/api/README.md) - REST API 文档
+- [迁移指南](docs/migration/README.md) - 版本升级说明
 
-## TTS功能
+---
 
-本项目支持完整的TTS（文本转语音）功能，包括：
+## 🔌 API 示例
 
-- **TTS播报** - 播报文本消息
-- **命令执行** - 相当于对音箱说"小爱同学，..."
-- **静默模式** - 静默执行命令
-
-### 快速示例
-
-```python
-from xiaoai_media.client import XiaoAiClient
-
-async with XiaoAiClient() as client:
-    devices = await client.list_devices()
-    device_id = devices[0]["deviceID"]
-    
-    # TTS播报
-    await client.text_to_speech("您有新消息", device_id)
-    
-    # 执行命令
-    await client.send_command("播放音乐", device_id)
-    
-    # 静默执行
-    await client.send_command("关灯", device_id, silent=True)
-```
-
-### 详细文档
-
-完整的TTS功能文档请查看：**[docs/tts/](docs/tts/)**
-
-快速链接：
-- [快速开始指南](docs/tts/README_TTS.md) - 5分钟上手
-- [完整解决方案](docs/tts/TTS_完整解决方案.md) - 深入了解所有功能
-- [技术实现说明](docs/tts/TTS修复说明.md) - 代码和技术细节
-- [功能验证报告](docs/tts/功能验证报告.md) - 完整测试结果
-- [测试指南](docs/tts/QUICK_TEST.md) - 测试方法和故障排查
-
-## API接口
-
-### TTS播报
+### TTS 播报
 ```bash
-POST /tts
+POST /api/tts
 {
   "text": "您好",
   "device_id": "xxx"
@@ -177,7 +159,7 @@ POST /tts
 
 ### 执行命令
 ```bash
-POST /command
+POST /api/command
 {
   "text": "播放音乐",
   "device_id": "xxx",
@@ -187,7 +169,7 @@ POST /command
 
 ### 音量控制
 ```bash
-POST /volume
+POST /api/volume
 {
   "volume": 50,
   "device_id": "xxx"
@@ -196,59 +178,75 @@ POST /volume
 
 ### 设备列表
 ```bash
-GET /devices
+GET /api/devices
 ```
 
-## 测试
+详见：[API 文档](docs/api/README.md)
 
-运行TTS功能测试：
-```bash
-python3 test/test_tts.py
-```
+---
 
-## 项目结构
-
-```
-xiaoai-media/
-├── backend/              # 后端服务
-│   └── src/
-│       └── xiaoai_media/
-│           ├── api/      # API路由
-│           ├── client.py # 核心客户端
-│           └── config.py # 配置
-├── frontend/             # 前端界面
-├── docs/                 # 文档
-│   └── tts/             # TTS功能文档
-├── test/                 # 测试脚本
-└── README.md            # 本文件
-```
-
-## 支持的设备
-
-支持所有小米/小爱音箱系列，包括：
-- 小米智能音箱 Pro (OH2P)
-- 小爱音箱系列 (LX06, LX01, LX04等)
-- Redmi小爱音箱系列 (X10A, X6A等)
-
-## 技术栈
+## 🛠️ 技术栈
 
 ### 后端
-- Python 3.7+
+- Python 3.11+
 - FastAPI
+- SQLite
 - aiohttp
-- miservice_fork (yihong0618/MiService)
 
 ### 前端
-- Vue.js
+- Vue 3
 - TypeScript
 - Vite
+- Element Plus
 
-## 参考资料
+### 部署
+- Docker
+- Docker Compose
 
-- [MiService Fork](https://github.com/yihong0618/MiService) - 增强版小米云服务库
-- [MiService](https://github.com/Yonsm/MiService) - 原版小米云服务库
-- [xiaomusic](https://github.com/hanxi/xiaomusic) - 小爱音箱播放器
+---
 
-## License
+## 📱 支持的设备
 
-MIT
+支持所有小米/小爱音箱系列：
+- 小米智能音箱 Pro (OH2P)
+- 小爱音箱系列 (LX06, LX01, LX04)
+- Redmi 小爱音箱系列 (X10A, X6A)
+
+---
+
+## 🐳 Docker 镜像
+
+### 镜像仓库
+
+- **GitHub Container Registry**: `ghcr.io/tmtbo/xiaoai-media:latest`
+- **Docker Hub**: `thrillerone/xiaoai-media:latest`
+
+### 镜像标签
+
+- `latest` - 最新稳定版本
+- `v1.x.x` - 特定版本号
+
+### 拉取镜像
+
+```bash
+# 从 GitHub Container Registry
+docker pull ghcr.io/tmtbo/xiaoai-media:latest
+
+# 从 Docker Hub
+docker pull thrillerone/xiaoai-media:latest
+```
+
+---
+
+## 🔗 相关链接
+
+- [GitHub 仓库](https://github.com/tmtbo/xiaoai-media)
+- [更新日志](CHANGELOG.md)
+- [问题反馈](https://github.com/tmtbo/xiaoai-media/issues)
+- [MiService Fork](https://github.com/yihong0618/MiService)
+
+---
+
+## 📄 许可证
+
+MIT License

@@ -21,7 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN groupadd -r appuser && useradd -r -g appuser -d /data appuser
 
 # Create data directory
-RUN mkdir -p /data/.xiaoai-media && chown -R appuser:appuser /data
+RUN mkdir -p /data && chown -R appuser:appuser /data
 
 WORKDIR /app
 
@@ -45,7 +45,7 @@ ENV HOME=/data
 EXPOSE 8000
 
 # Volume for persistent data (playlists, config, etc.)
-VOLUME ["/data/.xiaoai-media"]
+VOLUME ["/data"]
 
 # Start as root to fix permissions, then switch to appuser
 ENTRYPOINT ["docker-entrypoint.sh"]

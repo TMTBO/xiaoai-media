@@ -27,7 +27,6 @@ _ALLOWED_KEYS = {
     "WAKE_WORDS",
     "LOG_LEVEL",
     "VERBOSE_PLAYBACK_LOG",
-    "PLAYLIST_STORAGE_DIR",
 }
 
 
@@ -80,8 +79,17 @@ def _read_user_config() -> dict[str, str | bool | int | float]:
 def _write_user_config(data: dict[str, str | bool | int | float | list]) -> None:
     """更新 user_config.py 中的配置变量"""
     config_path = config.get_config_file_path(required=True)
-    if not config_path or not config_path.exists():
-        raise HTTPException(status_code=404, detail="user_config.py not found")
+    if not config_path:
+        raise HTTPException(status_code=500, detail="Cannot determine config file path")
+    
+    # 如果配置文件不存在，创建默认配置文件
+    if not config_path.exists():
+        # 确保数据目录存在
+        data_dir = config.get_data_dir()
+        data_dir.mkdir(parents=True, exist_ok=True)
+        
+        # 创建空配置文件
+        config_path.write_text("# XiaoAi Media 配置文件\n\n", encoding="utf-8")
 
     content = config_path.read_text(encoding="utf-8")
 
@@ -187,7 +195,6 @@ async def get_config():
         "WAKE_WORDS": config.WAKE_WORDS,
         "LOG_LEVEL": getattr(config, "LOG_LEVEL", "INFO"),
         "VERBOSE_PLAYBACK_LOG": getattr(config, "VERBOSE_PLAYBACK_LOG", False),
-        "PLAYLIST_STORAGE_DIR": config.PLAYLIST_STORAGE_DIR,
     }
 
 
@@ -206,7 +213,6 @@ class ConfigUpdate(BaseModel):
     WAKE_WORDS: list[str] | None = None
     LOG_LEVEL: str | None = Field(None, pattern="^(DEBUG|INFO|WARNING|ERROR|CRITICAL)$")
     VERBOSE_PLAYBACK_LOG: bool | None = None
-    PLAYLIST_STORAGE_DIR: str | None = None
 
 
 @router.put("")

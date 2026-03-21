@@ -1,142 +1,111 @@
 # 文档索引
 
-完整的文档列表和快速导航。
-
-## 📚 主要文档
-
-### 入门文档
-- [README.md](README.md) - 文档中心首页
-- [NAVIGATION.md](NAVIGATION.md) - 文档导航
-- [../QUICK_START.md](../QUICK_START.md) - 5分钟快速开始
-- [../README.md](../README.md) - 项目主页
-
-### 配置文档
-- [QUICK_CONFIG.md](QUICK_CONFIG.md) - 快速配置指南
-- [USER_CONFIG_GUIDE.md](USER_CONFIG_GUIDE.md) - 完整配置指南
-- [CONFIG_FAQ.md](CONFIG_FAQ.md) - 配置常见问题
-- [CONFIG_ANSWERS.md](CONFIG_ANSWERS.md) - 配置问题解答
-- [CONFIG_CHEATSHEET.md](CONFIG_CHEATSHEET.md) - 配置速查表
-- [USER_CONFIG_SUMMARY.md](USER_CONFIG_SUMMARY.md) - 配置系统技术总结
-- [USER_CONFIG_IMPLEMENTATION.md](USER_CONFIG_IMPLEMENTATION.md) - 配置系统实现总结
-
-### 迁移文档
-- [migration/](migration/) - 迁移文档目录
-  - [migration/README.md](migration/README.md) - 迁移文档索引
-  - [migration/MIGRATION_TO_USER_CONFIG.md](migration/MIGRATION_TO_USER_CONFIG.md) - 迁移指南
-  - [migration/MIGRATION_COMPLETE.md](migration/MIGRATION_COMPLETE.md) - 迁移完成报告
-  - [migration/IMPLEMENTATION_COMPLETE.md](migration/IMPLEMENTATION_COMPLETE.md) - 实现完成报告
-  - [migration/FINAL_SUMMARY.md](migration/FINAL_SUMMARY.md) - 最终总结
-  - [migration/CLEANUP_SUMMARY.md](migration/CLEANUP_SUMMARY.md) - 清理总结
-  - [migration/MIGRATION_SUMMARY.md](migration/MIGRATION_SUMMARY.md) - 迁移总结
-
-### 功能文档
-
-#### 播放功能
-- [playback/](playback/) - 播放功能文档目录
-  - [playback/README.md](playback/README.md) - 播放功能索引
-  - [playback/播放错误快速修复.md](playback/播放错误快速修复.md) - 快速修复指南
-  - [playback/代理URL使用指南.md](playback/代理URL使用指南.md) - 代理使用指南
-  - [playback/PLAYBACK_TROUBLESHOOTING.md](playback/PLAYBACK_TROUBLESHOOTING.md) - 故障排查
-
-#### TTS功能
-- [tts/](tts/) - TTS功能文档目录
-  - [tts/README.md](tts/README.md) - TTS功能索引
-  - [tts/README_TTS.md](tts/README_TTS.md) - 快速开始
-  - [tts/TTS_完整解决方案.md](tts/TTS_完整解决方案.md) - 完整指南
-  - [tts/QUICK_TEST.md](tts/QUICK_TEST.md) - 测试指南
-
-#### 对话监听
-- [conversation/](conversation/) - 对话监听文档目录
-  - [conversation/README.md](conversation/README.md) - 对话监听索引
-  - [conversation/QUICK_START.md](conversation/QUICK_START.md) - 快速开始
-  - [conversation/功能说明.md](conversation/功能说明.md) - 功能说明
-  - [conversation/使用说明.md](conversation/使用说明.md) - 使用指南
-
-### API文档
-- [API_REFERENCE.md](API_REFERENCE.md) - API接口参考
-- [API实现说明.md](API实现说明.md) - API实现说明
-
-### 升级和迁移
-- [UPGRADE_GUIDE.md](UPGRADE_GUIDE.md) - 升级指南
-- [MISERVICE_MIGRATION.md](MISERVICE_MIGRATION.md) - MiService迁移说明
-- [BEFORE_AFTER.md](BEFORE_AFTER.md) - 升级前后对比
-
-### 其他文档
-- [ORGANIZATION_SUMMARY.md](ORGANIZATION_SUMMARY.md) - 组织总结
-- [../CHANGELOG.md](../CHANGELOG.md) - 更新日志
-- [../ORGANIZATION_COMPLETE.md](../ORGANIZATION_COMPLETE.md) - 组织完成报告
-
-## 🎯 按主题查找
-
-### 我想快速开始
-1. [快速开始](../QUICK_START.md)
-2. [快速配置](QUICK_CONFIG.md)
-3. [TTS快速开始](tts/README_TTS.md)
-
-### 我想配置系统
-1. [快速配置指南](QUICK_CONFIG.md)
-2. [完整配置指南](USER_CONFIG_GUIDE.md)
-3. [配置常见问题](CONFIG_FAQ.md)
-4. [配置速查表](CONFIG_CHEATSHEET.md)
-
-### 我想迁移配置
-1. [迁移指南](migration/MIGRATION_TO_USER_CONFIG.md)
-2. [迁移文档索引](migration/README.md)
-
-### 我想使用播放功能
-1. [播放功能索引](playback/README.md)
-2. [快速修复指南](playback/播放错误快速修复.md)
-3. [故障排查](playback/PLAYBACK_TROUBLESHOOTING.md)
-
-### 我想使用TTS功能
-1. [TTS快速开始](tts/README_TTS.md)
-2. [完整解决方案](tts/TTS_完整解决方案.md)
-3. [测试指南](tts/QUICK_TEST.md)
-
-### 我想使用对话监听
-1. [对话监听快速开始](conversation/QUICK_START.md)
-2. [功能说明](conversation/功能说明.md)
-3. [使用说明](conversation/使用说明.md)
-
-### 我遇到了问题
-1. [配置常见问题](CONFIG_FAQ.md)
-2. [播放故障排查](playback/PLAYBACK_TROUBLESHOOTING.md)
-3. [TTS测试指南](tts/QUICK_TEST.md)
-
-## 📊 文档统计
-
-### 配置文档（13个）
-- 快速指南：2个
-- 完整指南：2个
-- 问题解答：2个
-- 技术文档：2个
-- 迁移文档：6个
-
-### 功能文档（30+个）
-- 播放功能：9个
-- TTS功能：6个
-- 对话监听：15个
-
-### 其他文档（10+个）
-- API文档：2个
-- 升级文档：3个
-- 项目文档：5个
-
-## 🔍 搜索提示
-
-使用以下关键词搜索文档：
-
-- **配置**: CONFIG, USER_CONFIG, QUICK_CONFIG
-- **迁移**: MIGRATION, CLEANUP
-- **播放**: playback, PLAYBACK, 播放
-- **TTS**: tts, TTS, 文本转语音
-- **对话**: conversation, 对话, 监听
-- **问题**: FAQ, TROUBLESHOOTING, 故障
-
-## 📝 文档更新
-
-最后更新：2024-XX-XX
+快速查找 XiaoAI Media 文档。
 
 ---
 
-**返回：** [文档中心](README.md) | [文档导航](NAVIGATION.md)
+## 📖 核心文档
+
+| 文档 | 说明 | 路径 |
+|------|------|------|
+| 快速开始 | 5 分钟快速上手 | [QUICK_START.md](../QUICK_START.md) |
+| 项目说明 | 完整项目介绍 | [README.md](../README.md) |
+| 项目结构 | 代码结构说明 | [STRUCTURE.md](STRUCTURE.md) |
+| 更新日志 | 版本更新记录 | [CHANGELOG.md](../CHANGELOG.md) |
+
+---
+
+## 🔧 配置文档
+
+| 文档 | 说明 | 路径 |
+|------|------|------|
+| 配置指南 | 配置总览 | [config/README.md](config/README.md) |
+| 开发环境 | 本地开发配置 | [config/DEV_ENVIRONMENT.md](config/DEV_ENVIRONMENT.md) |
+| 数据存储 | 数据目录说明 | [config/DATA_STORAGE.md](config/DATA_STORAGE.md) |
+| 用户配置 | 配置文件详解 | [config/USER_CONFIG_GUIDE.md](config/USER_CONFIG_GUIDE.md) |
+| 配置 FAQ | 常见问题 | [config/CONFIG_FAQ.md](config/CONFIG_FAQ.md) |
+
+---
+
+## 🚀 部署文档
+
+| 文档 | 说明 | 路径 |
+|------|------|------|
+| Docker 指南 | Docker 完整指南 | [deployment/DOCKER_GUIDE.md](deployment/DOCKER_GUIDE.md) |
+| Docker 快速开始 | Docker 快速部署 | [deployment/DOCKER_QUICK_START.md](deployment/DOCKER_QUICK_START.md) |
+| Docker Hub CI | CI/CD 配置 | [deployment/DOCKER_HUB_CI.md](deployment/DOCKER_HUB_CI.md) |
+
+---
+
+## 🎵 功能文档
+
+### 播放列表
+| 文档 | 说明 | 路径 |
+|------|------|------|
+| 播放列表总览 | 功能介绍 | [playlist/README.md](playlist/README.md) |
+| 播放列表指南 | 使用指南 | [playlist/PLAYLIST_GUIDE.md](playlist/PLAYLIST_GUIDE.md) |
+| 快速参考 | 快速查询 | [playlist/QUICK_REFERENCE.md](playlist/QUICK_REFERENCE.md) |
+
+### 对话监听
+| 文档 | 说明 | 路径 |
+|------|------|------|
+| 对话监听总览 | 功能介绍 | [conversation/README.md](conversation/README.md) |
+| 快速开始 | 快速上手 | [conversation/QUICK_START.md](conversation/QUICK_START.md) |
+| 完整指南 | 详细说明 | [conversation/完整指南.md](conversation/完整指南.md) |
+
+### 音乐播放
+| 文档 | 说明 | 路径 |
+|------|------|------|
+| 播放功能总览 | 功能介绍 | [playback/README.md](playback/README.md) |
+| 快速指南 | 快速上手 | [playback/QUICK_PLAYBACK_GUIDE.md](playback/QUICK_PLAYBACK_GUIDE.md) |
+| 故障排查 | 问题解决 | [playback/PLAYBACK_TROUBLESHOOTING.md](playback/PLAYBACK_TROUBLESHOOTING.md) |
+
+### TTS 语音
+| 文档 | 说明 | 路径 |
+|------|------|------|
+| TTS 总览 | 功能介绍 | [tts/README.md](tts/README.md) |
+| 快速测试 | 快速测试 | [tts/QUICK_TEST.md](tts/QUICK_TEST.md) |
+| 完整方案 | 详细说明 | [tts/TTS_完整解决方案.md](tts/TTS_完整解决方案.md) |
+
+---
+
+## 💻 开发文档
+
+| 文档 | 说明 | 路径 |
+|------|------|------|
+| API 参考 | REST API 文档 | [api/README.md](api/README.md) |
+| API 详细说明 | API 实现细节 | [api/API_REFERENCE.md](api/API_REFERENCE.md) |
+
+---
+
+## 🔄 迁移文档
+
+| 文档 | 说明 | 路径 |
+|------|------|------|
+| 迁移指南 | 版本升级总览 | [migration/README.md](migration/README.md) |
+| HOME 目录迁移 | 最新迁移说明 | [migration/HOME_DIR_MIGRATION.md](migration/HOME_DIR_MIGRATION.md) |
+| 用户配置迁移 | 配置系统迁移 | [migration/MIGRATION_TO_USER_CONFIG.md](migration/MIGRATION_TO_USER_CONFIG.md) |
+
+---
+
+## 🔍 按需查找
+
+### 我是新用户
+1. [快速开始](../QUICK_START.md)
+2. [配置指南](config/README.md)
+3. [Docker 部署](deployment/DOCKER_GUIDE.md)
+
+### 我要开发
+1. [项目结构](STRUCTURE.md)
+2. [开发环境](config/DEV_ENVIRONMENT.md)
+3. [API 文档](api/README.md)
+
+### 我遇到问题
+1. [配置 FAQ](config/CONFIG_FAQ.md)
+2. [播放故障排查](playback/PLAYBACK_TROUBLESHOOTING.md)
+3. [GitHub Issues](https://github.com/tmtbo/xiaoai-media/issues)
+
+### 我要升级版本
+1. [迁移指南](migration/README.md)
+2. [更新日志](../CHANGELOG.md)
+3. [HOME 目录迁移](migration/HOME_DIR_MIGRATION.md)

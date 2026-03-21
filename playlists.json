@@ -1,0 +1,2188 @@
+{
+  "巅峰榜·热歌_1774107372984": {
+    "id": "巅峰榜·热歌_1774107372984",
+    "name": "巅峰榜·热歌",
+    "type": "music",
+    "description": "从排行榜\"巅峰榜·热歌\"创建的播单",
+    "items": [
+      {
+        "title": "雨过后的风景",
+        "url": "",
+        "artist": "Dizzy Dizzo (蔡诗芸)",
+        "album": "黑色彩虹",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M0000038xSkp1EcVBf.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "004GEXe13HYtsE",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "3.7MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "9.3MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "26.0MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "155.1MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "25.8MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "66.0MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "Body to Body",
+        "url": "",
+        "artist": "BTS",
+        "album": "ARIRANG (Explicit Ver.)",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000003uMdMO0zGnIu.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "001r7qe62v2vXj",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "2.9MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "7.2MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "38.9MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "130.9MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "22.3MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "57.7MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "SWIM",
+        "url": "",
+        "artist": "BTS",
+        "album": "ARIRANG (Explicit Ver.)",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000003uMdMO0zGnIu.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "003ntttV0CC57P",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "2.4MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "6.1MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "31.9MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "109.8MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "18.4MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "48.2MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "宠",
+        "url": "",
+        "artist": "檀健次",
+        "album": "宠",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000001pEKRz4LW4Vx.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "004F7UlD2YXJtR",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "4.3MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "10.8MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "53.1MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "187.0MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "25.5MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "66.0MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "恋人",
+        "url": "",
+        "artist": "李荣浩",
+        "album": "黑马",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000004HaG7p4ZkhXA.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "001auUcH4WQs2V",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "4.2MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "10.5MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "53.6MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "168.7MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "26.9MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "68.9MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "茶花开了，该回家了",
+        "url": "",
+        "artist": "王睿卓 / 加木",
+        "album": "茶花开了，该回家了",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000001KCGcF29Na3i.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "002I9S2s4Tqxlv",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "2.9MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "7.2MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "20.1MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "121.1MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "爱错",
+        "url": "",
+        "artist": "王力宏",
+        "album": "心中的日月",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000002ElVxf43rOue.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "004fneUm24gD2c",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "3.6MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "9.1MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "26.4MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "156.4MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "25.6MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "65.8MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "一样的月光",
+        "url": "",
+        "artist": "徐佳莹",
+        "album": "LaLa首张创作专辑",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000000cchEp2CGNEf.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "001KyJTt1kbkfP",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "3.7MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "9.2MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "28.2MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "165.8MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "27.6MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "70.6MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "唯一",
+        "url": "",
+        "artist": "G.E.M. 邓紫棋",
+        "album": "T.I.M.E.",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000002d6m7k0xCbSv.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "001NgljR0RUhy1",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "3.9MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "9.7MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "48.6MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "152.9MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "23.9MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "60.5MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "咏春",
+        "url": "",
+        "artist": "七朵组合",
+        "album": "咏春",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000001UU6t44MTqcq.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "002kLjjv0w884W",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "4.1MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "10.3MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "28.7MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "171.0MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "28.3MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "71.9MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "失眠",
+        "url": "",
+        "artist": "Suki刘舒妤",
+        "album": "Ladies Night",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000002xCeeN4EJ1Ke.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "001Y2S0F1OaM2s",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "3.2MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "17.7MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "46.5MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "演员",
+        "url": "",
+        "artist": "薛之谦",
+        "album": "绅士",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000003y8dsH2wBHlo.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "001Qu4I30eVFYb",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "4.0MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "10.0MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "46.1MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "154.6MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "24.4MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "62.0MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "雨爱",
+        "url": "",
+        "artist": "杨丞琳",
+        "album": "雨爱",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000000jcKFG0sQrD0.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "000rh0dE2TyUic",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "4.0MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "9.9MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "32.1MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "181.7MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "31.2MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "80.6MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "NORMAL",
+        "url": "",
+        "artist": "BTS",
+        "album": "ARIRANG (Explicit Ver.)",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000003uMdMO0zGnIu.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "000MuXH14ChUUH",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "2.8MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "6.9MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "37.3MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "21.4MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "55.4MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "离开我的依赖",
+        "url": "",
+        "artist": "王艳薇",
+        "album": "离开我的依赖",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000004CSyAN1oc97b.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "001GOlCd2HImcY",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "3.6MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "8.9MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "28.4MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "162.0MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "我怀念的",
+        "url": "",
+        "artist": "孙燕姿",
+        "album": "逆光",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000000P3l050Olt27.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "000BO3xy4fd8BJ",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "4.4MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "11.0MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "28.5MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "175.6MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "28.0MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "72.5MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "Like Animals",
+        "url": "",
+        "artist": "BTS",
+        "album": "ARIRANG (Explicit Ver.)",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000003uMdMO0zGnIu.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "001pN9sj3Y1Lyc",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "2.9MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "7.2MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "39.1MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "134.3MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "22.8MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "59.1MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "读心术",
+        "url": "",
+        "artist": "卓文萱",
+        "album": "幸福氧气",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000004Xux2V0Phif9.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "000Ohkb52ZUMTE",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "4.0MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "9.9MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "31.4MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "179.8MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "30.4MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "78.8MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "One More Night",
+        "url": "",
+        "artist": "BTS",
+        "album": "ARIRANG (Explicit Ver.)",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000003uMdMO0zGnIu.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "002xdJKn37Xm2F",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "2.6MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "6.4MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "34.8MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "116.8MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "20.1MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "51.2MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "Please",
+        "url": "",
+        "artist": "BTS",
+        "album": "ARIRANG (Explicit Ver.)",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000003uMdMO0zGnIu.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "004QExMV1ppdsn",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "2.6MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "6.6MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "35.8MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "120.4MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "20.8MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "53.7MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "小半",
+        "url": "",
+        "artist": "陈粒",
+        "album": "小梦大半",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000004fAhFe0fdHYF.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "001hs89m3C5p3g",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "4.5MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "11.3MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "30.7MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "189.6MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "天赋",
+        "url": "",
+        "artist": "唐嫣 / 罗晋",
+        "album": "锦绣未央 电视剧原声带",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000003ngbki4P4sVT.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "001jzwcD208snK",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "4.2MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "10.6MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "29.6MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "169.4MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "26.6MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "68.4MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "they don't know 'bout us",
+        "url": "",
+        "artist": "BTS",
+        "album": "ARIRANG (Explicit Ver.)",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000003uMdMO0zGnIu.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "002yJq9v4enwOS",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "2.5MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "6.3MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "30.2MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "17.1MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "44.1MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "FYA",
+        "url": "",
+        "artist": "BTS",
+        "album": "ARIRANG (Explicit Ver.)",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000003uMdMO0zGnIu.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "0049B5WA12MrD0",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "2.8MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "6.9MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "37.8MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "22.3MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "57.6MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "特别的人",
+        "url": "",
+        "artist": "方大同",
+        "album": "危险世界",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000000GvdTR0qcKh8.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "003cSLOO35W3yP",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "4.0MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "9.9MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "25.8MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "157.7MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "26.4MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "67.0MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "Hooligan",
+        "url": "",
+        "artist": "BTS",
+        "album": "ARIRANG (Explicit Ver.)",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000003uMdMO0zGnIu.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "002k8i6A17UIZ7",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "2.8MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "6.9MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "35.8MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "123.2MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "21.0MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "54.6MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "Aliens",
+        "url": "",
+        "artist": "BTS",
+        "album": "ARIRANG (Explicit Ver.)",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000003uMdMO0zGnIu.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "004Y2ueY158sAG",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "2.6MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "6.4MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "35.0MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "118.0MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "20.5MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "53.4MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "Merry Go Round",
+        "url": "",
+        "artist": "BTS",
+        "album": "ARIRANG (Explicit Ver.)",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000003uMdMO0zGnIu.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "000Vm4aE1sniD8",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "3.5MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "8.8MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "43.5MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "149.3MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "24.3MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "62.3MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "Lonely",
+        "url": "",
+        "artist": "Nana",
+        "album": "Nana",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000000V1USK3p6z4D.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "004JGgSX45imUV",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "5.8MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "14.5MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "47.9MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "275.3MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "46.4MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "119.2MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "人间共鸣",
+        "url": "",
+        "artist": "李健",
+        "album": "人间共鸣",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000003RVJjp1svtyz.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "001ve92b4N7wT1",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "4.0MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "9.9MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "48.3MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "150.6MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "23.4MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "60.6MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "Into the Sun",
+        "url": "",
+        "artist": "BTS",
+        "album": "ARIRANG (Explicit Ver.)",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000003uMdMO0zGnIu.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "003fSrqx1FKuJr",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "3.5MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "8.7MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "45.0MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "152.1MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "25.4MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "65.2MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "春娇与志明",
+        "url": "",
+        "artist": "街道办GDC / 欧阳耀莹",
+        "album": "春娇与志明",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000000lrXyA0MlEEo.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "004Uln1G2Aunqw",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "3.1MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "7.8MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "40.8MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "137.6MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "23.3MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "57.5MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "别怕变老",
+        "url": "",
+        "artist": "王以太 / 艾热AIR",
+        "album": "幸存者的负罪感 (Explicit)",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000000KoPeI484qGg.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "003KrJNS0lGgUf",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "3.8MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "9.4MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "51.9MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "162.5MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "27.0MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "70.1MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "2.0",
+        "url": "",
+        "artist": "BTS",
+        "album": "ARIRANG (Explicit Ver.)",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000003uMdMO0zGnIu.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "002Ha9JP1mFRf1",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "2.6MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "6.5MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "34.6MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "115.3MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "19.8MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "51.0MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "Always Online",
+        "url": "",
+        "artist": "林俊杰",
+        "album": "JJ陆",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000002g6zv02X7SNi.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "001N8e5Q4Gjxda",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "3.4MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "8.6MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "24.0MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "143.6MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "24.0MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "61.7MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "其实",
+        "url": "",
+        "artist": "薛之谦",
+        "album": "意外",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000000QgFcm0v8WaF.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "003ouHMP12glVD",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "3.7MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "9.2MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "22.0MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "154.2MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "你就不要想起我",
+        "url": "",
+        "artist": "田馥甄",
+        "album": "渺小",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000001RIii71KURpF.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "001J4FTi3A2UH8",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "4.3MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "10.8MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "54.6MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "170.8MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "26.8MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "68.5MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "红色高跟鞋",
+        "url": "",
+        "artist": "蔡健雅",
+        "album": "若你碰到他",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000002dOge41xlS8x.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "003IGhQO0JdnuC",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "3.2MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "7.9MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "24.3MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "142.6MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "23.8MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "61.7MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "我们俩",
+        "url": "",
+        "artist": "郭顶",
+        "album": "微微",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000003sMyYb4HZAAz.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "003MASv802hpJ7",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "3.0MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "7.4MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "20.4MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "122.5MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "20.5MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "52.5MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "我对缘分小心翼翼",
+        "url": "",
+        "artist": "林俊杰",
+        "album": "我对缘分小心翼翼（影视剧《逐玉》主题曲）",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000003Z2Hee3ZhPz5.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "001xu6nK47SZjH",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "4.3MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "10.8MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "57.3MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "29.1MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "75.0MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "锁",
+        "url": "",
+        "artist": "TF_ING张子墨",
+        "album": "锁",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000000XPnel0Xsj5B.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "0031DL8C2JpFzq",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "2.7MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "6.8MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "37.9MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "123.0MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "20.2MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "52.5MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "第57次取消发送",
+        "url": "",
+        "artist": "菲菲公主（陆绮菲）",
+        "album": "第57次取消发送",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000000KrDC019mc82.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "001P6YOB0eXLlj",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "2.8MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "6.9MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "35.4MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "107.4MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "17.6MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "44.9MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "江南",
+        "url": "",
+        "artist": "林俊杰",
+        "album": "第二天堂",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000000y5gq7449K9I.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "004TXEXY2G2c7C",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "4.1MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "10.2MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "29.9MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "174.9MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "28.7MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "72.4MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "开始懂了",
+        "url": "",
+        "artist": "孙燕姿",
+        "album": "我要的幸福",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000004KRIQr1oCp2A.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "003PSWcB4EDl6P",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "4.1MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "10.4MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "27.3MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "165.9MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "27.2MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "69.6MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "多远都要在一起",
+        "url": "",
+        "artist": "G.E.M. 邓紫棋",
+        "album": "新的心跳",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000003c616O2Zlswm.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "003S1hgM2asCye",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "3.3MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "8.3MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "22.9MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "139.2MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "22.6MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "58.1MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "晴天",
+        "url": "",
+        "artist": "周杰伦",
+        "album": "叶惠美",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000000MkMni19ClKG.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "0039MnYb0qxYhV",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "4.1MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "10.3MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "52.8MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "178.3MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "29.7MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "76.7MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "遇见",
+        "url": "",
+        "artist": "孙燕姿",
+        "album": "The Moment",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000002ehzTm0TxXC2.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "001xJbdb2MBaaz",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "3.2MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "8.0MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "19.3MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "122.3MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "18.5MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "48.3MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "爱情讯息",
+        "url": "",
+        "artist": "郭静",
+        "album": "下一个天亮",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000003PKZMI1Wyx1A.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "000DOpDe2GfLaq",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "4.3MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "10.7MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "30.4MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "181.7MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "30.0MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "77.2MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "偏爱",
+        "url": "",
+        "artist": "张芸京",
+        "album": "破天荒",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000003ha6C92GRuVE.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "003Ho2cO2RXwUc",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "3.2MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "8.1MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "24.2MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "143.3MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "23.5MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "60.4MB"
+            }
+          ]
+        }
+      },
+      {
+        "title": "Dear D (亲爱的告诉你)",
+        "url": "",
+        "artist": "项睿娴",
+        "album": "Dear D (亲爱的告诉你)",
+        "duration": 0,
+        "cover_url": "https://y.gtimg.cn/music/photo_new/T002R500x500M000004MZ5Zt2DiuCz.jpg",
+        "custom_params": {
+          "type": "music",
+          "platform": "tx",
+          "song_id": "0026QZf64RIfkH",
+          "qualities": [
+            {
+              "type": "128k",
+              "format": "mp3",
+              "size": "3.0MB"
+            },
+            {
+              "type": "320k",
+              "format": "mp3",
+              "size": "7.5MB"
+            },
+            {
+              "type": "flac",
+              "format": "flac",
+              "size": "37.9MB"
+            },
+            {
+              "type": "master",
+              "format": "flac",
+              "size": "117.0MB"
+            },
+            {
+              "type": "atmos",
+              "format": "flac",
+              "size": "18.2MB"
+            },
+            {
+              "type": "atmos_plus",
+              "format": "flac",
+              "size": "47.0MB"
+            }
+          ]
+        }
+      }
+    ],
+    "voice_keywords": [],
+    "created_at": "2026-03-21T23:36:12.985006",
+    "updated_at": "2026-03-21T23:36:12.996131"
+  }
+}

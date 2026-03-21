@@ -28,8 +28,7 @@ router = APIRouter(prefix="/playlists", tags=["playlists"])
 
 def _get_playlist_file() -> Path:
     """获取播单存储文件路径"""
-    storage_dir = Path(config.PLAYLIST_STORAGE_DIR).expanduser()
-    return storage_dir / "playlists.json"
+    return config.get_data_dir() / "playlists.json"
 
 
 # ---------------------------------------------------------------------------
@@ -101,7 +100,29 @@ class PlayPlaylistRequest(BaseModel):
 
 def _ensure_storage_dir():
     """确保存储目录存在"""
-    _get_playlist_file().parent.mkdir(parents=True, exist_ok=True)
+    try:
+        storage_dir = _get_playlist_file().parent
+        storage_dir.mkdir(parents=True, exist_ok=True)
+        _log.info("Playlist storage directory: %s", storage_dir)
+        
+        # 验证目录是否可写
+        test_file = storage_dir / ".write_test"
+        try:
+            test_file.touch()
+            test_file.unlink()
+            _log.info("Storage directory is writable")
+        except Exception as e:
+            _log.error("Storage directory is not writable: %s", e)
+            raise HTTPException(
+                status_code=500,
+                detail=f"Storage directory {storage_dir} is not writable: {e}"
+            )
+    except Exception as e:
+        _log.error("Failed to create storage directory: %s", e)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to create storage directory: {e}"
+        )
 
 
 def _load_playlists() -> dict[str, Playlist]:

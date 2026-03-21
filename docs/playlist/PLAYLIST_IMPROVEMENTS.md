@@ -44,33 +44,13 @@
   - `handleCreatePlaylist()` - 打开创建对话框
   - `confirmCreatePlaylist()` - 执行创建操作
 
-### 3. ✅ 播单存储目录可配置
+### 3. ✅ 播单数据存储
 
-**改进前：** 播单数据固定存储在 `~/.xiaoai-media/playlists.json`
-
-**改进后：** 
-- 可以在 `user_config.py` 中配置存储目录
-- 默认值为 `~/.xiaoai-media`，可自定义为任意路径
-
-**配置方法：**
-
-在 `user_config.py` 中添加或修改：
-```python
-# 播单数据存储目录
-# 默认为用户目录下的 .xiaoai-media，可以自定义路径
-PLAYLIST_STORAGE_DIR = "~/.xiaoai-media"
-
-# 自定义示例：
-# PLAYLIST_STORAGE_DIR = "~/Documents/xiaoai-playlists"
-# PLAYLIST_STORAGE_DIR = "/data/music/playlists"
-```
-
-播单文件会存储在：`{PLAYLIST_STORAGE_DIR}/playlists.json`
+播单数据自动存储在数据目录：`~/.xiaoai-media/playlists.json`（Docker 中为 `/data/.xiaoai-media/playlists.json`）
 
 **实现位置：**
-- `user_config.py` - 添加 `PLAYLIST_STORAGE_DIR` 配置
-- `backend/src/xiaoai_media/config.py` - 读取配置
-- `backend/src/xiaoai_media/api/routes/playlist.py` - 使用配置的路径
+- `backend/src/xiaoai_media/config.py` - 数据目录配置
+- `backend/src/xiaoai_media/api/routes/playlist.py` - 使用数据目录存储播单
 
 ### 4. ✨ 改进音乐 URL 获取逻辑
 
@@ -141,19 +121,6 @@ def get_audio_url(custom_params: dict) -> str:
 5. 确认创建，榜单所有歌曲添加到播单
 6. 可以通过语音命令"播放热歌榜"来播放
 
-### 场景 3：自定义存储路径
-
-如果您想将播单数据存储在特定位置：
-
-1. 编辑 `user_config.py`：
-```python
-PLAYLIST_STORAGE_DIR = "~/Music/xiaoai-playlists"
-```
-
-2. 重启后端服务
-3. 新的播单数据会存储在 `~/Music/xiaoai-playlists/playlists.json`
-4. 原有播单数据可以手动复制到新位置
-
 ## 技术细节
 
 ### 播单项数据结构
@@ -184,12 +151,9 @@ PLAYLIST_STORAGE_DIR = "~/Music/xiaoai-playlists"
 - `custom_params` 包含所有必要的音乐信息
 - 系统会自动选择最高音质播放
 
-### 配置加载顺序
+### 配置加载
 
-1. 系统读取 `user_config.py` 中的 `PLAYLIST_STORAGE_DIR`
-2. 如果未配置，使用默认值 `~/.xiaoai-media`
-3. 路径会进行 `expanduser()` 展开（支持 `~` 符号）
-4. 确保目录存在，不存在会自动创建
+播单数据自动存储在 `~/.xiaoai-media/playlists.json`（Docker 中为 `/data/.xiaoai-media/playlists.json`），目录不存在会自动创建。
 
 ## 文件变更清单
 
@@ -203,13 +167,11 @@ PLAYLIST_STORAGE_DIR = "~/Music/xiaoai-playlists"
   - 实现创建播单功能
 
 **后端：**
-- `user_config.py`
-  - 添加 `PLAYLIST_STORAGE_DIR` 配置
-  - 改进 `get_audio_url()` 函数实现
 - `backend/src/xiaoai_media/config.py`
-  - 添加 `PLAYLIST_STORAGE_DIR` 配置读取
+  - 数据目录配置
 - `backend/src/xiaoai_media/api/routes/playlist.py`
-  - 使用可配置的存储路径
+  - 使用数据目录存储播单
+  - 改进 `get_audio_url()` 函数实现
 
 ## 注意事项
 
@@ -217,9 +179,9 @@ PLAYLIST_STORAGE_DIR = "~/Music/xiaoai-playlists"
    - 播放从搜索/排行榜创建的播单需要音乐下载 API 正常运行
    - 确保 `MUSIC_API_BASE_URL` 配置正确
 
-2. **存储路径修改**：
-   - 修改存储路径后需要重启后端服务
-   - 原有播单数据不会自动迁移，需要手动复制
+2. **播单数据备份**：
+   - 播单数据存储在 `~/.xiaoai-media/playlists.json`
+   - 建议定期备份此文件
 
 3. **播单数量**：
    - 从排行榜创建播单可能包含大量歌曲（50-100首）

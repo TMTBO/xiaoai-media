@@ -29,7 +29,6 @@ export interface Config {
   WAKE_WORDS: string[]
   LOG_LEVEL: string
   VERBOSE_PLAYBACK_LOG: boolean
-  PLAYLIST_STORAGE_DIR: string
 }
 
 export interface SongQuality {

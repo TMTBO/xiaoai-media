@@ -92,10 +92,9 @@ ENABLE_WAKE_WORD_FILTER = True
 # ============================================
 
 # 播单数据存储目录
-# 开发环境默认为 ./.xiaoai-media（项目根目录）
-# 生产环境建议使用 ~/.xiaoai-media（用户主目录）
-# Docker 环境会自动映射到 /data/.xiaoai-media
-PLAYLIST_STORAGE_DIR = "./.xiaoai-media"
+# 开发环境：HOME=. 设置后，数据存储在项目根目录
+# Docker 环境：HOME=/data，数据存储在 /data 目录（挂载卷）
+# 注意：播单数据会自动存储在 $HOME/playlists/ 目录中，无需单独配置
 
 
 # ============================================

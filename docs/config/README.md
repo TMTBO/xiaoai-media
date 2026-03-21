@@ -1,118 +1,193 @@
-# 配置系统文档
+# 配置指南
 
-XiaoAI Media 配置系统的完整文档。
+XiaoAI Media 的配置系统说明。
 
-## 📚 文档列表
+---
 
-### 快速开始
-- **[QUICK_CONFIG.md](QUICK_CONFIG.md)** - 5 分钟快速配置指南
+## 快速配置
 
-### 配置管理
-- **[CONFIG_API.md](CONFIG_API.md)** - 配置管理 API 文档
-  - 通过管理后台动态修改配置
-  - 支持所有配置项
-  - 无需重启服务
+### 开发环境
 
-### 用户指南
-- **[USER_CONFIG_GUIDE.md](USER_CONFIG_GUIDE.md)** - 用户配置详细指南
-  - 所有配置项的详细说明
-  - 配置示例和最佳实践
-  - 高级配置技巧
-
-### 参考文档
-- **[CONFIG_CHEATSHEET.md](CONFIG_CHEATSHEET.md)** - 配置项速查表
-  - 快速查找配置项
-  - 默认值和示例
-  - 常用配置组合
-
-### 问题排查
-- **[CONFIG_FAQ.md](CONFIG_FAQ.md)** - 配置常见问题
-  - 常见配置错误
-  - 问题诊断步骤
-  - 解决方案
-
-### 技术文档
-- **[USER_CONFIG_IMPLEMENTATION.md](USER_CONFIG_IMPLEMENTATION.md)** - 配置系统实现说明
-- **[USER_CONFIG_SUMMARY.md](USER_CONFIG_SUMMARY.md)** - 配置系统摘要
-- **[CONFIG_ANSWERS.md](CONFIG_ANSWERS.md)** - 配置问答集
-
-## 🎯 配置项总览
-
-### 必填配置
-
-| 配置项 | 说明 | 示例 |
-|--------|------|------|
-| `MI_USER` | 小米账号 | `"your_account"` |
-| `MI_PASS` | 小米密码 | `"password"` |
-| `MI_PASS_TOKEN` | 小米令牌 | `"V1:..."` |
-
-### 服务配置
-
-| 配置项 | 说明 | 默认值 |
-|--------|------|--------|
-| `MUSIC_API_BASE_URL` | 音乐搜索服务地址 | `"http://localhost:5050"` |
-| `MUSIC_DEFAULT_PLATFORM` | 默认音乐平台 | `"tx"` |
-| `SERVER_BASE_URL` | 本服务地址 | `"http://localhost:8000"` |
-
-### 功能配置
-
-| 配置项 | 说明 | 默认值 |
-|--------|------|--------|
-| `ENABLE_CONVERSATION_POLLING` | 启用对话监听 | `true` |
-| `CONVERSATION_POLL_INTERVAL` | 轮询间隔（秒） | `2.0` |
-| `ENABLE_WAKE_WORD_FILTER` | 启用唤醒词过滤 | `true` |
-
-### 日志配置
-
-| 配置项 | 说明 | 默认值 |
-|--------|------|--------|
-| `LOG_LEVEL` | 日志级别 | `"INFO"` |
-| `VERBOSE_PLAYBACK_LOG` | 详细播放日志 | `false` |
-
-### 存储配置
-
-| 配置项 | 说明 | 默认值 |
-|--------|------|--------|
-| `PLAYLIST_STORAGE_DIR` | 播单存储目录 | `"~/.xiaoai-media"` |
-
-## 🚀 快速配置流程
-
-### 1. 复制配置模板
 ```bash
+# 1. 复制配置模板
 cp user_config_template.py user_config.py
-```
 
-### 2. 修改配置
-编辑 `user_config.py`，填入必填配置：
-```python
-MI_USER = "your_xiaomi_account"
-MI_PASS = "your_password"
-MUSIC_API_BASE_URL = "http://192.168.1.100:5050"  # 使用局域网 IP
-SERVER_BASE_URL = "http://192.168.1.100:8000"     # 使用局域网 IP
-```
+# 2. 编辑配置
+vim user_config.py
 
-### 3. 启动服务
-```bash
+# 3. 启动服务
 make dev
 ```
 
-### 4. 管理后台配置
-访问 `http://localhost:8000`，在设置页面可以动态修改配置。
+### Docker 环境
 
-## ⚠️ 重要提示
+```bash
+# 1. 创建数据目录
+mkdir -p ./data
 
-### 网络配置
-- `MUSIC_API_BASE_URL` 和 `SERVER_BASE_URL` **必须使用局域网 IP**
-- 不能使用 `localhost` 或 `127.0.0.1`
-- 小爱音箱需要通过网络访问这些服务
+# 2. 复制配置模板
+cp user_config_template.py ./data/user_config.py
 
-### 敏感信息
-- 不要将 `user_config.py` 提交到版本控制
-- 密码和令牌会在管理后台中被掩码显示
-- 支持使用 `MI_PASS_TOKEN` 代替 `MI_PASS`
+# 3. 编辑配置
+vim ./data/user_config.py
 
-## 🔗 相关文档
+# 4. 启动服务
+docker-compose up -d
+```
 
-- [API 参考](../api/API_REFERENCE.md) - 查看配置 API 接口
-- [快速开始](../README.md) - 项目快速开始
-- [问题排查](CONFIG_FAQ.md) - 配置问题解决
+---
+
+## 配置文件位置
+
+### 数据目录
+
+| 环境 | HOME 设置 | 数据目录 | 配置文件路径 |
+|------|-----------|---------|-------------|
+| 开发 | `HOME=.` | `./` | `./user_config.py` |
+| Docker | `HOME=/data` | `/data/` | `/data/user_config.py` |
+
+### 查找顺序
+
+系统会在 `$HOME/user_config.py` 查找配置文件：
+- 开发环境：`./user_config.py`（项目根目录）
+- Docker 环境：`/data/user_config.py`（挂载卷）
+
+---
+
+## 配置项说明
+
+### 必填配置
+
+```python
+# 小米账号配置
+MI_USER = "your_xiaomi_account"
+MI_PASS = "your_password"
+MI_DID = "your_device_id"
+```
+
+### 可选配置
+
+```python
+# 服务器区域（默认：cn）
+MI_REGION = "cn"
+
+# 音乐 API 地址（默认：http://localhost:5050）
+MUSIC_API_BASE_URL = "http://localhost:5050"
+
+# 本服务地址（必须使用音箱可访问的局域网 IP）
+SERVER_BASE_URL = "http://192.168.1.100:8000"
+
+# 对话监听配置
+ENABLE_CONVERSATION_POLLING = True
+CONVERSATION_POLL_INTERVAL = 2.0
+
+# 唤醒词配置
+WAKE_WORDS = ["小爱", "播放"]
+ENABLE_WAKE_WORD_FILTER = True
+
+# 日志配置
+LOG_LEVEL = "INFO"
+VERBOSE_PLAYBACK_LOG = False
+```
+
+---
+
+## 高级配置
+
+### 自定义指令处理
+
+```python
+def should_handle_command(query: str) -> bool:
+    """判断是否应该处理该指令"""
+    # 自定义逻辑
+    if "播放" in query or "来一首" in query:
+        return True
+    return False
+
+def preprocess_command(query: str) -> str:
+    """预处理指令文本"""
+    # 移除唤醒词
+    query = query.replace("小爱", "").replace("同学", "")
+    return query.strip()
+```
+
+---
+
+## 环境变量配置
+
+除了配置文件，也可以使用环境变量（优先级低于配置文件）：
+
+```bash
+# Docker 运行时
+docker run -d \
+  -e MI_USER=your_account \
+  -e MI_PASS=your_password \
+  -e MI_DID=your_device_id \
+  -v ./data:/data \
+  xiaoai-media
+```
+
+---
+
+## 数据存储
+
+### 目录结构
+
+```
+$HOME/
+├── user_config.py      # 配置文件
+├── conversation.db     # 对话历史数据库
+├── playlists/          # 播放列表目录
+│   ├── default.json
+│   └── favorites.json
+└── logs/               # 日志文件（未来）
+```
+
+### 数据持久化
+
+- **开发环境**：数据存储在项目根目录，已添加到 `.gitignore`
+- **Docker 环境**：数据存储在挂载的 `/data` 目录
+
+详见：[数据存储说明](DATA_STORAGE.md)
+
+---
+
+## 相关文档
+
+- [开发环境配置](DEV_ENVIRONMENT.md) - 本地开发环境设置
+- [数据存储说明](DATA_STORAGE.md) - 数据目录详解
+- [用户配置指南](USER_CONFIG_GUIDE.md) - 配置文件详细说明
+- [配置 FAQ](CONFIG_FAQ.md) - 常见问题解答
+
+---
+
+## 故障排查
+
+### 配置文件未找到
+
+```bash
+# 检查配置文件是否存在
+ls -la user_config.py  # 开发环境
+ls -la ./data/user_config.py  # Docker 环境
+
+# 查看日志
+docker logs xiaoai-media  # Docker 环境
+```
+
+### 权限问题
+
+```bash
+# 修复权限
+chmod 644 user_config.py  # 开发环境
+chmod -R 755 ./data  # Docker 环境
+```
+
+### 验证配置
+
+```bash
+# 使用验证脚本
+make verify-config
+
+# 或手动验证
+HOME=. python -c "from xiaoai_media.config import *; print(MI_USER, MI_DID)"
+```

@@ -55,7 +55,7 @@ install-frontend:
 .PHONY: backend frontend dev
 
 backend: $(VENV)
-	PYTHONPATH=backend/src $(UVICORN) xiaoai_media.api.main:app \
+	HOME=. PYTHONPATH=backend/src $(UVICORN) xiaoai_media.api.main:app \
 		--reload \
 		--host 127.0.0.1 \
 		--port 8000
@@ -66,7 +66,7 @@ frontend:
 dev:
 	@echo "Starting backend and frontend..."
 	@trap 'kill 0' INT; \
-	PYTHONPATH=backend/src $(UVICORN) xiaoai_media.api.main:app \
+	HOME=. PYTHONPATH=backend/src $(UVICORN) xiaoai_media.api.main:app \
 		--reload --host 127.0.0.1 --port 8000 & \
 	cd frontend && npm run dev & \
 	wait
@@ -86,7 +86,7 @@ docker-run:
 .PHONY: list-devices test-config verify-config clean
 
 list-devices: $(VENV)
-	PYTHONPATH=backend/src $(PYTHON) -c "\
+	HOME=. PYTHONPATH=backend/src $(PYTHON) -c "\
 import asyncio; \
 from xiaoai_media.client import XiaoAiClient; \
 async def run(): \

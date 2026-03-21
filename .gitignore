@@ -15,7 +15,9 @@ venv/
 # Environment & secrets
 .mi.token
 user_config.py
-.xiaoai-media/
+playlists/
+conversation.db
+*.db
 
 # Node.js
 node_modules/

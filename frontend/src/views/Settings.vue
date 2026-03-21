@@ -92,11 +92,6 @@
         <el-switch v-model="form.VERBOSE_PLAYBACK_LOG" />
         <div class="el-form-item__explain">显示详细的播放过程日志</div>
       </el-form-item>
-      <el-divider content-position="left" style="margin: 20px 0 16px">存储配置</el-divider>
-      <el-form-item label="播单目录">
-        <el-input v-model="form.PLAYLIST_STORAGE_DIR" placeholder="~/.xiaoai-media" />
-        <div class="el-form-item__explain">播放列表数据存储目录</div>
-      </el-form-item>
       <el-form-item>
         <el-button type="primary" native-type="submit" :loading="saving">保存配置</el-button>
         <el-button @click="load">重新加载</el-button>
@@ -134,7 +129,6 @@ const form = ref<Config>({
   WAKE_WORDS: [],
   LOG_LEVEL: 'INFO',
   VERBOSE_PLAYBACK_LOG: false,
-  PLAYLIST_STORAGE_DIR: '~/.xiaoai-media',
 })
 
 const showWakeWordInput = ref(false)

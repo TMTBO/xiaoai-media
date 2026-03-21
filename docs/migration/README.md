@@ -1,84 +1,72 @@
-# 配置系统迁移文档
+# 迁移指南
 
-本目录包含从 `.env` 配置方式迁移到 `user_config.py` 配置方式的相关文档。
-
-## 📚 文档列表
-
-### 迁移指南
-- [MIGRATION_TO_USER_CONFIG.md](MIGRATION_TO_USER_CONFIG.md) - 详细的迁移步骤和说明
-
-### 完成报告
-- [MIGRATION_COMPLETE.md](MIGRATION_COMPLETE.md) - 迁移完成报告
-- [IMPLEMENTATION_COMPLETE.md](IMPLEMENTATION_COMPLETE.md) - 实现完成报告
-- [FINAL_SUMMARY.md](FINAL_SUMMARY.md) - 最终总结
-
-### 清理记录
-- [CLEANUP_SUMMARY.md](CLEANUP_SUMMARY.md) - 清理总结
-- [MIGRATION_SUMMARY.md](MIGRATION_SUMMARY.md) - 迁移总结
-
-## 🎯 快速导航
-
-### 我想了解迁移过程
-→ [MIGRATION_TO_USER_CONFIG.md](MIGRATION_TO_USER_CONFIG.md)
-
-### 我想查看迁移结果
-→ [MIGRATION_COMPLETE.md](MIGRATION_COMPLETE.md)
-
-### 我想了解技术细节
-→ [IMPLEMENTATION_COMPLETE.md](IMPLEMENTATION_COMPLETE.md)
-
-### 我想查看最终状态
-→ [FINAL_SUMMARY.md](FINAL_SUMMARY.md)
-
-## 📖 相关文档
-
-- [用户配置指南](../USER_CONFIG_GUIDE.md) - 完整的配置使用指南
-- [快速配置指南](../QUICK_CONFIG.md) - 5分钟快速开始
-- [配置常见问题](../CONFIG_FAQ.md) - 常见问题解答
-- [配置问题解答](../CONFIG_ANSWERS.md) - 详细问题解答
-
-## 🔄 迁移概述
-
-### 之前（.env）
-```env
-MI_USER=your_account@example.com
-MI_PASS=your_password
-MUSIC_API_BASE_URL=http://localhost:5050
-```
-
-### 现在（user_config.py）
-```python
-MI_USER = "your_account@example.com"
-MI_PASS = "your_password"
-MUSIC_API_BASE_URL = "http://localhost:5050"
-
-# 新增功能
-WAKE_WORDS = ["小爱同学", "小爱"]
-ENABLE_WAKE_WORD_FILTER = True
-```
-
-## ✅ 迁移状态
-
-- ✅ 配置系统已完全迁移到 `user_config.py`
-- ✅ 移除了 `.env` 文件和依赖
-- ✅ 所有测试通过
-- ✅ 文档已更新
-
-## 📝 注意事项
-
-1. **不再支持 .env 文件** - 必须使用 `user_config.py`
-2. **配置文件位置** - 必须在项目根目录
-3. **配置验证** - 使用 `make verify-config` 验证配置
-
-## 🚀 快速开始
-
-如果你是新用户，直接查看：
-- [快速开始指南](../../QUICK_START.md)
-- [快速配置指南](../QUICK_CONFIG.md)
-
-如果你需要迁移，查看：
-- [迁移指南](MIGRATION_TO_USER_CONFIG.md)
+版本升级和数据迁移说明。
 
 ---
 
-**返回：** [文档中心](../README.md) | [文档导航](../NAVIGATION.md)
+## 最新迁移
+
+### HOME 目录迁移（2026-03）
+
+从使用 `.xiaoai-media` 子目录改为直接使用 HOME 目录。
+
+**详见**：[HOME 目录迁移说明](HOME_DIR_MIGRATION.md)
+
+**快速迁移**：
+
+```bash
+# 开发环境
+mv .xiaoai-media/* ./
+rm -rf .xiaoai-media
+
+# Docker 环境
+# 更新 docker-compose.yml
+# volumes:
+#   - ./data:/data  # 新配置
+```
+
+---
+
+## 历史迁移
+
+### 用户配置迁移
+
+从环境变量配置改为 `user_config.py` 文件配置。
+
+**详见**：[用户配置迁移](MIGRATION_TO_USER_CONFIG.md)
+
+### miservice 依赖迁移
+
+从 miservice 包迁移到内置实现。
+
+**详见**：[miservice 迁移](MISERVICE_MIGRATION.md)
+
+---
+
+## 迁移文档索引
+
+- [HOME_DIR_MIGRATION.md](HOME_DIR_MIGRATION.md) - HOME 目录迁移（最新）
+- [MIGRATION_TO_USER_CONFIG.md](MIGRATION_TO_USER_CONFIG.md) - 用户配置迁移
+- [MISERVICE_MIGRATION.md](MISERVICE_MIGRATION.md) - miservice 依赖迁移
+- [MIGRATION_COMPLETE.md](MIGRATION_COMPLETE.md) - 迁移完成报告
+- [FINAL_SUMMARY.md](FINAL_SUMMARY.md) - 最终总结
+
+---
+
+## 版本兼容性
+
+| 版本 | 配置方式 | 数据目录 | 兼容性 |
+|------|---------|---------|--------|
+| v1.0 | 环境变量 | `~/.xiaoai-media` | ❌ 已废弃 |
+| v2.0 | user_config.py | `~/.xiaoai-media` | ⚠️ 需迁移 |
+| v3.0 | user_config.py | `$HOME/` | ✅ 当前版本 |
+
+---
+
+## 需要帮助？
+
+如果在迁移过程中遇到问题：
+
+1. 查看具体的迁移文档
+2. 检查 [配置 FAQ](../config/CONFIG_FAQ.md)
+3. 提交 [Issue](https://github.com/tmtbo/xiaoai-media/issues)

@@ -1,126 +1,212 @@
-# 文档结构
+# 项目结构
 
-本目录包含 XiaoAI Media 项目的完整文档。
+XiaoAI Media 项目的目录结构说明。
 
-## 📂 目录结构
+---
+
+## 项目根目录
+
+```
+xiaoai-media/
+├── backend/                # 后端代码
+├── frontend/               # 前端代码
+├── docs/                   # 文档目录
+├── scripts/                # 工具脚本
+├── test/                   # 测试代码
+├── Makefile               # 开发命令
+├── docker-compose.yml     # Docker Compose 配置
+├── Dockerfile             # Docker 镜像构建
+├── README.md              # 项目说明
+├── QUICK_START.md         # 快速开始
+└── user_config_template.py # 配置模板
+```
+
+---
+
+## 后端结构
+
+```
+backend/
+├── src/
+│   └── xiaoai_media/
+│       ├── __init__.py
+│       ├── config.py           # 配置管理
+│       ├── client.py           # 小米 AI 客户端
+│       ├── player.py           # 播放器
+│       ├── conversation.py     # 对话监听
+│       ├── command_handler.py  # 指令处理
+│       └── api/
+│           ├── main.py         # FastAPI 应用
+│           └── routes/         # API 路由
+│               ├── config.py
+│               ├── playlist.py
+│               ├── conversation.py
+│               └── ...
+└── pyproject.toml
+```
+
+---
+
+## 前端结构
+
+```
+frontend/
+├── src/
+│   ├── App.vue             # 主应用
+│   ├── main.ts             # 入口文件
+│   ├── api/                # API 客户端
+│   ├── composables/        # 组合式函数
+│   ├── router/             # 路由配置
+│   └── views/              # 页面组件
+│       ├── DeviceList.vue
+│       ├── PlaylistManager.vue
+│       ├── ConversationHistory.vue
+│       └── ...
+├── package.json
+└── vite.config.ts
+```
+
+---
+
+## 文档结构
 
 ```
 docs/
-├── README.md                    # 文档入口
-├── STRUCTURE.md                 # 本文档 - 文档结构说明
-├── INDEX.md                     # 文档索引
-├── NAVIGATION.md                # 导航指南
-│
-├── api/                         # API 文档
-│   ├── API_REFERENCE.md         # API 接口参考
-│   └── API实现说明.md            # API 实现说明
-│
-├── config/                      # 配置文档
-│   ├── CONFIG_API.md            # 配置管理 API
-│   ├── QUICK_CONFIG.md          # 快速配置指南
-│   ├── CONFIG_FAQ.md            # 配置常见问题
-│   ├── CONFIG_CHEATSHEET.md     # 配置速查表
-│   ├── CONFIG_ANSWERS.md        # 配置问答
-│   ├── USER_CONFIG_GUIDE.md     # 用户配置指南
-│   ├── USER_CONFIG_IMPLEMENTATION.md  # 配置实现说明
-│   └── USER_CONFIG_SUMMARY.md   # 配置摘要
-│
-├── playlist/                    # 播放列表文档
-│   ├── PLAYLIST_GUIDE.md        # 播放列表使用指南
-│   ├── PLAYLIST_FEATURE_UPDATE.md  # 功能更新说明
-│   └── PLAYLIST_IMPROVEMENTS.md # 功能改进记录
-│
-├── playback/                    # 播放功能文档
-│   ├── README.md                # 播放功能概览
-│   ├── QUICK_PLAYBACK_GUIDE.md  # 快速播放指南
-│   ├── PLAYBACK_FIX.md          # 播放问题修复
-│   ├── PLAYBACK_TROUBLESHOOTING.md  # 播放故障排查
-│   ├── PROXY_URL_SUMMARY.md     # 代理 URL 摘要
-│   ├── 播放错误修复说明.md        # 播放错误修复详解
-│   ├── 播放错误快速修复.md        # 播放错误快速修复
-│   ├── 代理URL使用指南.md         # 代理 URL 使用指南
-│   └── 代理URL封装说明.md         # 代理 URL 封装说明
-│
-├── tts/                         # TTS 文档
-│   ├── README.md                # TTS 功能概览
-│   ├── README_TTS.md            # TTS 详细说明
-│   ├── QUICK_TEST.md            # 快速测试指南
-│   ├── TTS修复说明.md            # TTS 修复说明
-│   ├── TTS_完整解决方案.md       # TTS 完整解决方案
-│   └── 功能验证报告.md           # 功能验证报告
-│
-├── conversation/                # 对话监听文档
-│   ├── README.md                # 对话监听概览
-│   ├── QUICK_START.md           # 快速开始
-│   ├── QUICK_REFERENCE.md       # 快速参考
-│   ├── USER_GUIDE.md            # 用户指南
-│   ├── FEATURE_SPEC.md          # 功能规格
-│   ├── SUMMARY.md               # 功能摘要
-│   ├── 使用说明.md               # 使用说明
-│   ├── 修复总结.md               # 修复总结
-│   ├── 修复说明.md               # 修复详解
-│   ├── 功能说明.md               # 功能说明
-│   ├── 完整修复报告.md           # 完整修复报告
-│   ├── 完整指南.md               # 完整指南
-│   ├── 快速参考.md               # 快速参考（中文）
-│   ├── 播放拦截问题分析.md       # 播放拦截分析
-│   ├── 管理后台修复.md           # 管理后台修复
-│   ├── 管理后台验证.md           # 管理后台验证
-│   └── 验证报告.md               # 验证报告
-│
-├── migration/                   # 迁移文档
-│   ├── README.md                # 迁移概览
-│   ├── MISERVICE_MIGRATION.md   # MiService 迁移指南
-│   ├── MIGRATION_TO_USER_CONFIG.md  # 迁移到 user_config
-│   ├── MIGRATION_COMPLETE.md    # 迁移完成说明
-│   ├── MIGRATION_SUMMARY.md     # 迁移摘要
-│   ├── IMPLEMENTATION_COMPLETE.md  # 实现完成说明
-│   ├── FINAL_SUMMARY.md         # 最终摘要
-│   └── CLEANUP_SUMMARY.md       # 清理摘要
-│
-├── BEFORE_AFTER.md              # 改进前后对比
-├── ORGANIZATION_REPORT.md       # 代码组织报告
-├── ORGANIZATION_SUMMARY.md      # 组织摘要
-└── UPGRADE_GUIDE.md             # 升级指南
+├── README.md               # 文档中心
+├── STRUCTURE.md            # 项目结构（本文件）
+├── api/                    # API 文档
+│   ├── README.md
+│   └── API_REFERENCE.md
+├── config/                 # 配置文档
+│   ├── README.md
+│   ├── DEV_ENVIRONMENT.md
+│   └── DATA_STORAGE.md
+├── deployment/             # 部署文档
+│   ├── DOCKER_GUIDE.md
+│   └── DOCKER_QUICK_START.md
+├── playlist/               # 播放列表文档
+├── conversation/           # 对话监听文档
+├── playback/               # 音乐播放文档
+├── tts/                    # TTS 文档
+└── migration/              # 迁移指南
+    ├── README.md
+    └── HOME_DIR_MIGRATION.md
 ```
 
-## 📖 快速导航
+---
 
-### 新手入门
-1. [README.md](README.md) - 项目概览
-2. [config/QUICK_CONFIG.md](config/QUICK_CONFIG.md) - 快速配置
-3. [playback/QUICK_PLAYBACK_GUIDE.md](playback/QUICK_PLAYBACK_GUIDE.md) - 快速播放测试
+## 数据目录
 
-### 配置相关
-- [配置 API](config/CONFIG_API.md) - 通过管理后台管理配置
-- [配置指南](config/USER_CONFIG_GUIDE.md) - 详细配置说明
-- [配置常见问题](config/CONFIG_FAQ.md) - 配置问题排查
+### 开发环境
 
-### 功能使用
-- [播放列表](playlist/PLAYLIST_GUIDE.md) - 播放列表功能
-- [TTS 语音播报](tts/README.md) - 文字转语音
-- [对话监听](conversation/README.md) - 语音指令监听
+```
+./                          # 项目根目录（HOME=.）
+├── user_config.py          # 配置文件
+├── conversation.db         # 对话历史
+├── playlists/              # 播放列表
+│   ├── default.json
+│   └── favorites.json
+└── .gitignore              # 已忽略数据文件
+```
 
-### 问题排查
-- [播放故障排查](playback/PLAYBACK_TROUBLESHOOTING.md)
-- [配置常见问题](config/CONFIG_FAQ.md)
-- [TTS 修复说明](tts/TTS修复说明.md)
+### Docker 环境
 
-### API 开发
-- [API 参考](api/API_REFERENCE.md) - 完整 API 文档
-- [API 实现说明](api/API实现说明.md) - API 实现细节
+```
+/data/                      # 容器内数据目录（HOME=/data）
+├── user_config.py          # 配置文件
+├── conversation.db         # 对话历史
+└── playlists/              # 播放列表
+```
 
-## 📝 文档维护原则
+---
 
-1. **功能分类**：按功能模块组织文档，每个功能一个目录
-2. **语言统一**：新文档优先使用中文，重要文档提供中英双语
-3. **文件命名**：
-   - 英文文档：`UPPERCASE_WITH_UNDERSCORE.md`
-   - 中文文档：`中文名称.md`
-4. **README 优先**：每个目录都应有 `README.md` 作为入口
-5. **定期清理**：删除过时文档，合并重复内容
+## 核心模块
 
-## 🔄 更新记录
+### config.py
+- 配置文件加载
+- 环境变量处理
+- 数据目录管理
 
-- 2026-03-20: 创建文档结构，整理配置、播放列表、API 文档
-- 2026-03-20: 添加配置管理 API 文档
+### client.py
+- 小米 AI 设备通信
+- 设备列表管理
+- 指令发送
+
+### player.py
+- 音乐播放控制
+- 播放列表管理
+- 音频流处理
+
+### conversation.py
+- 对话历史监听
+- 指令识别
+- 自动响应
+
+### command_handler.py
+- 指令解析
+- 音乐搜索
+- 播放控制
+
+---
+
+## API 路由
+
+| 路由 | 功能 | 文件 |
+|------|------|------|
+| `/api/devices` | 设备管理 | routes/devices.py |
+| `/api/playlists` | 播放列表 | routes/playlist.py |
+| `/api/conversation` | 对话历史 | routes/conversation.py |
+| `/api/config` | 配置管理 | routes/config.py |
+| `/api/tts` | TTS 语音 | routes/tts.py |
+
+---
+
+## 开发工具
+
+### Makefile 命令
+
+```bash
+make install        # 安装依赖
+make dev            # 启动开发环境
+make backend        # 启动后端
+make frontend       # 启动前端
+make list-devices   # 列出设备
+make clean          # 清理缓存
+```
+
+### 脚本工具
+
+```bash
+scripts/verify_config.sh              # 验证配置
+scripts/diagnose_docker_storage.sh    # Docker 诊断
+```
+
+---
+
+## 技术栈
+
+### 后端
+- Python 3.11+
+- FastAPI
+- SQLite
+- aiohttp
+
+### 前端
+- Vue 3
+- TypeScript
+- Vite
+- Element Plus
+
+### 部署
+- Docker
+- Docker Compose
+- Nginx（可选）
+
+---
+
+## 相关文档
+
+- [快速开始](../QUICK_START.md)
+- [配置指南](config/README.md)
+- [API 文档](api/README.md)
+- [Docker 部署](deployment/DOCKER_GUIDE.md)
