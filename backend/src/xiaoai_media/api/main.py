@@ -80,7 +80,7 @@ app.include_router(playlist.router, prefix="/api")
 app.include_router(proxy.router, prefix="/api")
 
 # Serve frontend static files in production (built by Docker)
-_static_dir = Path(__file__).resolve().parents[5] / "static"
+_static_dir = Path(__file__).resolve().parents[4] / "static"
 if _static_dir.is_dir():
     app.mount(
         "/assets", StaticFiles(directory=str(_static_dir / "assets")), name="assets"
