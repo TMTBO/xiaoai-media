@@ -18,6 +18,7 @@ from .playlist_models import (
     PlayPlaylistRequest,
 )
 from .playlist_storage import PlaylistStorage
+from .state_service import StateService, get_state_service
 
 __all__ = [
     "MusicService",
@@ -36,4 +37,6 @@ __all__ = [
     "AddItemRequest",
     "PlayPlaylistRequest",
     "PlaylistStorage",
+    "StateService",
+    "get_state_service",
 ]

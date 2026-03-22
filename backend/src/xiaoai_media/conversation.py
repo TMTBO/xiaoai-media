@@ -11,6 +11,7 @@ import time
 from typing import Callable
 
 from xiaoai_media.client import XiaoAiClient
+from xiaoai_media.services.state_service import get_state_service
 
 _log = logging.getLogger(__name__)
 
@@ -25,10 +26,13 @@ class ConversationPoller:
             poll_interval: Seconds between polling attempts (default: 2.0)
         """
         self.poll_interval = poll_interval
-        self.last_timestamp: dict[str, int] = {}  # device_id -> last timestamp
         self.running = False
         self._task: asyncio.Task | None = None
         self._command_callback: Callable | None = None
+        self._state_service = get_state_service()
+        
+        # Load last_timestamp from persistent storage
+        self.last_timestamp: dict[str, int] = self._state_service.get("conversation_last_timestamp", {})
 
     def set_command_callback(self, callback: Callable):
         """Set the callback function to handle detected commands.
@@ -133,8 +137,9 @@ class ConversationPoller:
                 _log.debug("跳过已处理的对话 (时间戳: %d)", timestamp)
                 continue
             
-            # Update last timestamp
+            # Update last timestamp and persist to storage
             self.last_timestamp[device_id] = timestamp
+            self._state_service.set("conversation_last_timestamp", self.last_timestamp)
             
             # Skip empty queries
             if not query:
