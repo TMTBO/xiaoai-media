@@ -172,3 +172,90 @@ LOG_LEVEL = "INFO"
 
 # 是否显示详细的播放日志
 VERBOSE_PLAYBACK_LOG = False
+
+
+# ============================================
+# 音乐提供者模块导入
+# ============================================
+
+# 导入音乐 URL 提供者模块
+# 注意：需要将 music_provider_template.py 复制为 music_provider.py
+try:
+    from music_provider import get_music_url
+except ImportError as e:
+    import sys
+    from pathlib import Path
+    raise ImportError(
+        "无法导入 music_provider 模块。\n"
+        f"请确保 music_provider.py 与 user_config.py 在同一目录下。\n"
+        f"提示：将 music_provider_template.py 复制为 music_provider.py\n"
+        f"当前目录：{Path(__file__).parent}\n"
+        f"原始错误：{e}"
+    ) from e
+
+
+# ============================================
+# 音频 URL 获取函数
+# ============================================
+
+
+async def get_audio_url(custom_params: dict) -> str:
+    """
+    根据音频信息获取播放 URL
+    
+    此函数支持异步并发调用，可以同时处理多个音频 URL 获取请求。
+    用于播单管理功能，当播单项没有 URL 时，会调用此函数获取 URL。
+
+    Args:
+        custom_params: 自定义参数字典，包含音频相关信息
+            通用字段（来自 PlaylistItem）：
+            - title: 歌曲名/标题
+            - artist: 艺术家/歌手
+            - album: 专辑名
+            - audio_id: 音频ID
+            - interval: 播放间隔（秒）或时长
+            - pic_url: 封面图片URL
+            
+            音乐类型特定字段（来自 custom_params）：
+            - type: 类型（music, audiobook, podcast 等）
+            - platform: 平台（tx, wy, kg 等）
+            - id/song_id: 歌曲ID
+            - name: 歌曲名称（可能与 title 重复）
+            - singer: 歌手名称（可能与 artist 重复）
+            - qualities: 音质列表
+            - meta: 元数据
+
+    Returns:
+        播放 URL（原始 URL，不需要包装为代理 URL，系统会自动处理）
+
+    Raises:
+        ValueError: 不支持的音频类型或获取 URL 失败
+
+    示例实现：
+        >>> await get_audio_url({"type": "music", "platform": "tx", "id": "001ABC"})
+        'https://music.qq.com/song/001ABC.mp3'
+    """
+    audio_type = custom_params.get("type", "")
+
+    if audio_type == "music":
+        # 音乐类型：调用专门的音乐 URL 获取函数
+        return await get_music_url(custom_params, MUSIC_API_BASE_URL)
+
+    elif audio_type == "audiobook":
+        # 有声书类型：根据您的数据源实现
+        book_id = custom_params.get("book_id", "")
+        chapter = custom_params.get("chapter", "1")
+        # TODO: 实现您的有声书 URL 获取逻辑
+        return f"https://example.com/audiobook/{book_id}/{chapter}.mp3"
+
+    elif audio_type == "podcast":
+        # 播客类型：根据您的数据源实现
+        podcast_id = custom_params.get("podcast_id", "")
+        episode = custom_params.get("episode", "")
+        # TODO: 实现您的播客 URL 获取逻辑
+        return f"https://example.com/podcast/{podcast_id}/{episode}.mp3"
+
+    else:
+        # 默认：返回空字符串或抛出异常
+        raise ValueError(f"Unsupported audio type: {audio_type}")
+

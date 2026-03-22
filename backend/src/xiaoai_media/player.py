@@ -9,13 +9,12 @@ from __future__ import annotations
 import asyncio
 import logging
 from typing import Any
-from urllib.parse import quote
 
-import aiohttp
 from fastapi import HTTPException
 
-from xiaoai_media import config
 from xiaoai_media.client import XiaoAiClient
+from xiaoai_media.services.playlist_models import PlaylistItem
+from xiaoai_media.services.playlist_service import PlaylistService
 
 _log = logging.getLogger(__name__)
 
@@ -126,23 +125,19 @@ class PlaylistPlayer:
             song["id"],
         )
 
-        # Get playback URL with quality fallback
-        play_info = await self._get_play_url_with_fallback(song)
-        if not play_info:
+        # Convert song dict to PlaylistItem
+        playlist_item = self._song_to_playlist_item(song)
+
+        # Get playback URL using PlaylistService (already returns proxy URL)
+        try:
+            url = await PlaylistService.get_item_url(playlist_item)
+            _log.info("Got playback URL: %s", url[:200])
+        except Exception as e:
+            _log.error("Failed to get playback URL: %s", e)
             raise HTTPException(
                 status_code=404,
-                detail=f"Cannot get playback URL for song {song['name']}: all qualities failed",
+                detail=f"Cannot get playback URL for song {song['name']}: {e}",
             )
-
-        original_url = play_info["url"]
-        _log.info(
-            "Got original playback URL (quality=%s): %s",
-            play_info["quality"],
-            original_url[:200],
-        )
-
-        # Convert to proxy URL
-        url = self._make_proxy_url(original_url)
 
         async with XiaoAiClient() as client:
             # Stop current playback if requested
@@ -273,174 +268,35 @@ class PlaylistPlayer:
     # Private helper methods
     # ------------------------------------------------------------------
 
-    def _make_proxy_url(self, original_url: str) -> str:
-        """将原始URL转换为代理URL
-
-        音乐平台的URL通常有防盗链保护，无法直接从音箱访问。
-        代理端点会添加必要的请求头并转发流到音箱。
-
-        Args:
-            original_url: 原始音乐URL
-
-        Returns:
-            代理URL
-        """
-        proxy_url = (
-            f"{config.SERVER_BASE_URL}/api/proxy/stream?url={quote(original_url)}"
-        )
-        _log.debug(
-            "Converted URL to proxy: %s -> %s", original_url[:100], proxy_url[:100]
-        )
-        return proxy_url
-
-    async def _get_play_url_with_fallback(self, song: dict) -> dict | None:
-        """获取播放URL，带音质降级重试
-
-        尝试从最高音质开始，逐个降级直到找到可用的URL。
+    @staticmethod
+    def _song_to_playlist_item(song: dict) -> PlaylistItem:
+        """将歌曲字典转换为 PlaylistItem
 
         Args:
             song: 歌曲信息字典
 
         Returns:
-            包含 url, lyric, quality 的字典，如果全部失败则返回 None
+            PlaylistItem 对象
         """
-        song_id = song.get("id", "")
-        platform = song.get("platform", "")
-        name = song.get("name", "")
-        singer = song.get("singer", "")
-        interval = song.get("interval", 0)
-        meta = song.get("meta") or {}
-        album_name = meta.get("albumName", "") if isinstance(meta, dict) else ""
-        pic_url = meta.get("picUrl", "") if isinstance(meta, dict) else ""
-        song_platform_id = meta.get("songId", 0) if isinstance(meta, dict) else 0
-        qualities_raw: list[dict] = song.get("qualities") or []
-
-        qualities = (
-            qualities_raw
-            if qualities_raw
-            else [{"type": "128k", "format": "mp3", "size": 0}]
+        return PlaylistItem(
+            title=song.get("name", ""),
+            artist=song.get("singer", ""),
+            album=song.get("meta", {}).get("albumName", "") if isinstance(song.get("meta"), dict) else "",
+            audio_id=song.get("id", ""),
+            url=None,  # 不使用预设 URL，让 get_item_url 动态获取
+            custom_params={
+                "type": "music",
+                "id": song.get("id", ""),
+                "platform": song.get("platform", ""),
+                "name": song.get("name", ""),
+                "singer": song.get("singer", ""),
+                "interval": song.get("interval", 0),
+                "qualities": song.get("qualities", []),
+                "meta": song.get("meta", {}),
+            },
+            interval=song.get("interval"),
+            pic_url=song.get("meta", {}).get("picUrl", "") if isinstance(song.get("meta"), dict) else None,
         )
-
-        # Sort by size descending — prefer higher quality
-        qualities_sorted = sorted(
-            qualities, key=lambda q: self._parse_size(q.get("size", 0)), reverse=True
-        )
-
-        for q in qualities_sorted:
-            quality_type = q.get("type", "128k")
-            quality_format = q.get("format", "mp3")
-            _log.info(
-                "MusicAPI: trying quality=%s format=%s for %s - %s",
-                quality_type,
-                quality_format,
-                singer,
-                name,
-            )
-            try:
-                data = await self._proxy_music_api(
-                    "POST",
-                    "/api/v3/play",
-                    json={
-                        "songId": song_id,
-                        "platform": platform,
-                        "quality": quality_type,
-                        "format": quality_format,
-                        "name": name,
-                        "singer": singer,
-                        "interval": interval,
-                        "size": q.get("size", 0),
-                        "albumName": album_name,
-                        "picUrl": pic_url,
-                        "song_platform_id": song_platform_id,
-                    },
-                )
-                url = data.get("data", {}).get("url") if data.get("code") == 0 else None
-                if url:
-                    _log.info("MusicAPI: quality=%s succeeded", quality_type)
-                    return {
-                        "url": url,
-                        "lyric": data.get("data", {}).get("lyric", ""),
-                        "quality": quality_type,
-                    }
-                _log.warning(
-                    "MusicAPI: quality=%s returned no URL (code=%s)",
-                    quality_type,
-                    data.get("code"),
-                )
-            except HTTPException as e:
-                _log.warning(
-                    "MusicAPI: quality=%s request failed: %s", quality_type, e.detail
-                )
-
-        _log.error("MusicAPI: all qualities failed for %s - %s", singer, name)
-        return None
-
-    async def _proxy_music_api(self, method: str, path: str, **kwargs: Any) -> dict:
-        """代理请求到音乐下载服务
-
-        Args:
-            method: HTTP方法
-            path: API路径
-            **kwargs: 其他请求参数
-
-        Returns:
-            响应数据
-
-        Raises:
-            HTTPException: 请求失败
-        """
-        base = config.MUSIC_API_BASE_URL.rstrip("/")
-        url = f"{base}{path}"
-        _log.info("MusicAPI: %s %s", method.upper(), url)
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.request(
-                    method, url, timeout=aiohttp.ClientTimeout(total=10), **kwargs
-                ) as resp:
-                    data: dict = await resp.json(content_type=None)
-                    _log.info(
-                        "MusicAPI: response code=%s status=%d",
-                        data.get("code"),
-                        resp.status,
-                    )
-                    if resp.status >= 500:
-                        raise HTTPException(
-                            status_code=502,
-                            detail=f"Music API returned HTTP {resp.status}",
-                        )
-                    return data
-        except aiohttp.ClientError as e:
-            _log.error("MusicAPI connection error: %s", e)
-            raise HTTPException(
-                status_code=502,
-                detail=f"Cannot connect to music service at {config.MUSIC_API_BASE_URL}: {e}",
-            )
-
-    @staticmethod
-    def _parse_size(size: int | str) -> int:
-        """解析文件大小为字节数
-
-        支持整数或字符串格式（如 '9.15M', '3.2K', '27.3MB'）
-
-        Args:
-            size: 文件大小
-
-        Returns:
-            字节数
-        """
-        if isinstance(size, int):
-            return size
-        s = str(size).strip().upper().rstrip("B")
-        try:
-            if s.endswith("G"):
-                return int(float(s[:-1]) * 1024**3)
-            if s.endswith("M"):
-                return int(float(s[:-1]) * 1024**2)
-            if s.endswith("K"):
-                return int(float(s[:-1]) * 1024)
-            return int(float(s))
-        except ValueError:
-            return 0
 
 
 # 全局播放器实例，供路由使用

@@ -50,6 +50,13 @@
 - **[PLAYER_REFACTOR_SUMMARY.md](PLAYER_REFACTOR_SUMMARY.md)** - 播放器重构总结
 - **[PLAYER_MIGRATION_GUIDE.md](PLAYER_MIGRATION_GUIDE.md)** - 播放器迁移指南
 
+### 音乐提供者模块重构
+- **[MUSIC_PROVIDER_REFACTOR.md](MUSIC_PROVIDER_REFACTOR.md)** - 音乐提供者模块重构总结
+  - 将音乐 URL 获取逻辑抽离到独立模块
+  - 参数传递优化
+  - 异步并发支持
+  - 用户迁移指南
+
 ## 🎯 重构原则
 
 ### 1. 关注点分离

@@ -75,11 +75,22 @@ class PlaylistService:
 
         get_audio_url = user_config.get_audio_url
 
+        # 构建完整的参数字典，合并 item 的所有字段和 custom_params
+        params = {
+            "title": item.title,
+            "artist": item.artist,
+            "album": item.album,
+            "audio_id": item.audio_id,
+            "interval": item.interval,
+            "pic_url": item.pic_url,
+            **item.custom_params,  # custom_params 中的值会覆盖上面的默认值
+        }
+
         # 调用函数获取 URL
         if asyncio.iscoroutinefunction(get_audio_url):
-            url = await get_audio_url(item.custom_params)
+            url = await get_audio_url(params)
         else:
-            url = get_audio_url(item.custom_params)
+            url = get_audio_url(params)
 
         if not url:
             raise RuntimeError(f"Failed to get audio URL for item: {item.title}")
