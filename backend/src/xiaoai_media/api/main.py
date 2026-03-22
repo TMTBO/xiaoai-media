@@ -27,6 +27,7 @@ from xiaoai_media.api.routes import (
 )
 from xiaoai_media.conversation import ConversationPoller
 from xiaoai_media.command_handler import CommandHandler
+from xiaoai_media.playback_monitor import PlaybackMonitor
 from xiaoai_media import config as app_config
 
 app = FastAPI(
@@ -41,6 +42,11 @@ conversation_poller = ConversationPoller(
 )
 command_handler = CommandHandler()
 conversation_poller.set_command_callback(command_handler.handle_command)
+
+# Initialize playback monitor for auto-play next track
+playback_monitor = PlaybackMonitor(
+    poll_interval=app_config.PLAYBACK_MONITOR_INTERVAL
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -59,6 +65,14 @@ async def startup_event():
         logging.getLogger(__name__).info("对话监听已启用")
     else:
         logging.getLogger(__name__).info("对话监听已禁用")
+    
+    # Start playback monitor for auto-play next track
+    if app_config.ENABLE_PLAYBACK_MONITOR:
+        await playback_monitor.start()
+        logging.getLogger(__name__).info("播放监控已启用")
+    else:
+        logging.getLogger(__name__).info("播放监控已禁用")
+    
     logging.getLogger(__name__).info("应用启动完成")
 
 
@@ -66,6 +80,7 @@ async def startup_event():
 async def shutdown_event():
     """Stop background tasks on application shutdown."""
     await conversation_poller.stop()
+    await playback_monitor.stop()
     logging.getLogger(__name__).info("应用已关闭")
 
 

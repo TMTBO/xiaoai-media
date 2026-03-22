@@ -25,6 +25,8 @@ export interface Config {
   SERVER_BASE_URL: string
   ENABLE_CONVERSATION_POLLING: boolean
   CONVERSATION_POLL_INTERVAL: number
+  ENABLE_PLAYBACK_MONITOR: boolean
+  PLAYBACK_MONITOR_INTERVAL: number
   ENABLE_WAKE_WORD_FILTER: boolean
   WAKE_WORDS: string[]
   LOG_LEVEL: string

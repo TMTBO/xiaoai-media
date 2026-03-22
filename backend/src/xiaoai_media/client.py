@@ -732,9 +732,9 @@ class XiaoAiClient:
         device_name = next(
             (d.get("name", "") for d in devices if d["deviceID"] == did), ""
         )
-        _log.info("MiService: get player status on device %s", did)
+        # _log.info("MiService: get player status on device %s", did)
         result = await self._na_service.player_get_status(did)
-        _log.info("MiService: player status result: %s", result)
+        # _log.info("MiService: player status result: %s", result)
         return {"device": f"{device_name}({did})", "status": result}
 
     async def player_set_loop(

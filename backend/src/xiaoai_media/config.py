@@ -152,6 +152,13 @@ ENABLE_CONVERSATION_POLLING: bool = _get_config("ENABLE_CONVERSATION_POLLING", T
 CONVERSATION_POLL_INTERVAL: float = _get_config("CONVERSATION_POLL_INTERVAL", 2.0)
 
 # ============================================
+# 播放监控配置
+# ============================================
+
+ENABLE_PLAYBACK_MONITOR: bool = _get_config("ENABLE_PLAYBACK_MONITOR", True)
+PLAYBACK_MONITOR_INTERVAL: float = _get_config("PLAYBACK_MONITOR_INTERVAL", 3.0)
+
+# ============================================
 # 唤醒词配置
 # ============================================
 

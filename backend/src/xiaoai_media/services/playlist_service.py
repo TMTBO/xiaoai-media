@@ -7,6 +7,7 @@ from __future__ import annotations
 import asyncio
 import importlib.util
 import logging
+import random
 import time
 from datetime import datetime
 from pathlib import Path
@@ -260,9 +261,9 @@ class PlaylistService:
                 await client.send_command(announce_text, req.device_id, silent=False)
                 await asyncio.sleep(1)  # 等待播报完成
 
-            # 发送播放 URL 命令
-            play_command = f"播放 {play_url}"
-            await client.send_command(play_command, req.device_id, silent=True)
+            # 直接使用 play_url 播放
+            result = await client.play_url(play_url, req.device_id, _type=1)
+            _log.info("Play URL result: %s", result)
 
         return {
             "message": "Playing",

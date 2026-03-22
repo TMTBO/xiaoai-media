@@ -74,6 +74,12 @@ ENABLE_CONVERSATION_POLLING = True
 # 对话轮询间隔（秒）
 CONVERSATION_POLL_INTERVAL = 2.0
 
+# 启用播放监控（自动播放下一曲）
+ENABLE_PLAYBACK_MONITOR = True
+
+# 播放监控轮询间隔（秒）
+PLAYBACK_MONITOR_INTERVAL = 3.0
+
 
 # ============================================
 # 音乐提供者模块导入

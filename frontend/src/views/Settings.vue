@@ -62,6 +62,17 @@
         <span style="margin-left: 8px">秒</span>
         <div class="el-form-item__explain">对话监听的轮询间隔时间</div>
       </el-form-item>
+      <el-divider content-position="left" style="margin: 20px 0 16px">播放监控</el-divider>
+      <el-form-item label="启用监控">
+        <el-switch v-model="form.ENABLE_PLAYBACK_MONITOR" />
+        <div class="el-form-item__explain">监控播放状态，自动播放下一曲</div>
+      </el-form-item>
+      <el-form-item label="轮询间隔">
+        <el-input-number v-model="form.PLAYBACK_MONITOR_INTERVAL" :min="0.5" :max="60" :step="0.1" :precision="1" />
+        <span style="margin-left: 8px">秒</span>
+        <div class="el-form-item__explain">播放监控的轮询间隔时间（建议 2-5 秒）</div>
+      </el-form-item>
+      <el-divider content-position="left" style="margin: 20px 0 16px">唤醒词配置</el-divider>
       <el-form-item label="唤醒词过滤">
         <el-switch v-model="form.ENABLE_WAKE_WORD_FILTER" />
         <div class="el-form-item__explain">只处理包含唤醒词的指令</div>
@@ -125,6 +136,8 @@ const form = ref<Config>({
   SERVER_BASE_URL: 'http://localhost:8000',
   ENABLE_CONVERSATION_POLLING: false,
   CONVERSATION_POLL_INTERVAL: 2.0,
+  ENABLE_PLAYBACK_MONITOR: true,
+  PLAYBACK_MONITOR_INTERVAL: 3.0,
   ENABLE_WAKE_WORD_FILTER: true,
   WAKE_WORDS: [],
   LOG_LEVEL: 'INFO',
