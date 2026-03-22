@@ -45,12 +45,17 @@ make run
 #### 小米账号配置
 
 ```python
+# 小米账号配置
 MI_USER = "your_account@example.com"  # 小米账号
-MI_PASS = "your_password"              # 小米密码
-MI_PASS_TOKEN = ""                     # 可选，已有 token 可直接使用
+MI_PASS = "your_password"              # 小米密码（必填）
 MI_DID = ""                            # 可选，设备ID（不填则使用第一个设备）
 MI_REGION = "cn"                       # 区域: cn, de, i2, ru, sg, us
 ```
+
+**重要说明**：
+- Token 会自动保存到 `.mi.token` 文件，无需手动配置
+- 首次登录可能需要在小米官网或 App 中完成安全验证
+- Token 过期后会自动使用密码重新登录
 
 #### 音乐服务配置
 

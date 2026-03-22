@@ -17,7 +17,6 @@ export interface Device {
 export interface Config {
   MI_USER: string
   MI_PASS: string
-  MI_PASS_TOKEN: string
   MI_DID: string
   MI_REGION: string
   MUSIC_API_BASE_URL: string

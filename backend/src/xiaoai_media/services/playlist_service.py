@@ -14,7 +14,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 from xiaoai_media import config
-from xiaoai_media.client import XiaoAiClient
+from xiaoai_media.api.dependencies import get_client_sync
 from xiaoai_media.services.playlist_models import (
     AddItemRequest,
     ContinuePlayRequest,
@@ -252,18 +252,18 @@ class PlaylistService:
         )
 
         # 发送播放命令
-        async with XiaoAiClient() as client:
-            # 如果需要播报，先播报
-            if req.announce:
-                announce_text = f"正在播放{playlist.name}，{item.title}"
-                if item.artist:
-                    announce_text += f"，{item.artist}"
-                await client.send_command(announce_text, req.device_id, silent=False)
-                await asyncio.sleep(1)  # 等待播报完成
+        client = get_client_sync()
+        # 如果需要播报，先播报
+        if req.announce:
+            announce_text = f"正在播放{playlist.name}，{item.title}"
+            if item.artist:
+                announce_text += f"，{item.artist}"
+            await client.text_to_speech(announce_text, req.device_id)
+            await asyncio.sleep(1)  # 等待播报完成
 
-            # 直接使用 play_url 播放
-            result = await client.play_url(play_url, req.device_id, _type=1)
-            _log.info("Play URL result: %s", result)
+        # 直接使用 play_url 播放
+        result = await client.play_url(play_url, req.device_id, _type=1)
+        _log.info("Play URL result: %s", result)
 
         return {
             "message": "Playing",
@@ -302,8 +302,8 @@ class PlaylistService:
             raise ValueError(f"Playlist not found: {playlist_id}")
 
         # 发送停止命令
-        async with XiaoAiClient() as client:
-            await client.player_stop(device_id)
+        client = get_client_sync()
+        await client.player_stop(device_id)
 
         _log.info("Stopped playlist: %s", playlist.name)
         return {

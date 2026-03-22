@@ -18,11 +18,9 @@
 # 小米账号
 MI_USER = "your_xiaomi_account@example.com"
 
-# 小米密码
+# 小米密码（必填，用于自动登录和 token 刷新）
+# Token 会自动保存到 .mi.token 文件，无需手动配置
 MI_PASS = "your_password"
-
-# 小米密码令牌（可选，如果已有 token 可直接使用）
-MI_PASS_TOKEN = ""
 
 # 设备 ID 或设备名称（选填，不填则自动使用第一个设备）
 # 可通过 make list-devices 查看设备列表

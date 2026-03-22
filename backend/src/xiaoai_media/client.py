@@ -61,25 +61,65 @@ class XiaoAiClient:
 
     async def connect(self) -> None:
         self._session = ClientSession()
+        
+        # Use miservice's token store to automatically save/load tokens
+        token_store_path = ".mi.token"
         self._account = MiAccount(
             self._session,
             config.MI_USER,
             config.MI_PASS,
+            token_store=token_store_path,  # Enable automatic token persistence
         )
-        if config.MI_PASS_TOKEN and config.MI_USER:
-            # Pre-inject passToken to allow re-auth without password
-            self._account.token = {
-                "deviceId": "",
-                "userId": config.MI_USER,
-                "passToken": config.MI_PASS_TOKEN,
-            }
-            _log.debug("MiService: using passToken auth for user %s", config.MI_USER)
-        elif config.MI_USER:
+
+        # Authentication strategy:
+        # Let miservice handle authentication automatically
+        # It will use password to login and get tokens for both micoapi and xiaomiio
+        if config.MI_USER and config.MI_PASS:
             _log.info("MiService: using password auth for user %s", config.MI_USER)
+        elif config.MI_USER:
+            _log.warning("MiService: user configured but no password provided")
         else:
             _log.warning("MiService: no credentials configured")
+
         self._na_service = MiNAService(self._account)
         self._io_service = MiIOService(self._account, region=config.MI_REGION)
+
+        # Test authentication by attempting to list devices
+        # This will trigger login for both micoapi and xiaomiio services
+        try:
+            _log.info("MiService: testing authentication...")
+            
+            # Test MiNA service (will trigger login for "micoapi" sid)
+            await self._na_service.device_list()
+            _log.info("MiService: MiNA authentication successful")
+            
+            # Test MiIO service (will trigger login for "xiaomiio" sid)
+            try:
+                await self._io_service.device_list("full")
+                _log.info("MiService: MiIO authentication successful")
+            except Exception as e:
+                _log.warning("MiService: MiIO authentication failed: %s", e)
+                _log.warning("MiService: MiIO features will be unavailable, but MiNA features will work")
+
+        except (KeyError, TypeError) as e:
+            # KeyError 或 TypeError 通常意味着登录响应格式不正确
+            error_type = type(e).__name__
+            error_detail = str(e)
+
+            _log.error(
+                "小米账号登录失败 (%s: %s)。可能的原因：\n"
+                "1. 账号或密码错误\n"
+                "2. 账号需要安全验证（请在小米官网或 App 中登录一次）\n"
+                "3. 网络问题或小米服务暂时不可用",
+                error_type,
+                error_detail,
+            )
+
+            raise Exception(f"小米账号认证失败: {error_type} - {error_detail}") from e
+
+        except Exception as e:
+            _log.error("MiService: authentication test failed: %s", e)
+            raise
 
     async def close(self) -> None:
         if self._session and not self._session.closed:
@@ -539,8 +579,13 @@ class XiaoAiClient:
         assert self._na_service is not None
         assert self._account is not None
 
-        # Trigger login if needed to populate token
-        await self._na_service.device_list()
+        # Ensure login by calling device_list which triggers login if needed
+        # This populates self._account.token with micoapi serviceToken
+        try:
+            await self._na_service.device_list()
+        except Exception as e:
+            _log.error("Failed to ensure login: %s", e)
+            return []
 
         # Get serviceToken and userId from MiAccount after login
         # Token structure: {"userId": ..., "micoapi": (ssecurity, serviceToken), ...}
@@ -551,25 +596,39 @@ class XiaoAiClient:
             token_data = self._account.token
             user_id = token_data.get("userId")
 
-            # Extract serviceToken from micoapi tuple (ssecurity, serviceToken)
+            # Extract serviceToken from micoapi tuple/list (ssecurity, serviceToken)
+            # Note: JSON serialization converts tuples to lists
             micoapi_data = token_data.get("micoapi")
             if (
                 micoapi_data
-                and isinstance(micoapi_data, tuple)
+                and isinstance(micoapi_data, (tuple, list))
                 and len(micoapi_data) >= 2
             ):
                 service_token = micoapi_data[1]  # Second element is serviceToken
+            
+            _log.debug(
+                "Token structure: userId=%s, micoapi=%s",
+                user_id,
+                "present" if micoapi_data else "missing",
+            )
 
             _log.debug(
                 "Token from MiAccount: userId=%s, has_serviceToken=%s",
                 user_id,
                 bool(service_token),
             )
+        else:
+            _log.error("MiAccount.token is None or empty")
 
         if not service_token or not user_id:
             _log.error(
                 "No valid serviceToken or userId in MiAccount.token for conversation API. "
-                "Please ensure you are logged in with valid credentials."
+                "Token data: %s",
+                {
+                    "has_token": bool(self._account.token),
+                    "has_userId": bool(user_id),
+                    "has_micoapi": bool(self._account.token and self._account.token.get("micoapi")),
+                } if self._account.token else "No token"
             )
             return []
 

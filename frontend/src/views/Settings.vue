@@ -1,17 +1,15 @@
 <template>
   <el-card>
     <template #header>配置管理</template>
-    <el-alert title="密码/Token 字段不会回显，留空则保持原值不变" type="info" show-icon :closable="false" style="margin-bottom: 20px" />
+    <el-alert title="密码字段不会回显，留空则保持原值不变" type="info" show-icon :closable="false" style="margin-bottom: 20px" />
+    <el-alert title="Token 自动管理：登录成功后 Token 会自动保存到 .mi.token 文件，无需手动配置" type="success" show-icon :closable="false" style="margin-bottom: 20px" />
     <el-form v-loading="loading" label-width="120px" @submit.prevent="save">
       <el-form-item label="小米账号">
         <el-input v-model="form.MI_USER" placeholder="your_account@example.com" />
       </el-form-item>
       <el-form-item label="小米密码">
         <el-input v-model="form.MI_PASS" type="password" placeholder="留空则不修改密码" show-password />
-      </el-form-item>
-      <el-form-item label="Pass Token">
-        <el-input v-model="form.MI_PASS_TOKEN" type="password" placeholder="留空则不修改 Token" show-password />
-        <div class="el-form-item__explain">可替代密码登录，从抓包或已有 Token 文件中获取</div>
+        <div class="el-form-item__explain">用于自动登录和 Token 刷新</div>
       </el-form-item>
       <el-form-item label="默认设备">
         <el-select v-model="form.MI_DID" placeholder="留空则使用第一个设备" clearable style="flex: 1; margin-right: 8px"
@@ -128,7 +126,6 @@ const devices = ref<Device[]>([])
 const form = ref<Config>({
   MI_USER: '',
   MI_PASS: '',
-  MI_PASS_TOKEN: '',
   MI_DID: '',
   MI_REGION: 'cn',
   MUSIC_API_BASE_URL: 'http://localhost:5050',
@@ -180,8 +177,7 @@ async function load() {
   error.value = ''
   try {
     const data = await api.getConfig()
-    // Keep masked sentinel (***) so user can see the field is already set.
-    // Password is always cleared for security; token shows its masked state.
+    // Password is always cleared for security
     form.value = { ...data, MI_PASS: '' }
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : '加载配置失败'
@@ -209,9 +205,8 @@ async function save() {
   success.value = false
   try {
     const payload: Partial<Config> = { ...form.value }
+    // Don't send empty password (keep existing)
     if (!payload.MI_PASS) delete payload.MI_PASS
-    // '***' means "already set, don't overwrite"
-    if (!payload.MI_PASS_TOKEN || payload.MI_PASS_TOKEN === '***') delete payload.MI_PASS_TOKEN
     await api.updateConfig(payload)
     success.value = true
   } catch (e: unknown) {

@@ -10,7 +10,7 @@ import re
 import time
 from typing import Callable
 
-from xiaoai_media.client import XiaoAiClient
+from xiaoai_media.api.dependencies import get_client_sync
 from xiaoai_media.services.state_service import get_state_service
 
 _log = logging.getLogger(__name__)
@@ -83,31 +83,31 @@ class ConversationPoller:
     async def _poll_conversations(self):
         """Poll conversations from all available devices."""
         try:
-            async with XiaoAiClient() as client:
-                devices = await client.list_devices()
-                _log.debug("轮询 %d 个设备的对话记录", len(devices))
+            client = get_client_sync()
+            devices = await client.list_devices()
+            _log.debug("轮询 %d 个设备的对话记录", len(devices))
+            
+            for device in devices:
+                device_id = device.get("deviceID")
+                device_name = device.get("name", "未知设备")
+                if not device_id:
+                    continue
                 
-                for device in devices:
-                    device_id = device.get("deviceID")
-                    device_name = device.get("name", "未知设备")
-                    if not device_id:
-                        continue
-                    
-                    # Initialize timestamp for new devices (start from 0 to catch recent conversations)
-                    if device_id not in self.last_timestamp:
-                        self.last_timestamp[device_id] = 0
-                        _log.debug("初始化设备 %s (%s) 的时间戳: 0", device_name, device_id)
-                    
-                    try:
-                        conversations = await client.get_latest_ask(device_id, limit=2)
-                        _log.debug("设备 %s 获取到 %d 条对话记录", device_name, len(conversations))
-                        await self._process_conversations(device_id, conversations)
-                    except Exception as e:
-                        _log.warning(
-                            "获取设备 %s 的对话记录失败: %s",
-                            device_id,
-                            e,
-                        )
+                # Initialize timestamp for new devices (start from 0 to catch recent conversations)
+                if device_id not in self.last_timestamp:
+                    self.last_timestamp[device_id] = 0
+                    _log.debug("初始化设备 %s (%s) 的时间戳: 0", device_name, device_id)
+                
+                try:
+                    conversations = await client.get_latest_ask(device_id, limit=2)
+                    _log.debug("设备 %s 获取到 %d 条对话记录", device_name, len(conversations))
+                    await self._process_conversations(device_id, conversations)
+                except Exception as e:
+                    _log.warning(
+                        "获取设备 %s 的对话记录失败: %s",
+                        device_id,
+                        e,
+                    )
         except Exception as e:
             _log.error("轮询对话记录失败: %s", e, exc_info=True)
 

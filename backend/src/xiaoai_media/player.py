@@ -12,7 +12,7 @@ from typing import Any
 
 from fastapi import HTTPException
 
-from xiaoai_media.client import XiaoAiClient
+from xiaoai_media.api.dependencies import get_client_sync
 from xiaoai_media.services.playlist_models import PlaylistItem
 from xiaoai_media.services.playlist_service import PlaylistService
 
@@ -139,23 +139,23 @@ class PlaylistPlayer:
                 detail=f"Cannot get playback URL for song {song['name']}: {e}",
             )
 
-        async with XiaoAiClient() as client:
-            # Stop current playback if requested
-            if stop_first:
-                try:
-                    _log.debug("Stopping current playback before playing new song...")
-                    await client.player_stop(device_id)
-                    _log.debug("Current playback stopped")
-                    await asyncio.sleep(0.5)
-                except Exception as e:
-                    _log.warning(
-                        "Failed to stop current playback (may not be playing): %s", e
-                    )
+        client = get_client_sync()
+        # Stop current playback if requested
+        if stop_first:
+            try:
+                _log.debug("Stopping current playback before playing new song...")
+                await client.player_stop(device_id)
+                _log.debug("Current playback stopped")
+                await asyncio.sleep(0.5)
+            except Exception as e:
+                _log.warning(
+                    "Failed to stop current playback (may not be playing): %s", e
+                )
 
-            # Play the new URL
-            _log.info("About to play URL: %s", url[:200])
-            result = await client.play_url(url, device_id, _type=1)
-            _log.info("Play result: %s", result)
+        # Play the new URL
+        _log.info("About to play URL: %s", url[:200])
+        result = await client.play_url(url, device_id, _type=1)
+        _log.info("Play result: %s", result)
 
         # Update current index
         pl["current"] = index
@@ -221,8 +221,8 @@ class PlaylistPlayer:
         Returns:
             操作结果
         """
-        async with XiaoAiClient() as client:
-            result = await client.player_pause(device_id)
+        client = get_client_sync()
+        result = await client.player_pause(device_id)
         return result
 
     async def resume(self, device_id: str) -> dict:
@@ -234,8 +234,8 @@ class PlaylistPlayer:
         Returns:
             操作结果
         """
-        async with XiaoAiClient() as client:
-            result = await client.player_play(device_id)
+        client = get_client_sync()
+        result = await client.player_play(device_id)
         return result
 
     async def stop(self, device_id: str) -> dict:
@@ -247,8 +247,8 @@ class PlaylistPlayer:
         Returns:
             操作结果
         """
-        async with XiaoAiClient() as client:
-            result = await client.player_stop(device_id)
+        client = get_client_sync()
+        result = await client.player_stop(device_id)
         return result
 
     async def get_status(self, device_id: str) -> dict:
@@ -260,8 +260,8 @@ class PlaylistPlayer:
         Returns:
             播放状态
         """
-        async with XiaoAiClient() as client:
-            result = await client.player_get_status(device_id)
+        client = get_client_sync()
+        result = await client.player_get_status(device_id)
         return result
 
     # ------------------------------------------------------------------

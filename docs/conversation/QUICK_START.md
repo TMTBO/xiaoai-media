@@ -110,7 +110,8 @@ INFO xiaoai_media.command_handler — 播放成功: 周杰伦 - 晴天
 **检查：**
 1. 确认 `ENABLE_CONVERSATION_POLLING=true`
 2. 查看日志是否有 "对话轮询器已启动"
-3. 确认小米账号配置正确（MI_USER, MI_PASS_TOKEN）
+3. 确认小米账号配置正确（MI_USER, MI_PASS）
+4. Token 会自动保存到 `.mi.token` 文件
 
 ### 问题：检测到对话但没有播放
 

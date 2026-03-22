@@ -11,7 +11,7 @@ import re
 from fastapi import HTTPException
 
 from xiaoai_media import config
-from xiaoai_media.client import XiaoAiClient
+from xiaoai_media.api.dependencies import get_client_sync
 from .music_service import MusicService
 from .playlist_loader import PlaylistLoaderService
 
@@ -241,8 +241,8 @@ class VoiceCommandService:
         """
         _log.info("VoiceCommand: relaying raw command %r", text)
         try:
-            async with XiaoAiClient() as client:
-                result = await client.send_command(text, device_id)
+            client = get_client_sync()
+            result = await client.send_command(text, device_id)
             return {"action": "command", "command": text, "result": result}
         except Exception as e:
             raise HTTPException(status_code=502, detail=str(e))
@@ -268,8 +268,8 @@ class VoiceCommandService:
         _log.info("AnnounceSearch: TTS %r", tts_text)
         
         try:
-            async with XiaoAiClient() as client:
-                result = await client.text_to_speech(tts_text, device_id)
+            client = get_client_sync()
+            result = await client.text_to_speech(tts_text, device_id)
             return {"tts": tts_text, "result": result}
         except Exception as e:
             raise HTTPException(status_code=502, detail=str(e))
@@ -307,8 +307,8 @@ class VoiceCommandService:
             mode_name = mode_names.get(mode, mode)
             
             # 播报模式变更
-            async with XiaoAiClient() as client:
-                await client.text_to_speech(f"已切换到{mode_name}模式", device_id)
+            client = get_client_sync()
+            await client.text_to_speech(f"已切换到{mode_name}模式", device_id)
             
             return {
                 "action": "set_play_mode",
@@ -374,8 +374,8 @@ class VoiceCommandService:
         
         if not current_playlist_id:
             # 如果没有播单，直接停止播放器
-            async with XiaoAiClient() as client:
-                await client.player_stop(device_id)
+            client = get_client_sync()
+            await client.player_stop(device_id)
             return {"action": "stop", "message": "已停止播放"}
         
         from xiaoai_media.services.playlist_service import PlaylistService

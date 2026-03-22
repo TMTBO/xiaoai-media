@@ -6,7 +6,7 @@ import re
 import aiohttp
 
 from xiaoai_media import config
-from xiaoai_media.client import XiaoAiClient
+from xiaoai_media.api.dependencies import get_client_sync
 
 _log = logging.getLogger(__name__)
 
@@ -64,13 +64,13 @@ class CommandHandler:
                         )
 
                         # Send error feedback to speaker
-                        async with XiaoAiClient() as client:
-                            if resp.status == 404:
-                                await client.text_to_speech(
-                                    "没有找到匹配的内容", device_id
-                                )
-                            else:
-                                await client.text_to_speech("命令处理失败", device_id)
+                        client = get_client_sync()
+                        if resp.status == 404:
+                            await client.text_to_speech(
+                                "没有找到匹配的内容", device_id
+                            )
+                        else:
+                            await client.text_to_speech("命令处理失败", device_id)
                         return
 
                     result = await resp.json(content_type=None)
@@ -79,7 +79,7 @@ class CommandHandler:
         except Exception as e:
             _log.error("语音命令处理失败: %s", e, exc_info=True)
             try:
-                async with XiaoAiClient() as client:
-                    await client.text_to_speech("命令处理出错", device_id)
+                client = get_client_sync()
+                await client.text_to_speech("命令处理出错", device_id)
             except:
                 pass

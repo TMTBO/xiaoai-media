@@ -8,7 +8,7 @@ import json
 import logging
 from typing import Dict, Optional
 
-from xiaoai_media.client import XiaoAiClient
+from xiaoai_media.api.dependencies import get_client_sync
 from xiaoai_media.services.state_service import get_state_service
 from xiaoai_media.services.playlist_service import PlaylistService
 
@@ -77,35 +77,35 @@ class PlaybackMonitor:
     async def _check_all_devices(self):
         """检查所有设备的播放状态"""
         try:
-            async with XiaoAiClient() as client:
-                devices = await client.list_devices()
+            client = get_client_sync()
+            devices = await client.list_devices()
+            
+            for device in devices:
+                device_id = device.get("deviceID")
+                if not device_id:
+                    continue
                 
-                for device in devices:
-                    device_id = device.get("deviceID")
-                    if not device_id:
-                        continue
-                    
-                    # 检查该设备是否有正在播放的播单
-                    current_playlist_id = self._state_service.get(
-                        f"current_playlist_{device_id}"
+                # 检查该设备是否有正在播放的播单
+                current_playlist_id = self._state_service.get(
+                    f"current_playlist_{device_id}"
+                )
+                if not current_playlist_id:
+                    continue
+                
+                try:
+                    await self._check_device_status(client, device_id, current_playlist_id)
+                except Exception as e:
+                    _log.debug(
+                        "检查设备 %s 播放状态失败: %s",
+                        device_id,
+                        e,
                     )
-                    if not current_playlist_id:
-                        continue
-                    
-                    try:
-                        await self._check_device_status(client, device_id, current_playlist_id)
-                    except Exception as e:
-                        _log.debug(
-                            "检查设备 %s 播放状态失败: %s",
-                            device_id,
-                            e,
-                        )
         except Exception as e:
             _log.error("检查设备播放状态失败: %s", e, exc_info=True)
 
     async def _check_device_status(
         self,
-        client: XiaoAiClient,
+        client,
         device_id: str,
         playlist_id: str,
     ):
@@ -160,7 +160,7 @@ class PlaybackMonitor:
             # 转换状态码为字符串
             play_status = {0: "stopped", 1: "playing", 2: "paused"}.get(status_code, "unknown")
             
-            _log.info(
+            _log.debug(
                 "设备 %s 播放状态: status=%s(%d), audio_id=%s, position=%d/%d, media_type=%d",
                 device_id,
                 play_status,
@@ -189,7 +189,7 @@ class PlaybackMonitor:
             # 2. 或者接近结尾时（最后 2 秒内）从 playing 变为 paused
             is_near_end = duration > 0 and position >= duration - 2000
 
-            _log.info("last_status: %s, current_status: %s, %s", last_play_status, play_status, is_near_end)
+            # _log.info("last_status: %s, current_status: %s, %s", last_play_status, play_status, is_near_end)
             
             if last_play_status == "playing":
                 if play_status == "playing" and duration == 0 and position == 0:

@@ -17,7 +17,6 @@ class ConfigUpdate(BaseModel):
     """配置更新请求模型"""
     MI_USER: str | None = None
     MI_PASS: str | None = None
-    MI_PASS_TOKEN: str | None = None
     MI_DID: str | None = None
     MI_REGION: str | None = None
     MUSIC_API_BASE_URL: str | None = None

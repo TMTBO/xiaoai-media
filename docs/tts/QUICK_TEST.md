@@ -132,7 +132,7 @@ curl -X POST "http://localhost:8000/command" \
 ```
 No devices found!
 ```
-**解决**：检查`.env`文件中的`MI_USER`和`MI_PASS_TOKEN`是否正确。
+**解决**：检查 `user_config.py` 文件中的 `MI_USER` 和 `MI_PASS` 是否正确。Token 会自动生成并保存到 `.mi.token` 文件。
 
 ### 问题2：音箱没有回应
 **原因**：可能使用了TTS播报而不是执行命令。

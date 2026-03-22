@@ -125,7 +125,6 @@ def _get_config(key: str, default: Any = "") -> Any:
 
 MI_USER: str = _get_config("MI_USER", "")
 MI_PASS: str = _get_config("MI_PASS", "")
-MI_PASS_TOKEN: str = _get_config("MI_PASS_TOKEN", "")
 MI_DID: str = _get_config("MI_DID", "")
 MI_REGION: str = _get_config("MI_REGION", "cn")
 

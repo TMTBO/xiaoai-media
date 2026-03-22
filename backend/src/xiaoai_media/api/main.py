@@ -28,6 +28,8 @@ from xiaoai_media.api.routes import (
 from xiaoai_media.conversation import ConversationPoller
 from xiaoai_media.command_handler import CommandHandler
 from xiaoai_media.playback_monitor import PlaybackMonitor
+from xiaoai_media.client import XiaoAiClient
+from xiaoai_media.api.dependencies import set_global_client
 from xiaoai_media import config as app_config
 
 app = FastAPI(
@@ -60,6 +62,12 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup_event():
     """Start background tasks on application startup."""
+    # Initialize global XiaoAiClient
+    client = XiaoAiClient()
+    await client.connect()
+    set_global_client(client)
+    logging.getLogger(__name__).info("XiaoAiClient 已初始化")
+    
     if app_config.ENABLE_CONVERSATION_POLLING:
         await conversation_poller.start()
         logging.getLogger(__name__).info("对话监听已启用")
@@ -81,6 +89,10 @@ async def shutdown_event():
     """Stop background tasks on application shutdown."""
     await conversation_poller.stop()
     await playback_monitor.stop()
+    
+    # Note: XiaoAiClient will be closed automatically when the app shuts down
+    # No need to explicitly close it here as it's managed by the dependency system
+    
     logging.getLogger(__name__).info("应用已关闭")
 
 

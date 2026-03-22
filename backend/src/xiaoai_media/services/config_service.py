@@ -17,7 +17,6 @@ from xiaoai_media import config
 ALLOWED_KEYS = {
     "MI_USER",
     "MI_PASS",
-    "MI_PASS_TOKEN",
     "MI_DID",
     "MI_REGION",
     "MUSIC_API_BASE_URL",
@@ -205,7 +204,6 @@ class ConfigService:
         return {
             "MI_USER": config.MI_USER,
             "MI_PASS": "***" if config.MI_PASS else "",
-            "MI_PASS_TOKEN": "***" if config.MI_PASS_TOKEN else "",
             "MI_DID": config.MI_DID,
             "MI_REGION": config.MI_REGION,
             "MUSIC_API_BASE_URL": config.MUSIC_API_BASE_URL,
@@ -246,9 +244,9 @@ class ConfigService:
             过滤后的更新字典
         """
         filtered = updates.copy()
-        for key in ["MI_PASS", "MI_PASS_TOKEN"]:
-            if key in filtered and filtered[key] == "***":
-                del filtered[key]
+        # 如果密码是占位符，则不更新
+        if "MI_PASS" in filtered and filtered["MI_PASS"] == "***":
+            del filtered["MI_PASS"]
         return filtered
 
     @staticmethod
