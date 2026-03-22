@@ -127,6 +127,8 @@ class PlaylistStorage:
             items=items,
             created_at=idx.created_at,
             updated_at=idx.updated_at,
+            interval=idx.interval,
+            pic_url=idx.pic_url,
         )
 
     @staticmethod
@@ -143,6 +145,8 @@ class PlaylistStorage:
             item_count=len(playlist.items),
             created_at=playlist.created_at,
             updated_at=playlist.updated_at,
+            interval=playlist.interval,
+            pic_url=playlist.pic_url,
         )
         PlaylistStorage.save_index(index)
 

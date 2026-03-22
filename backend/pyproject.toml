@@ -14,6 +14,7 @@ dependencies = [
     "fastapi",
     "uvicorn[standard]",
     "httpx",
+    "requests",
 ]
 
 [project.optional-dependencies]

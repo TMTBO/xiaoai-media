@@ -110,6 +110,8 @@ class PlaylistService:
             items=[],
             created_at=now,
             updated_at=now,
+            interval=req.interval,
+            pic_url=req.pic_url,
         )
 
         PlaylistStorage.save_playlist(playlist)
@@ -136,6 +138,10 @@ class PlaylistService:
             playlist.description = req.description
         if req.voice_keywords is not None:
             playlist.voice_keywords = req.voice_keywords
+        if req.interval is not None:
+            playlist.interval = req.interval
+        if req.pic_url is not None:
+            playlist.pic_url = req.pic_url
 
         playlist.updated_at = datetime.now().isoformat()
         PlaylistStorage.save_playlist(playlist)

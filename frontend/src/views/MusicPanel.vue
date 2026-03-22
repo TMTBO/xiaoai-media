@@ -278,13 +278,22 @@ function normalizeSong(raw: Record<string, unknown>, platform: string): Song {
         }))
         : []
     const meta = (raw.meta as Record<string, unknown>) ?? {}
+    
+    // interval 可能是数字或字符串（如 "04:32"）
+    let interval: number | string = 0
+    if (typeof raw.interval === 'number') {
+        interval = raw.interval
+    } else if (typeof raw.interval === 'string') {
+        interval = raw.interval
+    }
+    
     return {
         id: String(raw.id ?? raw.songId ?? ''),
         name: String(raw.name ?? ''),
         singer: String(raw.singer ?? ''),
         platform,
         qualities,
-        interval: typeof raw.interval === 'number' ? raw.interval : 0,
+        interval,
         meta: {
             albumName: String(meta.albumName ?? raw.albumName ?? ''),
             picUrl: String(meta.picUrl ?? raw.picUrl ?? ''),
@@ -630,6 +639,8 @@ async function confirmCreatePlaylist() {
                 song_id: song.id,
                 qualities: song.qualities,
             },
+            interval: song.interval,
+            pic_url: song.meta.picUrl,
         }))
 
         // 添加歌曲到播单

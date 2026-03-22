@@ -78,6 +78,15 @@
                 <el-form-item label="描述">
                     <el-input v-model="playlistForm.description" type="textarea" :rows="3" placeholder="播单描述（可选）" />
                 </el-form-item>
+                <el-form-item label="播放间隔">
+                    <el-input v-model="playlistForm.interval" placeholder="秒数或时长（如 300 或 04:32）" />
+                    <div style="font-size: 12px; color: #909399; margin-top: 4px">
+                        播放间隔，可以是秒数（如 300）或时长字符串（如 04:32），可选
+                    </div>
+                </el-form-item>
+                <el-form-item label="封面图片">
+                    <el-input v-model="playlistForm.pic_url" placeholder="封面图片URL（可选）" />
+                </el-form-item>
                 <el-form-item label="语音关键词">
                     <el-select v-model="playlistForm.voice_keywords" multiple filterable allow-create
                         default-first-option placeholder="输入关键词后按回车添加，例如：音乐、我的歌单" style="width: 100%">
@@ -147,6 +156,15 @@
                     <el-input v-model="itemForm.url" type="textarea" :rows="2"
                         placeholder="如果留空，则需要配置音频ID或自定义参数通过 user_config.py 动态获取" />
                 </el-form-item>
+                <el-form-item label="播放间隔">
+                    <el-input v-model="itemForm.interval" placeholder="秒数或时长（如 300 或 04:32）" />
+                    <div style="font-size: 12px; color: #909399; margin-top: 4px">
+                        播放间隔，可以是秒数（如 300）或时长字符串（如 04:32），可选
+                    </div>
+                </el-form-item>
+                <el-form-item label="封面图片">
+                    <el-input v-model="itemForm.pic_url" placeholder="封面图片URL（可选）" />
+                </el-form-item>
                 <el-form-item label="自定义参数">
                     <el-input v-model="customParamsText" type="textarea" :rows="4"
                         placeholder='JSON 格式，例如：{"type": "music", "platform": "tx", "song_id": "123"}' />
@@ -194,6 +212,8 @@ const playlistForm = ref({
     type: '',
     description: '',
     voice_keywords: [] as string[],
+    interval: undefined as number | string | undefined,
+    pic_url: '',
 })
 
 const itemForm = ref<PlaylistItem>({
@@ -203,6 +223,8 @@ const itemForm = ref<PlaylistItem>({
     audio_id: '',
     url: '',
     custom_params: {},
+    interval: undefined,
+    pic_url: '',
 })
 
 const customParamsText = ref('')
@@ -285,6 +307,8 @@ function handleEdit(playlist: PlaylistIndex) {
         type: playlist.type,
         description: playlist.description,
         voice_keywords: [...playlist.voice_keywords],
+        interval: playlist.interval,
+        pic_url: playlist.pic_url || '',
     }
     showCreateDialog.value = true
 }
@@ -382,6 +406,8 @@ async function handleAddItem() {
             audio_id: '',
             url: '',
             custom_params: {},
+            interval: undefined,
+            pic_url: '',
         }
         customParamsText.value = ''
 
@@ -431,6 +457,8 @@ function resetCreateForm() {
         type: '',
         description: '',
         voice_keywords: [],
+        interval: undefined as number | string | undefined,
+        pic_url: '',
     }
 }
 
