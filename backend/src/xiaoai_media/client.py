@@ -63,7 +63,11 @@ class XiaoAiClient:
         self._session = ClientSession()
         
         # Use miservice's token store to automatically save/load tokens
-        token_store_path = ".mi.token"
+        # Store token in data directory (HOME) instead of current working directory
+        # This ensures write permissions in Docker environment
+        from pathlib import Path
+        token_store_path = str(Path.home() / ".mi.token")
+        
         self._account = MiAccount(
             self._session,
             config.MI_USER,
