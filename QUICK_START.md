@@ -13,6 +13,7 @@ make install
 ```bash
 # 复制配置模板
 cp user_config_template.py user_config.py
+cp music_provider_template.py music_provider.py
 
 # 编辑配置（填入小米账号信息）
 vim user_config.py
@@ -36,6 +37,7 @@ make frontend # 前端：http://localhost:5173
 ```
 ./
 ├── user_config.py      # 配置文件
+├── music_provider.py   # 音乐提供者（必需）
 ├── conversation.db     # 对话历史
 ├── playlists/          # 播放列表（多文件存储）
 │   ├── index.json      # 播单索引
@@ -44,6 +46,8 @@ make frontend # 前端：http://localhost:5173
 ```
 
 这些文件已添加到 `.gitignore`，不会被提交。
+
+**重要提示**：`user_config.py` 和 `music_provider.py` 必须在同一目录。
 
 **从旧版本升级？** 如果你有旧的 `playlists.json` 文件，运行迁移脚本：
 ```bash
@@ -62,6 +66,7 @@ python scripts/migrate_playlists.py
 # 1. 创建数据目录和配置文件
 mkdir -p ./data
 cp user_config_template.py ./data/user_config.py
+cp music_provider_template.py ./data/music_provider.py
 vim ./data/user_config.py
 
 # 2. 启动服务（自动拉取镜像）
@@ -80,6 +85,7 @@ docker-compose down
 # 1. 创建数据目录和配置文件
 mkdir -p ./data
 cp user_config_template.py ./data/user_config.py
+cp music_provider_template.py ./data/music_provider.py
 vim ./data/user_config.py
 
 # 2. 拉取并运行镜像
@@ -128,10 +134,13 @@ Docker 环境的数据文件存储在挂载的 `/data` 目录：
 ```
 ./data/              # 宿主机目录
 ├── user_config.py   # 配置文件
+├── music_provider.py # 音乐提供者（必需）
 ├── conversation.db  # 对话历史
 ├── playlists/       # 播放列表
 └── ...
 ```
+
+**重要提示**：`user_config.py` 和 `music_provider.py` 必须在同一目录（`./data/`）。
 
 ---
 

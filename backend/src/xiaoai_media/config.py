@@ -83,6 +83,13 @@ def _load_user_config() -> Any | None:
         return None
 
     try:
+        # 将配置文件所在目录添加到 sys.path 的最前面
+        # 这样 user_config.py 可以导入同目录下的 music_provider.py
+        config_dir = str(config_path.parent.resolve())
+        if config_dir not in sys.path:
+            sys.path.insert(0, config_dir)
+            _log.debug("已将配置目录添加到 sys.path: %s", config_dir)
+        
         spec = importlib.util.spec_from_file_location("user_config", config_path)
         if spec and spec.loader:
             user_config = importlib.util.module_from_spec(spec)

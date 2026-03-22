@@ -16,6 +16,7 @@ cd xiaoai-media
 # 2. 创建配置文件
 mkdir -p ./data
 cp user_config_template.py ./data/user_config.py
+cp music_provider_template.py ./data/music_provider.py
 vim ./data/user_config.py  # 填入小米账号信息
 
 # 3. 启动服务
@@ -149,10 +150,19 @@ docker run -d \
 ```
 ./data/
 ├── user_config.py      # 配置文件
+├── music_provider.py   # 音乐提供者（必需）
 ├── conversation.db     # 对话历史
 ├── playlists/          # 播放列表
 └── logs/               # 日志文件
 ```
+
+**重要提示**：
+- `user_config.py` 和 `music_provider.py` 必须放在同一目录（`./data/`）
+- 首次部署时，请从模板文件复制：
+  ```bash
+  cp user_config_template.py ./data/user_config.py
+  cp music_provider_template.py ./data/music_provider.py
+  ```
 
 ---
 
@@ -181,9 +191,15 @@ chmod -R 755 ./data
 ```bash
 # 检查配置文件是否存在
 ls -la ./data/user_config.py
+ls -la ./data/music_provider.py
 
 # 检查容器内配置
 docker exec xiaoai-media ls -la /data/user_config.py
+docker exec xiaoai-media ls -la /data/music_provider.py
+
+# 如果缺少 music_provider.py，从模板复制
+cp music_provider_template.py ./data/music_provider.py
+docker restart xiaoai-media
 ```
 
 ### 4. 容器无法启动
