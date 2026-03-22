@@ -366,24 +366,40 @@ class XiaoAiClient:
 
     async def get_volume(self, device_id: str | None = None) -> dict:
         """Get current speaker volume."""
-        assert self._io_service is not None
+        assert self._na_service is not None
         devices = await self.list_devices()
         did = await self._resolve_device_id(device_id)
         device_name = next(
             (d.get("name", "") for d in devices if d["deviceID"] == did), ""
         )
 
-        # Get numeric did for miot request
-        numeric_did = next(
-            (d.get("did", "") for d in devices if d["deviceID"] == did), None
-        )
-        if not numeric_did:
-            raise ValueError(f"Cannot find numeric did for device {did}")
+        _log.info("MiService: get volume from device %s", did)
 
-        _log.info("MiService: get volume from device %s (did=%s)", did, numeric_did)
-        # Volume is at siid=2 (player service), piid=1 (volume property)
-        volume = await self._io_service.miot_get_prop(numeric_did, (2, 1))
-        _log.info("MiService: get volume result: %s", volume)
+        # Use player_get_status instead of miot_get_prop
+        # miot_get_prop(did, (2, 1)) returns None on some devices
+        result = await self._na_service.player_get_status(did)
+        _log.debug("MiService: player_get_status raw result: %s", result)
+
+        # Parse volume from nested JSON string in result['data']['info']
+        volume = None
+        try:
+            if result and isinstance(result, dict):
+                data = result.get("data", {})
+                info_str = data.get("info", "")
+                if info_str:
+                    info_data = json.loads(info_str)
+                    volume = info_data.get("volume")
+                    _log.info("MiService: get volume result: %s", volume)
+                else:
+                    _log.warning("MiService: player_get_status returned no info field")
+            else:
+                _log.warning(
+                    "MiService: player_get_status returned invalid data: %s", result
+                )
+        except (json.JSONDecodeError, AttributeError) as e:
+            _log.error(
+                "MiService: failed to parse volume from player_get_status: %s", e
+            )
 
         return {"device": f"{device_name}({did})", "volume": volume}
 
@@ -519,51 +535,41 @@ class XiaoAiClient:
             _log.warning("Cannot find hardware for device %s, using default", did)
             hardware = "LX06"
 
-        # Get serviceToken and userId from MiAccount or .mi.token file
         # Ensure we're logged in first
         assert self._na_service is not None
-        await self._na_service.device_list()  # This triggers login if needed
+        assert self._account is not None
 
+        # Trigger login if needed to populate token
+        await self._na_service.device_list()
+
+        # Get serviceToken and userId from MiAccount after login
+        # Token structure: {"userId": ..., "micoapi": (ssecurity, serviceToken), ...}
         service_token = None
         user_id = None
 
-        # Try to get from MiAccount first
-        if self._account and self._account.token:
+        if self._account.token:
             token_data = self._account.token
-            service_token = token_data.get("serviceToken")
             user_id = token_data.get("userId")
 
-        # If serviceToken not in MiAccount, read from .mi.token file
-        if not service_token:
-            import os
+            # Extract serviceToken from micoapi tuple (ssecurity, serviceToken)
+            micoapi_data = token_data.get("micoapi")
+            if (
+                micoapi_data
+                and isinstance(micoapi_data, tuple)
+                and len(micoapi_data) >= 2
+            ):
+                service_token = micoapi_data[1]  # Second element is serviceToken
 
-            project_root = os.path.dirname(
-                os.path.dirname(
-                    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                )
+            _log.debug(
+                "Token from MiAccount: userId=%s, has_serviceToken=%s",
+                user_id,
+                bool(service_token),
             )
-            token_file = os.path.join(project_root, ".mi.token")
-
-            try:
-                if os.path.exists(token_file):
-                    with open(token_file, "r") as f:
-                        token_data = json.load(f)
-                        if not user_id:
-                            user_id = token_data.get("userId")
-                        micoapi = token_data.get("micoapi", [])
-                        if len(micoapi) > 1:
-                            service_token = micoapi[1]
-                            _log.debug("Loaded serviceToken from .mi.token file")
-            except Exception as e:
-                _log.warning("Failed to read .mi.token: %s", e)
-
-        _log.debug(
-            "Auth info: userId=%s, has_serviceToken=%s", user_id, bool(service_token)
-        )
 
         if not service_token or not user_id:
-            _log.warning(
-                "No valid serviceToken or userId available for conversation API"
+            _log.error(
+                "No valid serviceToken or userId in MiAccount.token for conversation API. "
+                "Please ensure you are logged in with valid credentials."
             )
             return []
 
@@ -572,39 +578,65 @@ class XiaoAiClient:
         url = f"https://userprofile.mina.mi.com/device_profile/v2/conversation?source=dialogu&hardware={hardware}&timestamp={timestamp}&limit={limit}"
 
         _log.debug(
-            "MiService: get latest ask from device %s (hardware: %s)", did, hardware
+            "Conversation API request: device=%s, hardware=%s, url=%s",
+            did,
+            hardware,
+            url,
         )
 
         try:
             assert self._session is not None
 
-            # Build cookies manually
-            cookies = {"deviceId": did}
-            if service_token:
-                cookies["serviceToken"] = service_token
-            if user_id:
-                cookies["userId"] = str(user_id)
+            # Build request headers and cookies following miservice pattern
+            headers = {
+                "User-Agent": "MiHome/6.0.103 (com.xiaomi.mihome; build:6.0.103.1; iOS 14.4.0) Alamofire/6.0.103 MICO/iOSApp/appStore/6.0.103",
+            }
+
+            cookies = {
+                "deviceId": did,
+                "serviceToken": service_token,
+                "userId": str(user_id),
+            }
 
             _log.debug(
-                "Request cookies: deviceId=%s, has_serviceToken=%s, userId=%s",
+                "Request headers: %s, cookies: deviceId=%s, userId=%s, serviceToken=%s",
+                headers,
                 did,
-                bool(service_token),
                 user_id,
+                service_token[:20] + "..." if service_token else None,
             )
 
-            async with self._session.get(url, cookies=cookies, timeout=15) as resp:
+            async with self._session.get(
+                url, headers=headers, cookies=cookies, timeout=15
+            ) as resp:
+                _log.debug(
+                    "Conversation API response: status=%d, headers=%s",
+                    resp.status,
+                    dict(resp.headers),
+                )
+
                 if resp.status != 200:
-                    _log.debug("Conversation API returned status %d", resp.status)
+                    error_text = await resp.text()
+                    _log.error(
+                        "Conversation API failed with status %d: %s",
+                        resp.status,
+                        error_text,
+                    )
                     if resp.status == 401:
-                        _log.debug("Authentication failed, serviceToken may be invalid")
+                        _log.error(
+                            "Authentication failed - serviceToken may be expired. "
+                            "Try re-logging in or clearing credentials."
+                        )
                     elif resp.status == 400:
-                        _log.debug(
-                            "Bad request, check deviceId and hardware parameters"
+                        _log.error(
+                            "Bad request - check deviceId (%s) and hardware (%s)",
+                            did,
+                            hardware,
                         )
                     return []
 
                 data = await resp.json()
-                _log.debug("Conversation API response: %s", data)
+                _log.debug("Conversation API response data: %s", data)
 
                 # Parse response
                 result = []
