@@ -51,16 +51,46 @@
                         </el-tag>
                     </template>
                 </el-table-column>
-                <el-table-column label="操作" width="300" fixed="right">
+                <el-table-column label="播放模式" width="120">
                     <template #default="{ row }">
-                        <el-button size="small" type="success" :disabled="!row.item_count" @click="handlePlay(row)">
-                            <el-icon style="margin-right: 4px">
-                                <VideoPlay />
-                            </el-icon>播放
-                        </el-button>
-                        <el-button size="small" @click="handleEdit(row)">编辑</el-button>
-                        <el-button size="small" @click="handleManageItems(row)">项目</el-button>
-                        <el-button size="small" type="danger" @click="handleDelete(row)">删除</el-button>
+                        <el-select v-model="row.play_mode" size="small" @change="handlePlayModeChange(row)">
+                            <el-option label="列表循环" value="loop" />
+                            <el-option label="单曲循环" value="single" />
+                            <el-option label="随机播放" value="random" />
+                        </el-select>
+                    </template>
+                </el-table-column>
+                <el-table-column label="当前位置" width="100">
+                    <template #default="{ row }">
+                        {{ row.current_index + 1 }} / {{ row.item_count }}
+                    </template>
+                </el-table-column>
+                <el-table-column label="操作" width="280" fixed="right">
+                    <template #default="{ row }">
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <div style="display: flex; gap: 4px;">
+                                <el-button size="small" type="success" :disabled="!row.item_count" @click="handlePlay(row)" style="flex: 1;">
+                                    <el-icon style="margin-right: 4px">
+                                        <VideoPlay />
+                                    </el-icon>播放
+                                </el-button>
+                                <el-button size="small" type="primary" :disabled="!row.item_count" @click="handleContinue(row)" style="flex: 1;">
+                                    <el-icon style="margin-right: 4px">
+                                        <CaretRight />
+                                    </el-icon>继续
+                                </el-button>
+                                <el-button size="small" type="warning" :disabled="!row.item_count" @click="handleStop(row)" style="flex: 1;">
+                                    <el-icon style="margin-right: 4px">
+                                        <VideoPause />
+                                    </el-icon>停止
+                                </el-button>
+                            </div>
+                            <div style="display: flex; gap: 4px;">
+                                <el-button size="small" @click="handleEdit(row)" style="flex: 1;">编辑</el-button>
+                                <el-button size="small" @click="handleManageItems(row)" style="flex: 1;">项目</el-button>
+                                <el-button size="small" type="danger" @click="handleDelete(row)" style="flex: 1;">删除</el-button>
+                            </div>
+                        </div>
                     </template>
                 </el-table-column>
             </el-table>
@@ -184,7 +214,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Refresh, List, Plus, VideoPlay } from '@element-plus/icons-vue'
+import { Refresh, List, Plus, VideoPlay, CaretRight, VideoPause } from '@element-plus/icons-vue'
 import { api, type Device, type Playlist, type PlaylistIndex, type PlaylistItem } from '@/api'
 
 // 设备相关
@@ -353,9 +383,51 @@ async function handlePlay(playlist: PlaylistIndex) {
             announce: true,
         })
         ElMessage.success(`正在播放：${playlist.name}`)
+        await loadPlaylists()
     } catch (error: any) {
         ElMessage.error(`播放失败: ${error.message}`)
     }
+}
+
+// 继续播放播单
+async function handleContinue(playlist: PlaylistIndex) {
+    try {
+        await api.continuePlaylist(playlist.id, deviceId.value || undefined, true)
+        ElMessage.success(`继续播放：${playlist.name}`)
+    } catch (error: any) {
+        ElMessage.error(`继续播放失败: ${error.message}`)
+    }
+}
+
+// 停止播放播单
+async function handleStop(playlist: PlaylistIndex) {
+    try {
+        await api.stopPlaylist(playlist.id, deviceId.value || undefined)
+        ElMessage.success(`已停止：${playlist.name}`)
+    } catch (error: any) {
+        ElMessage.error(`停止失败: ${error.message}`)
+    }
+}
+
+// 修改播放模式
+async function handlePlayModeChange(playlist: PlaylistIndex) {
+    try {
+        await api.setPlayMode(playlist.id, playlist.play_mode)
+        ElMessage.success(`播放模式已更新为：${getPlayModeName(playlist.play_mode)}`)
+    } catch (error: any) {
+        ElMessage.error(`更新播放模式失败: ${error.message}`)
+        await loadPlaylists()
+    }
+}
+
+// 获取播放模式名称
+function getPlayModeName(mode: string): string {
+    const modeMap: Record<string, string> = {
+        loop: '列表循环',
+        single: '单曲循环',
+        random: '随机播放',
+    }
+    return modeMap[mode] || mode
 }
 
 // 页面加载时

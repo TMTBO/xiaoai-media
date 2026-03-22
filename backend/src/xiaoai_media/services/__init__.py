@@ -16,6 +16,8 @@ from .playlist_models import (
     UpdatePlaylistRequest,
     AddItemRequest,
     PlayPlaylistRequest,
+    PlayModeRequest,
+    ContinuePlayRequest,
 )
 from .playlist_storage import PlaylistStorage
 from .state_service import StateService, get_state_service
@@ -36,6 +38,8 @@ __all__ = [
     "UpdatePlaylistRequest",
     "AddItemRequest",
     "PlayPlaylistRequest",
+    "PlayModeRequest",
+    "ContinuePlayRequest",
     "PlaylistStorage",
     "StateService",
     "get_state_service",

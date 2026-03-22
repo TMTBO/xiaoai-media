@@ -43,6 +43,8 @@ class PlaylistIndex(BaseModel):
     updated_at: str = ""
     interval: int | str | None = Field(None, description="播放间隔（秒）或时长字符串（如 '04:32'），可选")
     pic_url: str | None = Field(None, description="封面图片URL，可选")
+    play_mode: str = Field("loop", description="播放模式：loop(列表循环), single(单曲循环), random(随机播放)")
+    current_index: int = Field(0, description="当前播放的索引位置")
 
 
 class Playlist(BaseModel):
@@ -61,6 +63,8 @@ class Playlist(BaseModel):
     updated_at: str = ""
     interval: int | str | None = Field(None, description="播放间隔（秒）或时长字符串（如 '04:32'），可选")
     pic_url: str | None = Field(None, description="封面图片URL，可选")
+    play_mode: str = Field("loop", description="播放模式：loop(列表循环), single(单曲循环), random(随机播放)")
+    current_index: int = Field(0, description="当前播放的索引位置")
 
 
 class CreatePlaylistRequest(BaseModel):
@@ -83,6 +87,8 @@ class UpdatePlaylistRequest(BaseModel):
     voice_keywords: list[str] | None = None
     interval: int | str | None = None
     pic_url: str | None = None
+    play_mode: str | None = None
+    current_index: int | None = None
 
 
 class AddItemRequest(BaseModel):
@@ -96,4 +102,17 @@ class PlayPlaylistRequest(BaseModel):
 
     device_id: str | None = None
     start_index: int = Field(0, description="从第几首开始播放（从 0 开始）")
+    announce: bool = Field(True, description="是否语音播报")
+
+
+class PlayModeRequest(BaseModel):
+    """设置播放模式请求"""
+
+    play_mode: str = Field(..., description="播放模式：loop(列表循环), single(单曲循环), random(随机播放)")
+
+
+class ContinuePlayRequest(BaseModel):
+    """继续播放请求"""
+
+    device_id: str | None = None
     announce: bool = Field(True, description="是否语音播报")

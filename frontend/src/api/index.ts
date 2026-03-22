@@ -90,6 +90,8 @@ export interface PlaylistIndex {
   updated_at: string
   interval?: number | string  // 播放间隔（秒）或时长字符串
   pic_url?: string       // 封面图片URL
+  play_mode: string      // 播放模式：loop, single, random
+  current_index: number  // 当前播放索引
 }
 
 export interface Playlist {
@@ -103,6 +105,8 @@ export interface Playlist {
   updated_at: string
   interval?: number | string  // 播放间隔（秒）或时长字符串
   pic_url?: string       // 封面图片URL
+  play_mode: string      // 播放模式：loop, single, random
+  current_index: number  // 当前播放索引
 }
 
 export interface CreatePlaylistRequest {
@@ -121,6 +125,8 @@ export interface UpdatePlaylistRequest {
   voice_keywords?: string[]
   interval?: number | string
   pic_url?: string
+  play_mode?: string
+  current_index?: number
 }
 
 export interface AddItemRequest {
@@ -207,4 +213,12 @@ export const api = {
     http.delete(`/playlists/${playlistId}/items/${itemIndex}`).then(r => r.data),
   playPlaylist: (playlistId: string, data: PlayPlaylistRequest) =>
     http.post(`/playlists/${playlistId}/play`, data).then(r => r.data),
+  continuePlaylist: (playlistId: string, deviceId?: string, announce?: boolean) =>
+    http.post(`/playlists/${playlistId}/continue`, { device_id: deviceId, announce }).then(r => r.data),
+  stopPlaylist: (playlistId: string, deviceId?: string) =>
+    http.post(`/playlists/${playlistId}/stop`, null, { params: { device_id: deviceId } }).then(r => r.data),
+  setPlayMode: (playlistId: string, playMode: string) =>
+    http.post(`/playlists/${playlistId}/play-mode`, { play_mode: playMode }).then(r => r.data),
+  playNextInPlaylist: (playlistId: string, deviceId?: string) =>
+    http.post(`/playlists/${playlistId}/next`, null, { params: { device_id: deviceId } }).then(r => r.data),
 }

@@ -13,7 +13,9 @@ from fastapi import APIRouter, HTTPException
 
 from xiaoai_media.services import (
     AddItemRequest,
+    ContinuePlayRequest,
     CreatePlaylistRequest,
+    PlayModeRequest,
     Playlist,
     PlaylistService,
     PlayPlaylistRequest,
@@ -155,4 +157,74 @@ async def play_by_voice_command(
         raise HTTPException(status_code=502, detail=str(e))
     except Exception as e:
         _log.error("Failed to play by voice: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{playlist_id}/continue")
+async def continue_playlist(playlist_id: str, req: ContinuePlayRequest):
+    """继续播放播单（从当前索引位置开始）"""
+    try:
+        return await PlaylistService.continue_playlist(playlist_id, req)
+    except ValueError as e:
+        error_msg = str(e)
+        if "not found" in error_msg.lower():
+            raise HTTPException(status_code=404, detail=error_msg)
+        else:
+            raise HTTPException(status_code=400, detail=error_msg)
+    except RuntimeError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+    except Exception as e:
+        _log.error("Failed to continue playlist: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{playlist_id}/stop")
+async def stop_playlist(playlist_id: str, device_id: str | None = None):
+    """停止播放播单"""
+    try:
+        return await PlaylistService.stop_playlist(playlist_id, device_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        _log.error("Failed to stop playlist: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{playlist_id}/play-mode")
+async def set_play_mode(playlist_id: str, req: PlayModeRequest):
+    """设置播放模式
+    
+    支持的播放模式：
+    - loop: 列表循环
+    - single: 单曲循环
+    - random: 随机播放
+    """
+    try:
+        return PlaylistService.set_play_mode(playlist_id, req)
+    except ValueError as e:
+        error_msg = str(e)
+        if "not found" in error_msg.lower():
+            raise HTTPException(status_code=404, detail=error_msg)
+        else:
+            raise HTTPException(status_code=400, detail=error_msg)
+    except Exception as e:
+        _log.error("Failed to set play mode: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{playlist_id}/next")
+async def play_next(playlist_id: str, device_id: str | None = None):
+    """播放下一首（根据播放模式）"""
+    try:
+        return await PlaylistService.play_next_in_playlist(playlist_id, device_id)
+    except ValueError as e:
+        error_msg = str(e)
+        if "not found" in error_msg.lower():
+            raise HTTPException(status_code=404, detail=error_msg)
+        else:
+            raise HTTPException(status_code=400, detail=error_msg)
+    except RuntimeError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+    except Exception as e:
+        _log.error("Failed to play next: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

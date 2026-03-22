@@ -16,7 +16,9 @@ from xiaoai_media import config
 from xiaoai_media.client import XiaoAiClient
 from xiaoai_media.services.playlist_models import (
     AddItemRequest,
+    ContinuePlayRequest,
     CreatePlaylistRequest,
+    PlayModeRequest,
     Playlist,
     PlaylistIndex,
     PlaylistItem,
@@ -75,7 +77,9 @@ class PlaylistService:
 
         get_audio_url = user_config.get_audio_url
 
-        # 构建完整的参数字典，合并 item 的所有字段和 custom_params
+        # 构建完整的参数字典
+        # 注意：custom_params 中的值会覆盖 PlaylistItem 的基础字段
+        # 这样可以确保 get_audio_url 接收到正确的字段名（如 id, name, singer）
         params = {
             "title": item.title,
             "artist": item.artist,
@@ -85,6 +89,8 @@ class PlaylistService:
             "pic_url": item.pic_url,
             **item.custom_params,  # custom_params 中的值会覆盖上面的默认值
         }
+
+        _log.info("Calling get_audio_url with params: %s", {k: v for k, v in params.items() if k not in ['qualities', 'meta']})
 
         # 调用函数获取 URL
         if asyncio.iscoroutinefunction(get_audio_url):
@@ -153,6 +159,14 @@ class PlaylistService:
             playlist.interval = req.interval
         if req.pic_url is not None:
             playlist.pic_url = req.pic_url
+        if req.play_mode is not None:
+            if req.play_mode not in ["loop", "single", "random"]:
+                raise ValueError(f"Invalid play_mode: {req.play_mode}")
+            playlist.play_mode = req.play_mode
+        if req.current_index is not None:
+            if req.current_index < 0 or req.current_index >= len(playlist.items):
+                raise ValueError(f"Invalid current_index: {req.current_index}")
+            playlist.current_index = req.current_index
 
         playlist.updated_at = datetime.now().isoformat()
         PlaylistStorage.save_playlist(playlist)
@@ -213,6 +227,16 @@ class PlaylistService:
         if req.start_index < 0 or req.start_index >= len(playlist.items):
             raise ValueError(f"Invalid start_index: {req.start_index}")
 
+        # 更新当前播放索引
+        playlist.current_index = req.start_index
+        playlist.updated_at = datetime.now().isoformat()
+        PlaylistStorage.save_playlist(playlist)
+
+        # 保存当前播放的播单ID到状态服务
+        from xiaoai_media.services.state_service import get_state_service
+        state_service = get_state_service()
+        state_service.set(f"current_playlist_{req.device_id or 'default'}", playlist_id)
+
         # 获取要播放的项
         item = playlist.items[req.start_index]
 
@@ -246,7 +270,88 @@ class PlaylistService:
             "item": item.model_dump(),
             "index": req.start_index,
             "total": len(playlist.items),
+            "play_mode": playlist.play_mode,
         }
+
+    @staticmethod
+    async def continue_playlist(playlist_id: str, req: ContinuePlayRequest) -> dict:
+        """继续播放播单（从当前索引位置开始）"""
+        playlist = PlaylistStorage.load_playlist(playlist_id)
+        if playlist is None:
+            raise ValueError(f"Playlist not found: {playlist_id}")
+
+        if not playlist.items:
+            raise ValueError("Playlist is empty")
+
+        # 从当前索引开始播放
+        return await PlaylistService.play_playlist(
+            playlist_id,
+            PlayPlaylistRequest(
+                device_id=req.device_id,
+                start_index=playlist.current_index,
+                announce=req.announce,
+            ),
+        )
+
+    @staticmethod
+    async def stop_playlist(playlist_id: str, device_id: str | None = None) -> dict:
+        """停止播放播单"""
+        playlist = PlaylistStorage.load_playlist(playlist_id)
+        if playlist is None:
+            raise ValueError(f"Playlist not found: {playlist_id}")
+
+        # 发送停止命令
+        async with XiaoAiClient() as client:
+            await client.player_stop(device_id)
+
+        _log.info("Stopped playlist: %s", playlist.name)
+        return {
+            "message": "Stopped",
+            "playlist": playlist.name,
+        }
+
+    @staticmethod
+    def set_play_mode(playlist_id: str, req: PlayModeRequest) -> Playlist:
+        """设置播放模式"""
+        playlist = PlaylistStorage.load_playlist(playlist_id)
+        if playlist is None:
+            raise ValueError(f"Playlist not found: {playlist_id}")
+
+        if req.play_mode not in ["loop", "single", "random"]:
+            raise ValueError(f"Invalid play_mode: {req.play_mode}")
+
+        playlist.play_mode = req.play_mode
+        playlist.updated_at = datetime.now().isoformat()
+        PlaylistStorage.save_playlist(playlist)
+
+        _log.info("Set play mode for playlist %s: %s", playlist.name, req.play_mode)
+        return playlist
+
+    @staticmethod
+    async def play_next_in_playlist(playlist_id: str, device_id: str | None = None) -> dict:
+        """播放播单中的下一首（根据播放模式）"""
+        playlist = PlaylistStorage.load_playlist(playlist_id)
+        if playlist is None:
+            raise ValueError(f"Playlist not found: {playlist_id}")
+
+        if not playlist.items:
+            raise ValueError("Playlist is empty")
+
+        # 根据播放模式计算下一首的索引
+        if playlist.play_mode == "single":
+            # 单曲循环：保持当前索引
+            next_index = playlist.current_index
+        elif playlist.play_mode == "random":
+            # 随机播放：随机选择一首
+            next_index = random.randint(0, len(playlist.items) - 1)
+        else:  # loop
+            # 列表循环：下一首，到末尾后回到开头
+            next_index = (playlist.current_index + 1) % len(playlist.items)
+
+        return await PlaylistService.play_playlist(
+            playlist_id,
+            PlayPlaylistRequest(device_id=device_id, start_index=next_index, announce=False),
+        )
 
     @staticmethod
     async def play_by_voice_command(voice_text: str, device_id: str | None = None) -> dict:
