@@ -50,6 +50,11 @@ playback_monitor = PlaybackMonitor(
     poll_interval=app_config.PLAYBACK_MONITOR_INTERVAL
 )
 
+
+def get_playback_monitor() -> PlaybackMonitor:
+    """获取全局播放监控器实例"""
+    return playback_monitor
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
@@ -74,10 +79,9 @@ async def startup_event():
     else:
         logging.getLogger(__name__).info("对话监听已禁用")
     
-    # Start playback monitor for auto-play next track
+    # Playback monitor will be started automatically when playback begins
     if app_config.ENABLE_PLAYBACK_MONITOR:
-        await playback_monitor.start()
-        logging.getLogger(__name__).info("播放监控已启用")
+        logging.getLogger(__name__).info("播放监控已启用（将在播放开始时自动启动）")
     else:
         logging.getLogger(__name__).info("播放监控已禁用")
     

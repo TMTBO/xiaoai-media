@@ -75,7 +75,12 @@ class PlaybackMonitor:
             raise
 
     async def _check_all_devices(self):
-        """检查所有设备的播放状态"""
+        """检查所有设备的播放状态
+        
+        如果没有任何设备有活动的播放，自动停止监听。
+        """
+        has_active_playback = False
+        
         try:
             client = get_client_sync()
             devices = await client.list_devices()
@@ -92,6 +97,8 @@ class PlaybackMonitor:
                 if not current_playlist_id:
                     continue
                 
+                has_active_playback = True
+                
                 try:
                     await self._check_device_status(client, device_id, current_playlist_id)
                 except Exception as e:
@@ -102,6 +109,11 @@ class PlaybackMonitor:
                     )
         except Exception as e:
             _log.error("检查设备播放状态失败: %s", e, exc_info=True)
+        
+        # 如果没有活动的播放，自动停止监听
+        if not has_active_playback:
+            _log.info("没有活动的播放，自动停止监听")
+            await self.stop()
 
     async def _check_device_status(
         self,
@@ -156,11 +168,13 @@ class PlaybackMonitor:
             audio_id = play_song_detail.get("audio_id", "")
             position = play_song_detail.get("position", 0)  # 当前播放位置（毫秒）
             duration = play_song_detail.get("duration", 0)  # 总时长（毫秒）
+
+            _log.debug("play_song_detail: %s---%s ------ %s", play_song_detail, audio_id, status_result)
             
             # 转换状态码为字符串
             play_status = {0: "stopped", 1: "playing", 2: "paused"}.get(status_code, "unknown")
             
-            _log.debug(
+            _log.info(
                 "设备 %s 播放状态: status=%s(%d), audio_id=%s, position=%d/%d, media_type=%d",
                 device_id,
                 play_status,
@@ -182,23 +196,33 @@ class PlaybackMonitor:
                 "audio_id": audio_id,
                 "position": position,
                 "duration": duration,
+                "media_type": media_type,
             }
             
             # 检测播放完成的条件：
             # 1. 从 playing 变为 stopped（歌曲播放完成）
             # 2. 或者接近结尾时（最后 2 秒内）从 playing 变为 paused
+            # 3. 或者 playing 状态下 position 和 duration 都变为 0（小爱音箱特殊行为）
+            # 注意：只处理音乐播放 (media_type=3)，避免与 TTS 等其他类型混淆
             is_near_end = duration > 0 and position >= duration - 2000
-
-            # _log.info("last_status: %s, current_status: %s, %s", last_play_status, play_status, is_near_end)
+            last_position = last_status.get("position", 0)
+            last_duration = last_status.get("duration", 0)
+            last_media_type = last_status.get("media_type", 0)
             
-            if last_play_status == "playing":
-                if play_status == "playing" and duration == 0 and position == 0:
-                    _log.info(
-                        "检测到设备 %s 自然播放完成，准备播放下一曲",
-                        device_id,
-                    )
-                    await self._play_next(device_id, playlist_id)
-                elif play_status == "stopped":
+            # 检测播放完成：上一次有有效的播放进度，现在变成了 0/0
+            # 且 media_type 为音乐类型（通常是 3）
+            is_playback_reset = (
+                last_duration > 0 and 
+                last_position > 0 and 
+                duration == 0 and 
+                position == 0 and
+                play_status == "playing" and
+                media_type == 3  # 只处理音乐播放
+            )
+            
+            # 只在音乐播放时才触发自动播放下一曲
+            if last_play_status == "playing" and media_type == 3:
+                if play_status == "stopped":
                     _log.info(
                         "检测到设备 %s 播放完成 (playing -> stopped)，准备播放下一曲",
                         device_id,
@@ -213,6 +237,23 @@ class PlaybackMonitor:
                         duration,
                     )
                     await self._play_next(device_id, playlist_id)
+                    
+                elif is_playback_reset:
+                    _log.info(
+                        "检测到设备 %s 播放完成 (position: %d/%d -> 0/0)，准备播放下一曲",
+                        device_id,
+                        last_position,
+                        last_duration,
+                    )
+                    await self._play_next(device_id, playlist_id)
+            
+            # 如果播放已停止且没有播放进度，清除播放状态
+            elif play_status == "stopped" and duration == 0 and position == 0:
+                _log.info("设备 %s 播放已停止，清除播放状态", device_id)
+                self._state_service.set(f"current_playlist_{device_id}", None)
+                # 清除该设备的状态记录
+                if device_id in self._last_status:
+                    del self._last_status[device_id]
             
         except Exception as e:
             _log.debug("获取设备 %s 播放状态失败: %s", device_id, e)

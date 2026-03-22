@@ -42,7 +42,21 @@ class PlaylistService:
 
     @staticmethod
     def make_proxy_url(original_url: str) -> str:
-        """将原始 URL 转换为代理 URL"""
+        """将原始 URL 转换为代理 URL
+        
+        如果 URL 已经是本地 URL（192.168.x.x 或 localhost），则直接返回，
+        避免嵌套代理导致的延迟。
+        """
+        # 检查是否已经是本地 URL
+        if any(host in original_url for host in ['192.168.', '127.0.0.1', 'localhost', '10.0.', '172.16.']):
+            _log.debug("URL is already local, skipping proxy: %s", original_url[:100])
+            return original_url
+        
+        # 检查是否已经是我们自己的代理 URL
+        if '/api/proxy/stream' in original_url:
+            _log.debug("URL is already proxied, skipping: %s", original_url[:100])
+            return original_url
+        
         proxy_url = f"{config.SERVER_BASE_URL}/api/proxy/stream?url={quote(original_url)}"
         _log.debug("Converted URL to proxy: %s -> %s", original_url[:100], proxy_url[:100])
         return proxy_url
@@ -265,6 +279,15 @@ class PlaylistService:
         result = await client.play_url(play_url, req.device_id, _type=1)
         _log.info("Play URL result: %s", result)
 
+        # 启动播放监控器（如果已启用）
+        from xiaoai_media import config as app_config
+        if app_config.ENABLE_PLAYBACK_MONITOR:
+            from xiaoai_media.api.main import get_playback_monitor
+            monitor = get_playback_monitor()
+            if not monitor.running:
+                await monitor.start()
+                _log.info("播放监控器已自动启动")
+
         return {
             "message": "Playing",
             "playlist": playlist.name,
@@ -304,6 +327,11 @@ class PlaylistService:
         # 发送停止命令
         client = get_client_sync()
         await client.player_stop(device_id)
+
+        # 清除播放状态
+        from xiaoai_media.services.state_service import get_state_service
+        state_service = get_state_service()
+        state_service.set(f"current_playlist_{device_id or 'default'}", None)
 
         _log.info("Stopped playlist: %s", playlist.name)
         return {

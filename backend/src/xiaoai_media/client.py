@@ -481,11 +481,12 @@ class XiaoAiClient:
         device_name = device.get("name", "")
         hardware = device.get("hardware", "")
 
-        _log.info(
-            "MiService: play URL on device %s (hardware=%s, type=%d)",
+        _log.debug(
+            "=== play_url START === device=%s (hardware=%s), type=%d, url_length=%d",
             did,
             hardware,
             _type,
+            len(url),
         )
         _log.debug("Full URL: %s", url)
 
@@ -508,17 +509,20 @@ class XiaoAiClient:
                 )
 
             # Use play_by_music_url for better compatibility
-            audio_id = "1582971365183456177"
-            cp_id = "355454500"
+            # Generate unique audio_id based on timestamp to avoid playback cache issues
+            import time
+            audio_id = str(int(time.time() * 1000000))  # 微秒级时间戳
+            cp_id = "355454500"  # Content provider ID, can remain constant
 
             _log.info(
-                "Calling play_by_music_url with audio_id=%s, cp_id=%s", audio_id, cp_id
+                "Calling play_by_music_url with audio_id=%s (timestamp-based), cp_id=%s", 
+                audio_id, cp_id
             )
 
             result = await self._na_service.play_by_music_url(
                 did, url, _type, audio_id, cp_id
             )
-            _log.info("MiService: play_by_music_url result: %s", result)
+            # _log.info("MiService: play_by_music_url result: %s", result)
 
             # Check if the result indicates success
             success = False
@@ -538,15 +542,28 @@ class XiaoAiClient:
                     success,
                 )
 
+            _log.debug(
+                "=== play_url END === device=%s, audio_id=%s, success=%s",
+                did,
+                audio_id,
+                success,
+            )
+
             return {
                 "device": f"{device_name}({did})",
                 "url": url,
                 "result": success,
                 "hardware": hardware,
                 "raw_result": result,
+                "audio_id": audio_id,  # 返回使用的 audio_id 以便追踪
             }
         except Exception as e:
-            _log.error("MiService: play_url failed: %s", e, exc_info=True)
+            _log.error(
+                "=== play_url FAILED === device=%s, error=%s", 
+                did, 
+                e, 
+                exc_info=True
+            )
             raise
 
     async def get_latest_ask(
