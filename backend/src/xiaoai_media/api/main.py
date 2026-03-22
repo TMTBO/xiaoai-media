@@ -79,9 +79,10 @@ async def startup_event():
     else:
         logging.getLogger(__name__).info("对话监听已禁用")
     
-    # Playback monitor will be started automatically when playback begins
+    # Check and resume playback monitoring if needed
     if app_config.ENABLE_PLAYBACK_MONITOR:
-        logging.getLogger(__name__).info("播放监控已启用（将在播放开始时自动启动）")
+        logging.getLogger(__name__).info("播放监控已启用，检查是否需要恢复监听...")
+        await playback_monitor.check_and_resume()
     else:
         logging.getLogger(__name__).info("播放监控已禁用")
     

@@ -46,6 +46,82 @@ class PlaybackMonitor:
         self._task = asyncio.create_task(self._monitor_loop())
         _log.info("播放监控器已启动 (轮询间隔: %.1f秒)", self.poll_interval)
 
+    async def check_and_resume(self):
+        """检查设备播放状态并恢复监听
+        
+        在应用启动时调用，检查是否有设备正在播放，
+        如果有，则恢复监听状态。
+        """
+        try:
+            client = get_client_sync()
+            devices = await client.list_devices()
+            
+            has_active_playback = False
+            
+            for device in devices:
+                device_id = device.get("deviceID")
+                if not device_id:
+                    continue
+                
+                try:
+                    # 获取播放状态
+                    status_result = await client.player_get_status(device_id)
+                    status_data = status_result.get("status", {})
+                    data = status_data.get("data", {})
+                    info_str = data.get("info", "{}")
+                    
+                    try:
+                        info = json.loads(info_str)
+                    except (json.JSONDecodeError, TypeError):
+                        continue
+                    
+                    status_code = info.get("status", 0)
+                    media_type = info.get("media_type", 0)
+                    play_song_detail = info.get("play_song_detail", {})
+                    duration = play_song_detail.get("duration", 0)
+                    
+                    # 如果设备正在播放音乐（status=1, media_type=3）且有有效时长
+                    if status_code == 1 and media_type == 3 and duration > 0:
+                        _log.info(
+                            "检测到设备 %s 正在播放音乐，尝试恢复监听状态",
+                            device_id
+                        )
+                        
+                        # 检查是否有保存的播放状态（尝试两种 key）
+                        current_playlist_id = (
+                            self._state_service.get(f"current_playlist_{device_id}") or
+                            self._state_service.get("current_playlist_default")
+                        )
+                        
+                        if current_playlist_id:
+                            _log.info(
+                                "设备 %s 的播放状态已存在: %s，将恢复监听",
+                                device_id,
+                                current_playlist_id
+                            )
+                            has_active_playback = True
+                        else:
+                            _log.warning(
+                                "设备 %s 正在播放但没有保存的播放状态，无法自动恢复自动播放下一曲功能",
+                                device_id
+                            )
+                            _log.info(
+                                "提示：如果需要自动播放下一曲，请通过 API 重新开始播放播单"
+                            )
+                            
+                except Exception as e:
+                    _log.debug("检查设备 %s 状态失败: %s", device_id, e)
+            
+            # 如果有活动的播放，启动监控器
+            if has_active_playback and not self.running:
+                await self.start()
+                _log.info("已自动恢复播放监控")
+            elif not has_active_playback:
+                _log.info("没有检测到活动的播放，监控器保持待机状态")
+                
+        except Exception as e:
+            _log.error("检查播放状态失败: %s", e, exc_info=True)
+
     async def stop(self):
         """停止播放监控"""
         if not self.running:

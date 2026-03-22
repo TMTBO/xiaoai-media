@@ -129,6 +129,8 @@ class PlaylistStorage:
             updated_at=idx.updated_at,
             interval=idx.interval,
             pic_url=idx.pic_url,
+            play_mode=idx.play_mode,
+            current_index=idx.current_index,
         )
 
     @staticmethod
@@ -147,6 +149,8 @@ class PlaylistStorage:
             updated_at=playlist.updated_at,
             interval=playlist.interval,
             pic_url=playlist.pic_url,
+            play_mode=playlist.play_mode,
+            current_index=playlist.current_index,
         )
         PlaylistStorage.save_index(index)
 
