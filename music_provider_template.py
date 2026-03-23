@@ -2,12 +2,26 @@
 音乐 URL 提供者模块（模板文件）
 
 此模块负责从音乐 API 获取播放 URL，支持音质降级重试。
+同时提供音乐搜索、排行榜等接口的实现，方便用户自定义。
 
 使用方法：
 1. 将此文件复制为 music_provider.py
 2. 确保 music_provider.py 与 user_config.py 在同一目录
 3. 根据需要自定义音乐 API 调用逻辑
+
+可自定义的接口：
+- search_music(): 搜索音乐
+- get_ranks(): 获取排行榜列表
+- get_rank_songs(): 获取排行榜歌曲
+- get_music_url(): 获取播放 URL
 """
+
+import logging
+from typing import Any
+
+import aiohttp
+
+_log = logging.getLogger(__name__)
 
 
 def _parse_size(size) -> int:
@@ -36,6 +50,176 @@ def _parse_size(size) -> int:
         return int(float(s))
     except ValueError:
         return 0
+
+
+# ============================================================================
+# 音乐搜索、排行榜接口
+# ============================================================================
+
+
+async def search_music(
+    query: str,
+    platform: str,
+    page: int,
+    limit: int,
+    music_api_base_url: str,
+    timeout: int = 10,
+) -> dict:
+    """搜索音乐
+    
+    用户可以自定义此函数来实现自己的音乐搜索逻辑。
+    例如：添加缓存、聚合多个音乐源、实现自己的搜索算法等。
+    
+    Args:
+        query: 搜索关键词
+        platform: 平台代码 (tx, wy, kg, kw, mg)
+        page: 页码
+        limit: 每页数量
+        music_api_base_url: 音乐 API 基础 URL
+        timeout: 请求超时时间（秒）
+        
+    Returns:
+        搜索结果字典，格式：
+        {
+            "code": 0,
+            "data": {
+                "list": [
+                    {
+                        "id": "歌曲ID",
+                        "name": "歌曲名",
+                        "singer": "歌手",
+                        "album": "专辑",
+                        "pic_url": "封面URL",
+                        "interval": 时长（秒）,
+                        "qualities": [...],
+                        ...
+                    }
+                ]
+            }
+        }
+        
+    示例：
+        >>> result = await search_music(
+        ...     query="周杰伦",
+        ...     platform="tx",
+        ...     page=1,
+        ...     limit=20,
+        ...     music_api_base_url="http://localhost:5050"
+        ... )
+    """
+    url = f"{music_api_base_url.rstrip('/')}/api/v3/search"
+    _log.info("Searching music: query=%s platform=%s page=%d limit=%d", query, platform, page, limit)
+    
+    async with aiohttp.ClientSession() as session:
+        async with session.post(
+            url,
+            json={"platform": platform, "query": query, "page": page, "limit": limit},
+            timeout=aiohttp.ClientTimeout(total=timeout),
+        ) as resp:
+            data = await resp.json(content_type=None)
+            _log.info("Search response: code=%s status=%d", data.get("code"), resp.status)
+            return data
+
+
+async def get_ranks(
+    platform: str,
+    music_api_base_url: str,
+    timeout: int = 10,
+) -> dict:
+    """获取平台的排行榜列表
+    
+    用户可以自定义此函数来实现自己的排行榜获取逻辑。
+    例如：添加缓存、过滤特定排行榜、添加自定义排行榜等。
+    
+    Args:
+        platform: 平台代码 (tx, wy, kg, kw, mg)
+        music_api_base_url: 音乐 API 基础 URL
+        timeout: 请求超时时间（秒）
+        
+    Returns:
+        排行榜列表字典，格式：
+        {
+            "code": 0,
+            "data": {
+                "list": [
+                    {
+                        "id": "排行榜ID",
+                        "name": "排行榜名称",
+                        ...
+                    }
+                ]
+            }
+        }
+        
+    示例：
+        >>> result = await get_ranks(
+        ...     platform="tx",
+        ...     music_api_base_url="http://localhost:5050"
+        ... )
+    """
+    url = f"{music_api_base_url.rstrip('/')}/api/v3/{platform}/ranks"
+    _log.info("Getting ranks: platform=%s", platform)
+    
+    async with aiohttp.ClientSession() as session:
+        async with session.get(
+            url,
+            timeout=aiohttp.ClientTimeout(total=timeout),
+        ) as resp:
+            data = await resp.json(content_type=None)
+            _log.info("Ranks response: code=%s status=%d", data.get("code"), resp.status)
+            return data
+
+
+async def get_rank_songs(
+    rank_id: str,
+    platform: str,
+    page: int,
+    limit: int,
+    music_api_base_url: str,
+    timeout: int = 10,
+) -> dict:
+    """获取指定排行榜的歌曲列表
+    
+    用户可以自定义此函数来实现自己的排行榜歌曲获取逻辑。
+    例如：添加缓存、过滤特定歌曲、重新排序等。
+    
+    Args:
+        rank_id: 排行榜ID
+        platform: 平台代码 (tx, wy, kg, kw, mg)
+        page: 页码
+        limit: 每页数量
+        music_api_base_url: 音乐 API 基础 URL
+        timeout: 请求超时时间（秒）
+        
+    Returns:
+        歌曲列表字典，格式同 search_music
+        
+    示例：
+        >>> result = await get_rank_songs(
+        ...     rank_id="26",
+        ...     platform="tx",
+        ...     page=1,
+        ...     limit=50,
+        ...     music_api_base_url="http://localhost:5050"
+        ... )
+    """
+    url = f"{music_api_base_url.rstrip('/')}/api/v3/{platform}/rank/{rank_id}"
+    _log.info("Getting rank songs: rank_id=%s platform=%s page=%d limit=%d", rank_id, platform, page, limit)
+    
+    async with aiohttp.ClientSession() as session:
+        async with session.get(
+            url,
+            params={"page": page, "limit": limit},
+            timeout=aiohttp.ClientTimeout(total=timeout),
+        ) as resp:
+            data = await resp.json(content_type=None)
+            _log.info("Rank songs response: code=%s status=%d", data.get("code"), resp.status)
+            return data
+
+
+# ============================================================================
+# 音乐播放 URL 获取接口
+# ============================================================================
 
 
 async def get_music_url(custom_params: dict, music_api_base_url: str) -> str:

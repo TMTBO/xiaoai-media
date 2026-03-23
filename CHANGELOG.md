@@ -1,6 +1,61 @@
 # 更新日志
 
-## [未发布] - 2024-XX-XX
+## [未发布] - 2026-03-XX
+
+### 重大变更 ⚠️
+
+#### 移除 MI_PASS_TOKEN 配置项
+- **自动 Token 管理** - 使用 `miservice` 库的 `token_store` 机制自动管理 token
+- **简化配置** - 用户只需配置账号密码，无需手动获取和配置 token
+- **自动刷新** - Token 过期时自动重新登录并更新
+- **Token 文件** - 自动保存到 `.mi.token` 文件
+
+详细说明请查看：[docs/migration/REMOVE_MI_PASS_TOKEN.md](docs/migration/REMOVE_MI_PASS_TOKEN.md)
+
+变更日志：[docs/migration/CHANGELOG_REMOVE_MI_PASS_TOKEN.md](docs/migration/CHANGELOG_REMOVE_MI_PASS_TOKEN.md)
+
+#### 音乐 Provider 接口扩展
+- **新增接口** - 在 `music_provider.py` 中新增搜索、排行榜接口
+  - `search_music()` - 搜索音乐
+  - `get_ranks()` - 获取排行榜列表
+  - `get_rank_songs()` - 获取排行榜歌曲
+- **职责分离** - `MusicService` 只负责参数校验，`music_provider` 负责实际 API 调用
+- **用户自定义** - 所有音乐相关接口都可由用户自定义实现
+
+详细说明请查看：[docs/refactor/MUSIC_PROVIDER_MIGRATION.md](docs/refactor/MUSIC_PROVIDER_MIGRATION.md)
+
+变更日志：[docs/refactor/CHANGELOG_MUSIC_PROVIDER_UPDATE.md](docs/refactor/CHANGELOG_MUSIC_PROVIDER_UPDATE.md)
+
+### 迁移指南
+
+#### 移除 MI_PASS_TOKEN
+
+```python
+# 编辑 user_config.py，删除 MI_PASS_TOKEN 行
+MI_USER = "your_account@example.com"
+MI_PASS = "your_password"
+# MI_PASS_TOKEN = "V1:xxxxxxxx..."  # 删除这一行
+```
+
+#### 使用新的音乐 Provider 接口
+
+```python
+# music_provider.py 中现在可以自定义更多接口
+
+# 自定义搜索（例如添加缓存）
+async def search_music(query, platform, page, limit, music_api_base_url, timeout=10):
+    # 你的自定义逻辑
+    pass
+
+# 自定义排行榜获取
+async def get_ranks(platform, music_api_base_url, timeout=10):
+    # 你的自定义逻辑
+    pass
+```
+
+---
+
+## [历史版本] - 2024-XX-XX
 
 ### 重大变更 ⚠️
 

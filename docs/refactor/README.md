@@ -57,6 +57,17 @@
   - 异步并发支持
   - 用户迁移指南
 
+- **[MUSIC_PROVIDER_MIGRATION.md](MUSIC_PROVIDER_MIGRATION.md)** - 音乐 Provider 接口迁移
+  - 将 MusicService.proxy_request 迁移到 music_provider
+  - 搜索、排行榜接口用户自定义支持
+  - 参数校验与业务逻辑分离
+  - 用户自定义实现指南
+
+- **[CHANGELOG_MUSIC_PROVIDER_UPDATE.md](CHANGELOG_MUSIC_PROVIDER_UPDATE.md)** - 音乐 Provider 更新日志
+  - 新增接口详细说明
+  - 架构改进总结
+  - 使用方法和示例
+
 ## 🎯 重构原则
 
 ### 1. 关注点分离

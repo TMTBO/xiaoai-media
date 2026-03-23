@@ -1,6 +1,7 @@
 """音乐服务层
 
 处理音乐搜索、排行榜、播放列表加载等业务逻辑。
+负责参数校验，实际的 API 调用委托给 music_provider。
 """
 
 from __future__ import annotations
@@ -8,12 +9,26 @@ from __future__ import annotations
 import logging
 import re
 from difflib import get_close_matches
-from typing import Any
 
-import aiohttp
 from fastapi import HTTPException
 
 from xiaoai_media import config
+
+# 导入 music_provider 中的实现
+try:
+    from music_provider import search_music as provider_search_music
+    from music_provider import get_ranks as provider_get_ranks
+    from music_provider import get_rank_songs as provider_get_rank_songs
+except ImportError:
+    # 如果 music_provider 不在路径中，尝试从根目录导入
+    import sys
+    from pathlib import Path
+    root_dir = Path(__file__).parent.parent.parent.parent.parent
+    if str(root_dir) not in sys.path:
+        sys.path.insert(0, str(root_dir))
+    from music_provider import search_music as provider_search_music
+    from music_provider import get_ranks as provider_get_ranks
+    from music_provider import get_rank_songs as provider_get_rank_songs
 
 _log = logging.getLogger(__name__)
 
@@ -39,50 +54,11 @@ PLATFORM_KEYWORDS: dict[str, str] = {
 
 
 class MusicService:
-    """音乐服务类，封装音乐API相关的业务逻辑"""
-
-    @staticmethod
-    async def proxy_request(method: str, path: str, **kwargs: Any) -> dict:
-        """代理请求到音乐下载服务
-        
-        Args:
-            method: HTTP方法 (GET, POST等)
-            path: API路径
-            **kwargs: 传递给aiohttp的额外参数
-            
-        Returns:
-            API响应的JSON数据
-            
-        Raises:
-            HTTPException: 当请求失败时
-        """
-        base = config.MUSIC_API_BASE_URL.rstrip("/")
-        url = f"{base}{path}"
-        _log.info("MusicAPI: %s %s", method.upper(), url)
-        
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.request(
-                    method, url, timeout=aiohttp.ClientTimeout(total=10), **kwargs
-                ) as resp:
-                    data: dict = await resp.json(content_type=None)
-                    _log.info(
-                        "MusicAPI: response code=%s status=%d",
-                        data.get("code"),
-                        resp.status,
-                    )
-                    if resp.status >= 500:
-                        raise HTTPException(
-                            status_code=502,
-                            detail=f"Music API returned HTTP {resp.status}",
-                        )
-                    return data
-        except aiohttp.ClientError as e:
-            _log.error("MusicAPI connection error: %s", e)
-            raise HTTPException(
-                status_code=502,
-                detail=f"Cannot connect to music service at {config.MUSIC_API_BASE_URL}: {e}",
-            )
+    """音乐服务类，封装音乐API相关的业务逻辑
+    
+    此类负责参数校验和业务逻辑，实际的 API 调用委托给 music_provider。
+    用户可以通过修改 music_provider.py 来自定义音乐源的实现。
+    """
 
     @staticmethod
     def validate_platform(platform: str | None) -> str:
@@ -189,16 +165,33 @@ class MusicService:
             
         Returns:
             搜索结果
+            
+        Raises:
+            HTTPException: 参数校验失败或 API 调用失败
         """
+        # 参数校验
         if not query.strip():
             raise HTTPException(status_code=422, detail="query must not be empty")
         
         plat = MusicService.validate_platform(platform)
-        return await MusicService.proxy_request(
-            "POST",
-            "/api/v3/search",
-            json={"platform": plat, "query": query.strip(), "page": page, "limit": limit},
-        )
+        
+        # 调用 music_provider 实现
+        try:
+            return await provider_search_music(
+                query=query.strip(),
+                platform=plat,
+                page=page,
+                limit=limit,
+                music_api_base_url=config.MUSIC_API_BASE_URL,
+            )
+        except HTTPException:
+            raise
+        except Exception as e:
+            _log.error("Search music failed: %s", e, exc_info=True)
+            raise HTTPException(
+                status_code=502,
+                detail=f"Failed to search music: {e}",
+            )
 
     @staticmethod
     async def get_ranks(platform: str | None = None) -> dict:
@@ -209,9 +202,27 @@ class MusicService:
             
         Returns:
             排行榜列表
+            
+        Raises:
+            HTTPException: 参数校验失败或 API 调用失败
         """
+        # 参数校验
         plat = MusicService.validate_platform(platform)
-        return await MusicService.proxy_request("GET", f"/api/v3/{plat}/ranks")
+        
+        # 调用 music_provider 实现
+        try:
+            return await provider_get_ranks(
+                platform=plat,
+                music_api_base_url=config.MUSIC_API_BASE_URL,
+            )
+        except HTTPException:
+            raise
+        except Exception as e:
+            _log.error("Get ranks failed: %s", e, exc_info=True)
+            raise HTTPException(
+                status_code=502,
+                detail=f"Failed to get ranks: {e}",
+            )
 
     @staticmethod
     async def get_rank_songs(
@@ -230,10 +241,27 @@ class MusicService:
             
         Returns:
             歌曲列表
+            
+        Raises:
+            HTTPException: 参数校验失败或 API 调用失败
         """
+        # 参数校验
         plat = MusicService.validate_platform(platform)
-        return await MusicService.proxy_request(
-            "GET",
-            f"/api/v3/{plat}/rank/{rank_id}",
-            params={"page": page, "limit": limit},
-        )
+        
+        # 调用 music_provider 实现
+        try:
+            return await provider_get_rank_songs(
+                rank_id=rank_id,
+                platform=plat,
+                page=page,
+                limit=limit,
+                music_api_base_url=config.MUSIC_API_BASE_URL,
+            )
+        except HTTPException:
+            raise
+        except Exception as e:
+            _log.error("Get rank songs failed: %s", e, exc_info=True)
+            raise HTTPException(
+                status_code=502,
+                detail=f"Failed to get rank songs: {e}",
+            )
