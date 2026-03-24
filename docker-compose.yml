@@ -17,6 +17,8 @@ services:
       # 音乐目录挂载（可选，用于批量导入本地音频文件）
       # 取消注释下面一行，将本地音乐目录挂载到容器中
       # - /path/to/your/music:/data/music
+      # Audiobooks 目录挂载示例
+      - /mnt/NAS/audiobooks:/data/audiobooks
     restart: unless-stopped
     
     # 健康检查

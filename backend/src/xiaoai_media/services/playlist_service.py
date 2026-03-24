@@ -450,13 +450,19 @@ class PlaylistService:
             
             # 列出 /data 下的子目录
             try:
-                for item in base_dir.iterdir():
+                for item in sorted(base_dir.iterdir()):
                     if item.is_dir() and not item.name.startswith('.'):
-                        directories.append({
-                            "path": str(item),
-                            "name": item.name,
-                            "is_docker": True
-                        })
+                        # 检查是否为挂载点或包含文件
+                        try:
+                            # 尝试访问目录以确认可读
+                            item.stat()
+                            directories.append({
+                                "path": str(item),
+                                "name": item.name,
+                                "is_docker": True
+                            })
+                        except (PermissionError, OSError) as e:
+                            _log.warning("Cannot access directory %s: %s", item, e)
             except Exception as e:
                 _log.error("Failed to list directories in /data: %s", e)
             
