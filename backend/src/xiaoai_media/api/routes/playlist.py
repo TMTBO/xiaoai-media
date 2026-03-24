@@ -15,6 +15,7 @@ from xiaoai_media.services import (
     AddItemRequest,
     ContinuePlayRequest,
     CreatePlaylistRequest,
+    ImportFromDirectoryRequest,
     PlayModeRequest,
     Playlist,
     PlaylistService,
@@ -44,6 +45,51 @@ async def create_playlist(req: CreatePlaylistRequest) -> Playlist:
         return PlaylistService.create_playlist(req)
     except Exception as e:
         _log.error("Failed to create playlist: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/directories")
+async def list_directories():
+    """列出可用的目录
+    
+    - 本地模式：返回常用目录列表
+    - Docker模式：返回 /data 下的可用目录列表
+    """
+    try:
+        directories = PlaylistService.list_available_directories()
+        is_docker = PlaylistService.is_docker_environment()
+        return {
+            "directories": directories,
+            "is_docker": is_docker,
+            "message": "Docker模式：从列表中选择目录" if is_docker else "本地模式：浏览目录"
+        }
+    except Exception as e:
+        _log.error("Failed to list directories: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/directories/browse")
+async def browse_directory(path: str | None = None):
+    """浏览指定目录，返回子目录列表
+    
+    参数：
+    - path: 目录路径（可选），如果为空则返回根目录
+    
+    返回：
+    - current_path: 当前路径
+    - parent_path: 父路径（如果有）
+    - directories: 子目录列表
+    - total: 子目录数量
+    """
+    try:
+        result = PlaylistService.browse_directory(path)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        _log.error("Failed to browse directory: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -227,4 +273,41 @@ async def play_next(playlist_id: str, device_id: str | None = None):
         raise HTTPException(status_code=502, detail=str(e))
     except Exception as e:
         _log.error("Failed to play next: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
+@router.post("/{playlist_id}/import")
+async def import_from_directory(playlist_id: str, req: ImportFromDirectoryRequest):
+    """从指定目录批量导入音频文件
+    
+    支持的音频格式：.mp3, .m4a, .flac, .wav, .ogg, .aac, .wma
+    
+    参数：
+    - directory: 目录路径
+      - 本地模式：完整的本地文件系统路径
+      - Docker模式：/data 下的路径（通过 volume 挂载）
+    - recursive: 是否递归扫描子目录
+    - file_extensions: 要导入的文件扩展名列表（可选）
+    
+    返回：
+    - imported: 成功导入的文件数量
+    - skipped: 跳过的文件数量
+    - total_scanned: 扫描的总文件数
+    - playlist_total_items: 播单中的总项目数
+    """
+    try:
+        result = PlaylistService.import_from_directory(
+            playlist_id=playlist_id,
+            directory=req.directory,
+            recursive=req.recursive,
+            file_extensions=req.file_extensions
+        )
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        _log.error("Failed to import from directory: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

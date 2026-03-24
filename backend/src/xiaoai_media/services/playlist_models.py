@@ -116,3 +116,14 @@ class ContinuePlayRequest(BaseModel):
 
     device_id: str | None = None
     announce: bool = Field(True, description="是否语音播报")
+
+
+class ImportFromDirectoryRequest(BaseModel):
+    """从目录批量导入请求"""
+
+    directory: str = Field(..., description="要导入的目录路径")
+    recursive: bool = Field(False, description="是否递归扫描子目录")
+    file_extensions: list[str] = Field(
+        default_factory=lambda: [".mp3", ".m4a", ".flac", ".wav", ".ogg", ".aac"],
+        description="要导入的文件扩展名列表"
+    )

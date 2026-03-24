@@ -415,3 +415,263 @@ class PlaylistService:
             matched_playlist_id,
             PlayPlaylistRequest(device_id=device_id, start_index=0, announce=True),
         )
+
+    @staticmethod
+    def is_docker_environment() -> bool:
+        """判断是否在Docker环境中运行"""
+        # 检查是否存在 /.dockerenv 文件
+        if Path("/.dockerenv").exists():
+            return True
+        # 检查 HOME 环境变量是否为 /data（Docker配置）
+        if Path.home() == Path("/data"):
+            return True
+        return False
+
+    @staticmethod
+    def list_available_directories() -> list[dict[str, str]]:
+        """列出可用的目录（主要用于Docker环境）
+        
+        Returns:
+            目录列表，每个目录包含 path 和 name
+        """
+        is_docker = PlaylistService.is_docker_environment()
+        
+        if is_docker:
+            # Docker环境：列出 /data 下的目录
+            base_dir = Path("/data")
+            directories = []
+            
+            # 添加 /data 本身
+            directories.append({
+                "path": str(base_dir),
+                "name": "数据根目录 (/data)",
+                "is_docker": True
+            })
+            
+            # 列出 /data 下的子目录
+            try:
+                for item in base_dir.iterdir():
+                    if item.is_dir() and not item.name.startswith('.'):
+                        directories.append({
+                            "path": str(item),
+                            "name": item.name,
+                            "is_docker": True
+                        })
+            except Exception as e:
+                _log.error("Failed to list directories in /data: %s", e)
+            
+            return directories
+        else:
+            # 本地环境：列出常用目录
+            directories = []
+            home_dir = Path.home()
+            
+            # 添加用户主目录
+            directories.append({
+                "path": str(home_dir),
+                "name": f"主目录 ({home_dir.name})",
+                "is_docker": False
+            })
+            
+            # 添加常用的音乐目录
+            common_music_dirs = [
+                home_dir / "Music",
+                home_dir / "音乐",
+                home_dir / "Documents" / "Music",
+                home_dir / "Documents" / "音乐",
+                home_dir / "Downloads",
+                home_dir / "下载",
+            ]
+            
+            for music_dir in common_music_dirs:
+                if music_dir.exists() and music_dir.is_dir():
+                    directories.append({
+                        "path": str(music_dir),
+                        "name": music_dir.name,
+                        "is_docker": False
+                    })
+            
+            return directories
+
+    @staticmethod
+    def browse_directory(path: str | None = None) -> dict[str, any]:
+        """浏览指定目录，返回子目录列表
+        
+        Args:
+            path: 目录路径，如果为空则返回根目录列表
+            
+        Returns:
+            包含当前路径、父路径和子目录列表的字典
+        """
+        try:
+            if not path:
+                # 返回根目录列表
+                is_docker = PlaylistService.is_docker_environment()
+                
+                if is_docker:
+                    # Docker环境：从 /data 开始
+                    current_path = Path("/data")
+                else:
+                    # 本地环境：从用户主目录开始
+                    current_path = Path.home()
+            else:
+                current_path = Path(path)
+            
+            # 验证路径存在且是目录
+            if not current_path.exists():
+                raise ValueError(f"路径不存在: {path}")
+            
+            if not current_path.is_dir():
+                raise ValueError(f"路径不是目录: {path}")
+            
+            # 获取父目录
+            parent_path = str(current_path.parent) if current_path.parent != current_path else None
+            
+            # 列出子目录
+            subdirectories = []
+            try:
+                for item in sorted(current_path.iterdir()):
+                    # 只列出目录，跳过隐藏目录
+                    if item.is_dir() and not item.name.startswith('.'):
+                        try:
+                            # 尝试获取目录信息
+                            subdirectories.append({
+                                "path": str(item),
+                                "name": item.name,
+                                "is_accessible": True
+                            })
+                        except PermissionError:
+                            # 没有权限访问的目录
+                            subdirectories.append({
+                                "path": str(item),
+                                "name": item.name,
+                                "is_accessible": False
+                            })
+            except PermissionError:
+                _log.warning("No permission to list directory: %s", current_path)
+            
+            return {
+                "current_path": str(current_path),
+                "parent_path": parent_path,
+                "directories": subdirectories,
+                "total": len(subdirectories)
+            }
+            
+        except Exception as e:
+            _log.error("Failed to browse directory %s: %s", path, e)
+            raise RuntimeError(f"Failed to browse directory: {str(e)}")
+
+    @staticmethod
+    def import_from_directory(
+        playlist_id: str,
+        directory: str,
+        recursive: bool = False,
+        file_extensions: list[str] | None = None
+    ) -> dict[str, any]:
+        """从指定目录批量导入音频文件
+        
+        Args:
+            playlist_id: 播单ID
+            directory: 目录路径
+            recursive: 是否递归扫描子目录
+            file_extensions: 文件扩展名列表，默认为常见音频格式
+            
+        Returns:
+            导入结果统计
+        """
+        playlist = PlaylistStorage.load_playlist(playlist_id)
+        if playlist is None:
+            raise ValueError(f"Playlist not found: {playlist_id}")
+        
+        if file_extensions is None:
+            file_extensions = [".mp3", ".m4a", ".flac", ".wav", ".ogg", ".aac", ".wma"]
+        
+        # 规范化扩展名（确保以点开头且小写）
+        file_extensions = [ext.lower() if ext.startswith('.') else f'.{ext.lower()}' 
+                          for ext in file_extensions]
+        
+        dir_path = Path(directory)
+        if not dir_path.exists():
+            raise ValueError(f"Directory not found: {directory}")
+        
+        if not dir_path.is_dir():
+            raise ValueError(f"Path is not a directory: {directory}")
+        
+        # 扫描文件
+        imported_items = []
+        skipped_files = []
+        
+        try:
+            if recursive:
+                # 递归扫描
+                files = [f for f in dir_path.rglob("*") if f.is_file()]
+            else:
+                # 只扫描当前目录
+                files = [f for f in dir_path.iterdir() if f.is_file()]
+            
+            for file_path in files:
+                # 检查文件扩展名
+                if file_path.suffix.lower() not in file_extensions:
+                    continue
+                
+                try:
+                    # 提取文件信息
+                    # 文件名作为标题（去除扩展名）
+                    title = file_path.stem
+                    
+                    # 尝试从文件路径提取艺术家和专辑信息
+                    # 假设目录结构为：艺术家/专辑/歌曲.mp3
+                    parts = file_path.parts
+                    artist = ""
+                    album = ""
+                    
+                    if len(parts) >= 2:
+                        album = parts[-2]  # 父目录作为专辑
+                    if len(parts) >= 3:
+                        artist = parts[-3]  # 祖父目录作为艺术家
+                    
+                    # 创建播单项
+                    # 使用文件的绝对路径作为URL
+                    item = PlaylistItem(
+                        title=title,
+                        artist=artist,
+                        album=album,
+                        url=f"file://{file_path.absolute()}",
+                        audio_id="",
+                        custom_params={
+                            "file_path": str(file_path.absolute()),
+                            "file_size": file_path.stat().st_size,
+                            "file_extension": file_path.suffix
+                        }
+                    )
+                    
+                    imported_items.append(item)
+                    _log.debug("Imported file: %s", file_path)
+                    
+                except Exception as e:
+                    _log.warning("Failed to import file %s: %s", file_path, e)
+                    skipped_files.append(str(file_path))
+            
+            # 添加到播单
+            if imported_items:
+                playlist.items.extend(imported_items)
+                playlist.updated_at = datetime.now().isoformat()
+                PlaylistStorage.save_playlist(playlist)
+                _log.info(
+                    "Imported %d files from directory %s to playlist %s",
+                    len(imported_items),
+                    directory,
+                    playlist_id
+                )
+            
+            return {
+                "imported": len(imported_items),
+                "skipped": len(skipped_files),
+                "total_scanned": len(files),
+                "skipped_files": skipped_files[:10],  # 只返回前10个失败的文件
+                "playlist_total_items": len(playlist.items)
+            }
+            
+        except Exception as e:
+            _log.error("Failed to import from directory %s: %s", directory, e, exc_info=True)
+            raise RuntimeError(f"Failed to import from directory: {str(e)}")

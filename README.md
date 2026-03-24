@@ -13,6 +13,7 @@
 - 📱 设备管理
 - 🎧 对话监听 - 自动拦截音箱播放指令
 - 📋 播放列表管理
+- 📁 批量导入 - 从目录批量导入音频文件
 
 ---
 
@@ -139,6 +140,7 @@ $HOME/
 
 ### 功能文档
 - [播放列表管理](docs/playlist/README.md) - 播放列表功能
+- [批量导入功能](docs/playlist/README_BATCH_IMPORT.md) - 从目录批量导入音频文件 ⭐
 - [对话监听](docs/conversation/README.md) - 对话监听功能
 - [TTS 语音](docs/tts/README.md) - 文字转语音
 - [音乐播放](docs/playback/README.md) - 音乐播放功能

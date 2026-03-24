@@ -140,6 +140,39 @@ export interface PlayPlaylistRequest {
   announce?: boolean
 }
 
+export interface ImportFromDirectoryRequest {
+  directory: string
+  recursive?: boolean
+  file_extensions?: string[]
+}
+
+export interface ImportResult {
+  imported: number
+  skipped: number
+  total_scanned: number
+  skipped_files?: string[]
+  playlist_total_items: number
+}
+
+export interface DirectoryInfo {
+  path: string
+  name: string
+  is_docker: boolean
+}
+
+export interface DirectoriesResponse {
+  directories: DirectoryInfo[]
+  is_docker: boolean
+  message: string
+}
+
+export interface BrowseDirectoryResponse {
+  current_path: string
+  parent_path: string | null
+  directories: DirectoryInfo[]
+  total: number
+}
+
 export const api = {
   // Devices
   listDevices: (refresh = false) =>
@@ -222,4 +255,12 @@ export const api = {
     http.post(`/playlists/${playlistId}/play-mode`, { play_mode: playMode }).then(r => r.data),
   playNextInPlaylist: (playlistId: string, deviceId?: string) =>
     http.post(`/playlists/${playlistId}/next`, null, { params: { device_id: deviceId } }).then(r => r.data),
+
+  // Playlist: Batch import
+  getAvailableDirectories: () =>
+    http.get<DirectoriesResponse>('/playlists/directories').then(r => r.data),
+  browseDirectory: (path?: string) =>
+    http.get<BrowseDirectoryResponse>('/playlists/directories/browse', { params: path ? { path } : undefined }).then(r => r.data),
+  importFromDirectory: (playlistId: string, data: ImportFromDirectoryRequest) =>
+    http.post<ImportResult>(`/playlists/${playlistId}/import`, data).then(r => r.data),
 }
