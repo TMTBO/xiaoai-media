@@ -63,7 +63,7 @@ class VoiceCommandService:
             return await VoiceCommandService._handle_next_command(device_id)
 
         # 模式1: 播放列表 - "播放音乐播单", "打开我的有声书"
-        if re.search(r"播单|列表", text):
+        if re.search(r"播单|列表|有声书|播客", text):
             return await VoiceCommandService._handle_playlist_command(text, device_id)
 
         # 模式2: 排行榜播放 - 包含"榜"或"排行"
@@ -94,8 +94,8 @@ class VoiceCommandService:
         _log.info("VoiceCommand: playlist intent detected for text=%r", text)
         try:
             # 从命令中提取播放列表名称/关键词
-            playlist_keyword = re.sub(r"^(播放|打开|加载)\s*", "", text)
-            playlist_keyword = re.sub(r"(播单|列表)\s*$", "", playlist_keyword).strip()
+            playlist_keyword = text
+            playlist_keyword = re.sub(r"(播单|列表|有声书|播客)\s*$", "", playlist_keyword).strip()
 
             # 加载播放列表并查找匹配项
             from xiaoai_media.services.playlist_storage import PlaylistStorage

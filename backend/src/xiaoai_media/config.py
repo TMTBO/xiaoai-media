@@ -209,9 +209,9 @@ def should_handle_command(query: str) -> bool:
     if not WAKE_WORDS:
         return True
 
-    # 检查是否包含任何唤醒词
+    # 检查是否以任何唤醒词开头
     for wake_word in WAKE_WORDS:
-        if wake_word in query:
+        if query.startswith(wake_word):
             return True
 
     return False
@@ -234,10 +234,12 @@ def preprocess_command(query: str) -> str:
             _log.error("用户自定义 preprocess_command 函数执行失败: %s", e)
             # 失败时使用默认逻辑
 
-    # 默认逻辑：移除唤醒词
+    # 默认逻辑：移除开头的唤醒词
     processed = query
     for wake_word in WAKE_WORDS:
-        processed = processed.replace(wake_word, "")
+        if processed.startswith(wake_word):
+            processed = processed[len(wake_word):]
+            break  # 只移除第一个匹配的唤醒词
 
     return processed.strip()
 
