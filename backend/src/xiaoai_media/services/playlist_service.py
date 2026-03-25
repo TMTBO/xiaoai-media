@@ -501,13 +501,13 @@ class PlaylistService:
 
     @staticmethod
     def browse_directory(path: str | None = None) -> dict[str, any]:
-        """浏览指定目录，返回子目录列表
+        """浏览指定目录，返回子目录和文件列表
         
         Args:
             path: 目录路径，如果为空则返回根目录列表
             
         Returns:
-            包含当前路径、父路径和子目录列表的字典
+            包含当前路径、父路径、子目录列表和文件列表的字典
         """
         try:
             if not path:
@@ -533,12 +533,17 @@ class PlaylistService:
             # 获取父目录
             parent_path = str(current_path.parent) if current_path.parent != current_path else None
             
-            # 列出子目录
+            # 列出子目录和文件
             subdirectories = []
+            files = []
+            
             try:
                 for item in sorted(current_path.iterdir()):
-                    # 只列出目录，跳过隐藏目录
-                    if item.is_dir() and not item.name.startswith('.'):
+                    # 跳过隐藏文件和目录
+                    if item.name.startswith('.'):
+                        continue
+                    
+                    if item.is_dir():
                         try:
                             # 尝试获取目录信息
                             subdirectories.append({
@@ -553,6 +558,16 @@ class PlaylistService:
                                 "name": item.name,
                                 "is_accessible": False
                             })
+                    elif item.is_file():
+                        # 列出所有文件（不仅仅是音频文件）
+                        try:
+                            files.append({
+                                "path": str(item),
+                                "name": item.name,
+                                "size": item.stat().st_size
+                            })
+                        except Exception as e:
+                            _log.warning("Failed to get file info for %s: %s", item, e)
             except PermissionError:
                 _log.warning("No permission to list directory: %s", current_path)
             
@@ -560,7 +575,8 @@ class PlaylistService:
                 "current_path": str(current_path),
                 "parent_path": parent_path,
                 "directories": subdirectories,
-                "total": len(subdirectories)
+                "files": files,
+                "total": len(subdirectories) + len(files)
             }
             
         except Exception as e:
@@ -568,19 +584,75 @@ class PlaylistService:
             raise RuntimeError(f"Failed to browse directory: {str(e)}")
 
     @staticmethod
+    def _natural_sort_key(text: str) -> list:
+        """
+        生成自然排序的键
+        
+        参考 audiobookshelf 和 ECMAScript Intl.Collator 的实现
+        将字符串分解为数字和非数字部分，数字部分转换为整数进行比较
+        
+        示例:
+        - "Chapter 1" -> ["Chapter ", 1]
+        - "Chapter 10" -> ["Chapter ", 10]
+        - "第01章" -> ["第", 1, "章"]
+        - "001-标题" -> [1, "-标题"]
+        
+        Args:
+            text: 要排序的文本
+            
+        Returns:
+            用于排序的键列表，每个元素都是 (类型, 值) 元组以确保可比较性
+        """
+        import re
+        
+        # 将字符串分解为数字和非数字部分
+        # 使用正则表达式匹配连续的数字或非数字字符
+        parts = re.split(r'(\d+)', text.lower())
+        
+        # 转换数字部分为整数，保留非数字部分为字符串
+        # 使用元组 (类型标识, 值) 确保不同类型之间可以比较
+        result = []
+        for part in parts:
+            if part:  # 跳过空字符串
+                if part.isdigit():
+                    # 数字部分：(0, 整数值)
+                    # 类型标识 0 确保数字排在字符串前面
+                    result.append((0, int(part)))
+                else:
+                    # 非数字部分：(1, 字符串值)
+                    result.append((1, part))
+        
+        return result
+
+    @staticmethod
+    def _should_sort_files(playlist_type: str) -> bool:
+        """判断是否需要对文件进行排序
+        
+        Args:
+            playlist_type: 播单类型
+            
+        Returns:
+            是否需要排序
+        """
+        # 音乐类型不排序，其他类型（有声书、播客、广播剧等）需要排序
+        return playlist_type not in ['music', '']
+
+    @staticmethod
     def import_from_directory(
         playlist_id: str,
-        directory: str,
+        directory: str | None = None,
+        files: list[str] | None = None,
         recursive: bool = False,
         file_extensions: list[str] | None = None
     ) -> dict[str, any]:
-        """从指定目录批量导入音频文件
+        """从指定目录或文件列表批量导入音频文件
         
         Args:
             playlist_id: 播单ID
-            directory: 目录路径
-            recursive: 是否递归扫描子目录
-            file_extensions: 文件扩展名列表，默认为常见音频格式
+            directory: 目录路径（与 files 二选一）
+            files: 文件路径列表（与 directory 二选一）
+            recursive: 是否递归扫描子目录（仅目录模式有效）
+            file_extensions: 文件扩展名列表，默认为常见音频格式（仅目录模式有效）
             
         Returns:
             导入结果统计
@@ -589,6 +661,13 @@ class PlaylistService:
         if playlist is None:
             raise ValueError(f"Playlist not found: {playlist_id}")
         
+        # 验证参数
+        if not directory and not files:
+            raise ValueError("Either directory or files must be provided")
+        
+        if directory and files:
+            raise ValueError("Cannot specify both directory and files")
+        
         if file_extensions is None:
             file_extensions = [".mp3", ".m4a", ".flac", ".wav", ".ogg", ".aac", ".wma"]
         
@@ -596,67 +675,74 @@ class PlaylistService:
         file_extensions = [ext.lower() if ext.startswith('.') else f'.{ext.lower()}' 
                           for ext in file_extensions]
         
-        dir_path = Path(directory)
-        if not dir_path.exists():
-            raise ValueError(f"Directory not found: {directory}")
-        
-        if not dir_path.is_dir():
-            raise ValueError(f"Path is not a directory: {directory}")
-        
         # 扫描文件
         imported_items = []
         skipped_files = []
+        total_scanned = 0
         
         try:
-            if recursive:
-                # 递归扫描
-                files = [f for f in dir_path.rglob("*") if f.is_file()]
-            else:
-                # 只扫描当前目录
-                files = [f for f in dir_path.iterdir() if f.is_file()]
-            
-            for file_path in files:
-                # 检查文件扩展名
-                if file_path.suffix.lower() not in file_extensions:
-                    continue
+            # 文件列表模式
+            if files:
+                file_paths = [Path(f) for f in files]
+                total_scanned = len(file_paths)
                 
-                try:
-                    # 提取文件信息
-                    # 文件名作为标题（去除扩展名）
-                    title = file_path.stem
+                for file_path in file_paths:
+                    if not file_path.exists():
+                        _log.warning("File not found: %s", file_path)
+                        skipped_files.append(str(file_path))
+                        continue
                     
-                    # 尝试从文件路径提取艺术家和专辑信息
-                    # 假设目录结构为：艺术家/专辑/歌曲.mp3
-                    parts = file_path.parts
-                    artist = ""
-                    album = ""
+                    if not file_path.is_file():
+                        _log.warning("Path is not a file: %s", file_path)
+                        skipped_files.append(str(file_path))
+                        continue
                     
-                    if len(parts) >= 2:
-                        album = parts[-2]  # 父目录作为专辑
-                    if len(parts) >= 3:
-                        artist = parts[-3]  # 祖父目录作为艺术家
+                    try:
+                        item = PlaylistService._create_playlist_item_from_file(file_path)
+                        imported_items.append(item)
+                        _log.debug("Imported file: %s", file_path)
+                    except Exception as e:
+                        _log.warning("Failed to import file %s: %s", file_path, e)
+                        skipped_files.append(str(file_path))
+            
+            # 目录模式
+            else:
+                dir_path = Path(directory)
+                if not dir_path.exists():
+                    raise ValueError(f"Directory not found: {directory}")
+                
+                if not dir_path.is_dir():
+                    raise ValueError(f"Path is not a directory: {directory}")
+                
+                if recursive:
+                    # 递归扫描
+                    file_paths = [f for f in dir_path.rglob("*") if f.is_file()]
+                else:
+                    # 只扫描当前目录
+                    file_paths = [f for f in dir_path.iterdir() if f.is_file()]
+                
+                total_scanned = len(file_paths)
+                
+                for file_path in file_paths:
+                    # 检查文件扩展名
+                    if file_path.suffix.lower() not in file_extensions:
+                        continue
                     
-                    # 创建播单项
-                    # 使用文件的绝对路径作为URL
-                    item = PlaylistItem(
-                        title=title,
-                        artist=artist,
-                        album=album,
-                        url=f"file://{file_path.absolute()}",
-                        audio_id="",
-                        custom_params={
-                            "file_path": str(file_path.absolute()),
-                            "file_size": file_path.stat().st_size,
-                            "file_extension": file_path.suffix
-                        }
-                    )
-                    
-                    imported_items.append(item)
-                    _log.debug("Imported file: %s", file_path)
-                    
-                except Exception as e:
-                    _log.warning("Failed to import file %s: %s", file_path, e)
-                    skipped_files.append(str(file_path))
+                    try:
+                        item = PlaylistService._create_playlist_item_from_file(file_path)
+                        imported_items.append(item)
+                        _log.debug("Imported file: %s", file_path)
+                    except Exception as e:
+                        _log.warning("Failed to import file %s: %s", file_path, e)
+                        skipped_files.append(str(file_path))
+            
+            # 根据播单类型决定是否排序
+            if imported_items and PlaylistService._should_sort_files(playlist.type):
+                # 使用自然排序算法按文件名排序
+                imported_items.sort(key=lambda item: PlaylistService._natural_sort_key(
+                    item.custom_params.get("file_name", item.title)
+                ))
+                _log.info("Sorted %d items using natural sort algorithm", len(imported_items))
             
             # 添加到播单
             if imported_items:
@@ -664,20 +750,59 @@ class PlaylistService:
                 playlist.updated_at = datetime.now().isoformat()
                 PlaylistStorage.save_playlist(playlist)
                 _log.info(
-                    "Imported %d files from directory %s to playlist %s",
+                    "Imported %d files to playlist %s",
                     len(imported_items),
-                    directory,
                     playlist_id
                 )
             
             return {
                 "imported": len(imported_items),
                 "skipped": len(skipped_files),
-                "total_scanned": len(files),
+                "total_scanned": total_scanned,
                 "skipped_files": skipped_files[:10],  # 只返回前10个失败的文件
                 "playlist_total_items": len(playlist.items)
             }
             
         except Exception as e:
-            _log.error("Failed to import from directory %s: %s", directory, e, exc_info=True)
-            raise RuntimeError(f"Failed to import from directory: {str(e)}")
+            _log.error("Failed to import: %s", e, exc_info=True)
+            raise RuntimeError(f"Failed to import: {str(e)}")
+    
+    @staticmethod
+    def _create_playlist_item_from_file(file_path: Path) -> PlaylistItem:
+        """从文件路径创建播单项
+        
+        Args:
+            file_path: 文件路径
+            
+        Returns:
+            播单项
+        """
+        # 文件名作为标题（去除扩展名）
+        title = file_path.stem
+        
+        # 尝试从文件路径提取艺术家和专辑信息
+        # 假设目录结构为：艺术家/专辑/歌曲.mp3
+        parts = file_path.parts
+        artist = ""
+        album = ""
+        
+        if len(parts) >= 2:
+            album = parts[-2]  # 父目录作为专辑
+        if len(parts) >= 3:
+            artist = parts[-3]  # 祖父目录作为艺术家
+        
+        # 创建播单项
+        # 使用文件的绝对路径作为URL
+        return PlaylistItem(
+            title=title,
+            artist=artist,
+            album=album,
+            url=f"file://{file_path.absolute()}",
+            audio_id="",
+            custom_params={
+                "file_path": str(file_path.absolute()),
+                "file_size": file_path.stat().st_size,
+                "file_extension": file_path.suffix,
+                "file_name": file_path.name  # 保存完整文件名用于排序
+            }
+        )

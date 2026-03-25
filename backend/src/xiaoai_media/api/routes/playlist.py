@@ -279,16 +279,18 @@ async def play_next(playlist_id: str, device_id: str | None = None):
 
 @router.post("/{playlist_id}/import")
 async def import_from_directory(playlist_id: str, req: ImportFromDirectoryRequest):
-    """从指定目录批量导入音频文件
+    """从指定目录或文件列表批量导入音频文件
     
     支持的音频格式：.mp3, .m4a, .flac, .wav, .ogg, .aac, .wma
     
     参数：
-    - directory: 目录路径
+    - directory: 目录路径（与 files 二选一）
       - 本地模式：完整的本地文件系统路径
       - Docker模式：/data 下的路径（通过 volume 挂载）
-    - recursive: 是否递归扫描子目录
-    - file_extensions: 要导入的文件扩展名列表（可选）
+    - files: 文件路径列表（与 directory 二选一）
+      - 支持多个文件路径
+    - recursive: 是否递归扫描子目录（仅目录模式有效）
+    - file_extensions: 要导入的文件扩展名列表（仅目录模式有效）
     
     返回：
     - imported: 成功导入的文件数量
@@ -300,6 +302,7 @@ async def import_from_directory(playlist_id: str, req: ImportFromDirectoryReques
         result = PlaylistService.import_from_directory(
             playlist_id=playlist_id,
             directory=req.directory,
+            files=req.files,
             recursive=req.recursive,
             file_extensions=req.file_extensions
         )

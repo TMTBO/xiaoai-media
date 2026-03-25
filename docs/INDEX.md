@@ -42,11 +42,16 @@
 ### 播放列表
 | 文档 | 说明 | 路径 |
 |------|------|------|
+| 播放列表索引 | 📚 完整文档索引 | [playlist/INDEX.md](playlist/INDEX.md) ⭐ |
 | 播放列表总览 | 功能介绍 | [playlist/README.md](playlist/README.md) |
 | 播放列表指南 | 使用指南 | [playlist/PLAYLIST_GUIDE.md](playlist/PLAYLIST_GUIDE.md) |
+| 批量导入快速参考 | V2.1 快速参考 | [playlist/BATCH_IMPORT_QUICK_REFERENCE.md](playlist/BATCH_IMPORT_QUICK_REFERENCE.md) ⭐ |
+| 批量导入改进 | V2.1 功能改进 | [playlist/BATCH_IMPORT_IMPROVEMENTS.md](playlist/BATCH_IMPORT_IMPROVEMENTS.md) |
+| 自然排序算法 | V2.1 排序实现 | [playlist/NATURAL_SORT_IMPLEMENTATION.md](playlist/NATURAL_SORT_IMPLEMENTATION.md) |
+| V2.1 更新日志 | 最新版本更新 | [playlist/CHANGELOG_V2.1.md](playlist/CHANGELOG_V2.1.md) |
+| V2.1 总结 | 完整版本总结 | [playlist/BATCH_IMPORT_V2_SUMMARY.md](playlist/BATCH_IMPORT_V2_SUMMARY.md) |
 | 存储结构重构 | v1.0 重构说明 | [playlist/PLAYLIST_STORAGE_REFACTOR.md](playlist/PLAYLIST_STORAGE_REFACTOR.md) |
 | 重构总结 | 完成总结 | [playlist/PLAYLIST_REFACTOR_SUMMARY.md](playlist/PLAYLIST_REFACTOR_SUMMARY.md) |
-| 快速参考 | 快速查询 | [playlist/QUICK_REFERENCE.md](playlist/QUICK_REFERENCE.md) |
 
 ### 对话监听
 | 文档 | 说明 | 路径 |

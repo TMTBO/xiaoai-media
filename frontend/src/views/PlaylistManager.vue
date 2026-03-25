@@ -247,33 +247,18 @@
 
                 <!-- 路径导入模式 -->
                 <template v-if="importMode === 'path'">
-                    <!-- 统一的目录浏览器（本地和Docker模式） -->
-                    <el-form-item label="选择目录" required>
-                        <div style="width: 100%">
-                            <!-- 当前路径显示 -->
-                            <div style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px">
-                                <el-input 
-                                    v-model="importForm.directory" 
-                                    placeholder="点击输入框或浏览按钮选择目录"
-                                    readonly
-                                    @click="showDirectoryBrowser = true"
-                                    style="cursor: pointer"
-                                />
-                                <el-button @click="showDirectoryBrowser = true">
-                                    <el-icon style="margin-right: 4px">
-                                        <FolderOpened />
-                                    </el-icon>
-                                    浏览
-                                </el-button>
-                            </div>
-                            <div style="font-size: 12px; color: #909399">
-                                {{ isDockerEnv ? '点击输入框或"浏览"按钮选择目录' : '点击输入框或"浏览"按钮选择目录，也可直接输入完整路径' }}
-                            </div>
-                        </div>
+                    <!-- 统一的路径选择器 -->
+                    <el-form-item label="选择路径" required>
+                        <PathSelector 
+                            v-model:directory="importForm.directory"
+                            v-model:files="importForm.files"
+                            placeholder="点击选择目录或文件"
+                            hint="可以选择一个目录批量导入，或选择一个或多个文件精确导入"
+                        />
                     </el-form-item>
 
-                <!-- 导入选项 -->
-                <el-form-item label="扫描选项">
+                <!-- 导入选项（仅目录模式） -->
+                <el-form-item v-if="importForm.directory" label="扫描选项">
                     <el-checkbox v-model="importForm.recursive">
                         递归扫描子目录
                     </el-checkbox>
@@ -282,7 +267,7 @@
                     </div>
                 </el-form-item>
 
-                <el-form-item label="文件格式">
+                <el-form-item v-if="importForm.directory" label="文件格式">
                     <el-checkbox-group v-model="importForm.file_extensions">
                         <el-checkbox label=".mp3">MP3</el-checkbox>
                         <el-checkbox label=".m4a">M4A</el-checkbox>
@@ -363,7 +348,7 @@
                     type="primary" 
                     @click="handleBatchImport" 
                     :loading="importing"
-                    :disabled="!importForm.directory || importForm.file_extensions.length === 0"
+                    :disabled="(!importForm.directory && (!importForm.files || importForm.files.length === 0)) || (importForm.directory && importForm.file_extensions.length === 0)"
                 >
                     {{ importing ? '导入中...' : '开始导入' }}
                 </el-button>
@@ -378,70 +363,15 @@
                 </el-button>
             </template>
         </el-dialog>
-
-        <!-- 目录浏览器对话框 -->
-        <el-dialog v-model="showDirectoryBrowser" title="选择目录" width="600px">
-            <!-- 当前路径 -->
-            <div style="margin-bottom: 16px">
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px">
-                    <el-button 
-                        size="small" 
-                        :disabled="!currentBrowsePath || !browserParentPath"
-                        @click="browseParentDirectory"
-                    >
-                        <el-icon><ArrowUp /></el-icon>
-                        上级目录
-                    </el-button>
-                    <span style="flex: 1; font-size: 14px; color: #606266">
-                        {{ currentBrowsePath || '加载中...' }}
-                    </span>
-                </div>
-            </div>
-
-            <!-- 目录列表 -->
-            <el-scrollbar height="400px">
-                <div v-loading="browsingDirectory">
-                    <div 
-                        v-for="dir in browserDirectories" 
-                        :key="dir.path"
-                        class="directory-item"
-                        :class="{ 'directory-item-disabled': !dir.is_accessible }"
-                        @click="dir.is_accessible !== false && browseSubDirectory(dir.path)"
-                    >
-                        <el-icon style="margin-right: 8px; font-size: 18px">
-                            <Folder />
-                        </el-icon>
-                        <span style="flex: 1">{{ dir.name }}</span>
-                        <el-icon v-if="dir.is_accessible !== false" style="color: #909399">
-                            <ArrowRight />
-                        </el-icon>
-                        <el-icon v-else style="color: #f56c6c">
-                            <Lock />
-                        </el-icon>
-                    </div>
-                    <el-empty v-if="!browsingDirectory && browserDirectories.length === 0" description="此目录下没有子目录" />
-                </div>
-            </el-scrollbar>
-
-            <template #footer>
-                <el-button @click="showDirectoryBrowser = false">取消</el-button>
-                <el-button 
-                    type="primary" 
-                    @click="selectCurrentDirectory"
-                    :disabled="!currentBrowsePath"
-                >
-                    选择当前目录
-                </el-button>
-            </template>
-        </el-dialog>
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Refresh, List, Plus, VideoPlay, CaretRight, VideoPause, FolderOpened, UploadFilled, Folder, ArrowRight, ArrowUp, Lock } from '@element-plus/icons-vue'
-import { api, type Device, type Playlist, type PlaylistIndex, type PlaylistItem, type DirectoryInfo, type ImportResult, type BrowseDirectoryResponse } from '@/api'
+import { Refresh, List, Plus, VideoPlay, CaretRight, VideoPause, FolderOpened, UploadFilled } from '@element-plus/icons-vue'
+import { api, type Device, type Playlist, type PlaylistIndex, type PlaylistItem, type DirectoryInfo, type ImportResult } from '@/api'
+import PathSelector from '@/components/PathSelector.vue'
 
 // 设备相关
 const devices = ref<Device[]>([])
@@ -457,7 +387,6 @@ const showCreateDialog = ref(false)
 const showItemsDialog = ref(false)
 const showAddItemDialog = ref(false)
 const showBatchImportDialog = ref(false)
-const showDirectoryBrowser = ref(false)
 const saving = ref(false)
 
 // 编辑状态
@@ -492,20 +421,13 @@ const uploadRef = ref()
 const importMode = ref<'path' | 'upload'>('path')
 const isDockerEnv = ref(false)
 const environmentMessage = ref('')
-const availableDirectories = ref<DirectoryInfo[]>([])
-const directoriesLoading = ref(false)
 const importing = ref(false)
 const importResult = ref<ImportResult | null>(null)
 const uploadFileList = ref<any[]>([])
 
-// 目录浏览器相关
-const browsingDirectory = ref(false)
-const currentBrowsePath = ref('')
-const browserParentPath = ref<string | null>(null)
-const browserDirectories = ref<DirectoryInfo[]>([])
-
 const importForm = ref({
     directory: '',
+    files: [] as string[],
     recursive: true,
     file_extensions: ['.mp3', '.m4a', '.flac', '.wav', '.ogg', '.aac'] as string[],
 })
@@ -785,34 +707,29 @@ function resetCreateForm() {
     }
 }
 
-// 加载可用目录
-async function loadAvailableDirectories() {
-    directoriesLoading.value = true
+// 加载环境信息
+async function loadEnvironmentInfo() {
     try {
         const data = await api.getAvailableDirectories()
         isDockerEnv.value = data.is_docker
         environmentMessage.value = data.message
-        availableDirectories.value = data.directories
-
-        // Docker模式下，默认选择第一个非根目录
-        if (data.is_docker && data.directories.length > 1) {
-            importForm.value.directory = data.directories[1].path
-        }
     } catch (error: any) {
-        ElMessage.error(`加载目录列表失败: ${error.message}`)
-    } finally {
-        directoriesLoading.value = false
+        ElMessage.error(`加载环境信息失败: ${error.message}`)
     }
 }
 
 // 批量导入
 async function handleBatchImport() {
-    if (!importForm.value.directory) {
-        ElMessage.error('请选择或输入目录路径')
+    // 验证输入
+    const hasDirectory = !!importForm.value.directory
+    const hasFiles = importForm.value.files && importForm.value.files.length > 0
+    
+    if (!hasDirectory && !hasFiles) {
+        ElMessage.error('请选择目录或文件')
         return
     }
-
-    if (importForm.value.file_extensions.length === 0) {
+    
+    if (hasDirectory && importForm.value.file_extensions.length === 0) {
         ElMessage.error('请至少选择一种文件格式')
         return
     }
@@ -826,11 +743,19 @@ async function handleBatchImport() {
     importResult.value = null
 
     try {
-        const result = await api.importFromDirectory(currentPlaylist.value.id, {
-            directory: importForm.value.directory,
-            recursive: importForm.value.recursive,
-            file_extensions: importForm.value.file_extensions,
-        })
+        const requestData: any = {}
+        
+        if (hasDirectory) {
+            requestData.directory = importForm.value.directory
+            requestData.recursive = importForm.value.recursive
+            requestData.file_extensions = importForm.value.file_extensions
+        }
+        
+        if (hasFiles) {
+            requestData.files = importForm.value.files
+        }
+
+        const result = await api.importFromDirectory(currentPlaylist.value.id, requestData)
 
         importResult.value = result
 
@@ -843,8 +768,14 @@ async function handleBatchImport() {
             // 重新加载当前播单
             const fullPlaylist = await api.getPlaylistById(currentPlaylist.value.id)
             currentPlaylist.value = fullPlaylist
+            
+            // 关闭批量导入对话框
+            showBatchImportDialog.value = false
+            
+            // 确保项目列表对话框保持打开状态
+            // showItemsDialog 已经是 true，无需额外操作
         } else {
-            ElMessage.warning('没有文件被导入，请检查目录路径和文件格式')
+            ElMessage.warning('没有文件被导入，请检查路径和文件格式')
         }
     } catch (error: any) {
         ElMessage.error(`导入失败: ${error.response?.data?.detail || error.message}`)
@@ -858,6 +789,7 @@ function resetImportForm() {
     importMode.value = 'path'
     importForm.value = {
         directory: '',
+        files: [],
         recursive: true,
         file_extensions: ['.mp3', '.m4a', '.flac', '.wav', '.ogg', '.aac'],
     }
@@ -866,37 +798,6 @@ function resetImportForm() {
         uploadRef.value.clearFiles()
     }
     importResult.value = null
-}
-
-// 浏览目录
-async function browseSubDirectory(path: string) {
-    browsingDirectory.value = true
-    try {
-        const data = await api.browseDirectory(path)
-        currentBrowsePath.value = data.current_path
-        browserParentPath.value = data.parent_path
-        browserDirectories.value = data.directories
-    } catch (error: any) {
-        ElMessage.error(`浏览目录失败: ${error.response?.data?.detail || error.message}`)
-    } finally {
-        browsingDirectory.value = false
-    }
-}
-
-// 浏览父目录
-async function browseParentDirectory() {
-    if (browserParentPath.value) {
-        await browseSubDirectory(browserParentPath.value)
-    }
-}
-
-// 选择当前目录
-function selectCurrentDirectory() {
-    if (currentBrowsePath.value) {
-        importForm.value.directory = currentBrowsePath.value
-        showDirectoryBrowser.value = false
-        ElMessage.success(`已选择目录: ${currentBrowsePath.value}`)
-    }
 }
 
 // 处理文件变化
@@ -1017,18 +918,11 @@ watch(showCreateDialog, (val) => {
 
 watch(showBatchImportDialog, (val) => {
     if (val) {
-        // 打开对话框时加载目录列表
-        loadAvailableDirectories()
+        // 打开对话框时加载环境信息
+        loadEnvironmentInfo()
     } else {
         // 关闭对话框时重置表单
         resetImportForm()
-    }
-})
-
-watch(showDirectoryBrowser, (val) => {
-    if (val) {
-        // 打开目录浏览器时，加载初始目录
-        browseSubDirectory('')
     }
 })
 </script>
@@ -1042,37 +936,5 @@ watch(showDirectoryBrowser, (val) => {
 
 .device-selector :deep(.el-form--inline .el-form-item) {
     margin-bottom: 0;
-}
-
-.directory-item {
-    display: flex;
-    align-items: center;
-    padding: 12px 16px;
-    border-bottom: 1px solid #ebeef5;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.directory-item:hover {
-    background-color: #f5f7fa;
-}
-
-.directory-item-disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.directory-item-disabled:hover {
-    background-color: transparent;
-}
-
-/* 让只读输入框看起来可点击 */
-:deep(.el-input.is-disabled .el-input__wrapper) {
-    cursor: pointer;
-    background-color: var(--el-fill-color-blank);
-}
-
-:deep(.el-input__wrapper) {
-    cursor: pointer;
 }
 </style>

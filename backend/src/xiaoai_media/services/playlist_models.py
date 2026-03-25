@@ -119,11 +119,12 @@ class ContinuePlayRequest(BaseModel):
 
 
 class ImportFromDirectoryRequest(BaseModel):
-    """从目录批量导入请求"""
+    """从目录或文件批量导入请求"""
 
-    directory: str = Field(..., description="要导入的目录路径")
-    recursive: bool = Field(False, description="是否递归扫描子目录")
+    directory: str | None = Field(None, description="要导入的目录路径（与 files 二选一）")
+    files: list[str] | None = Field(None, description="要导入的文件路径列表（与 directory 二选一）")
+    recursive: bool = Field(False, description="是否递归扫描子目录（仅目录模式有效）")
     file_extensions: list[str] = Field(
         default_factory=lambda: [".mp3", ".m4a", ".flac", ".wav", ".ogg", ".aac"],
-        description="要导入的文件扩展名列表"
+        description="要导入的文件扩展名列表（仅目录模式有效）"
     )

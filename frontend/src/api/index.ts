@@ -141,7 +141,8 @@ export interface PlayPlaylistRequest {
 }
 
 export interface ImportFromDirectoryRequest {
-  directory: string
+  directory?: string
+  files?: string[]
   recursive?: boolean
   file_extensions?: string[]
 }
@@ -157,7 +158,13 @@ export interface ImportResult {
 export interface DirectoryInfo {
   path: string
   name: string
-  is_docker: boolean
+  is_accessible?: boolean
+}
+
+export interface FileInfo {
+  path: string
+  name: string
+  size: number
 }
 
 export interface DirectoriesResponse {
@@ -170,6 +177,7 @@ export interface BrowseDirectoryResponse {
   current_path: string
   parent_path: string | null
   directories: DirectoryInfo[]
+  files?: FileInfo[]
   total: number
 }
 
