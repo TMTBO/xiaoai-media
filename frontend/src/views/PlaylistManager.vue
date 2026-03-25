@@ -247,53 +247,30 @@
 
                 <!-- 路径导入模式 -->
                 <template v-if="importMode === 'path'">
-                    <!-- Docker模式：目录选择器 -->
-                    <el-form-item v-if="isDockerEnv" label="选择目录" required>
-                    <el-select 
-                        v-model="importForm.directory" 
-                        placeholder="请选择要导入的目录"
-                        style="width: 100%"
-                        :loading="directoriesLoading"
-                    >
-                        <el-option 
-                            v-for="dir in availableDirectories" 
-                            :key="dir.path" 
-                            :value="dir.path"
-                            :label="dir.name"
-                        >
-                            <div style="display: flex; justify-content: space-between">
-                                <span>{{ dir.name }}</span>
-                                <span style="color: #8492a6; font-size: 12px">{{ dir.path }}</span>
+                    <!-- 统一的目录浏览器（本地和Docker模式） -->
+                    <el-form-item label="选择目录" required>
+                        <div style="width: 100%">
+                            <!-- 当前路径显示 -->
+                            <div style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px">
+                                <el-input 
+                                    v-model="importForm.directory" 
+                                    placeholder="点击输入框或浏览按钮选择目录"
+                                    readonly
+                                    @click="showDirectoryBrowser = true"
+                                    style="cursor: pointer"
+                                />
+                                <el-button @click="showDirectoryBrowser = true">
+                                    <el-icon style="margin-right: 4px">
+                                        <FolderOpened />
+                                    </el-icon>
+                                    浏览
+                                </el-button>
                             </div>
-                        </el-option>
-                    </el-select>
-                    <div style="font-size: 12px; color: #909399; margin-top: 4px">
-                        从挂载的volume中选择目录
-                    </div>
-                </el-form-item>
-
-                <!-- 本地模式：目录浏览器 -->
-                <el-form-item v-else label="选择目录" required>
-                    <div style="width: 100%">
-                        <!-- 当前路径显示 -->
-                        <div style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px">
-                            <el-input 
-                                v-model="importForm.directory" 
-                                placeholder="当前选择的目录路径"
-                                readonly
-                            />
-                            <el-button @click="showDirectoryBrowser = true">
-                                <el-icon style="margin-right: 4px">
-                                    <FolderOpened />
-                                </el-icon>
-                                浏览
-                            </el-button>
+                            <div style="font-size: 12px; color: #909399">
+                                {{ isDockerEnv ? '点击输入框或"浏览"按钮选择目录' : '点击输入框或"浏览"按钮选择目录，也可直接输入完整路径' }}
+                            </div>
                         </div>
-                        <div style="font-size: 12px; color: #909399">
-                            点击"浏览"按钮选择目录，或直接输入完整路径
-                        </div>
-                    </div>
-                </el-form-item>
+                    </el-form-item>
 
                 <!-- 导入选项 -->
                 <el-form-item label="扫描选项">
@@ -1087,5 +1064,15 @@ watch(showDirectoryBrowser, (val) => {
 
 .directory-item-disabled:hover {
     background-color: transparent;
+}
+
+/* 让只读输入框看起来可点击 */
+:deep(.el-input.is-disabled .el-input__wrapper) {
+    cursor: pointer;
+    background-color: var(--el-fill-color-blank);
+}
+
+:deep(.el-input__wrapper) {
+    cursor: pointer;
 }
 </style>
