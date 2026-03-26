@@ -1,25 +1,7 @@
 <template>
     <div class="playlist-manager">
-        <!-- 设备选择器 -->
-        <el-card shadow="never" class="device-selector">
-            <el-form inline>
-                <el-form-item label="目标设备">
-                    <el-select v-model="deviceId" placeholder="留空则使用默认设备" clearable style="width: 240px"
-                        :loading="devicesLoading" no-data-text="暂无设备，请先在配置页填写账号后点击刷新">
-                        <el-option v-for="d in devices" :key="d.deviceID" :label="`${d.name} (${d.deviceID})`"
-                            :value="d.deviceID" />
-                    </el-select>
-                    <el-button :loading="devicesLoading" style="margin-left: 8px" @click="loadDevices">
-                        <el-icon>
-                            <Refresh />
-                        </el-icon>
-                    </el-button>
-                </el-form-item>
-            </el-form>
-        </el-card>
-
         <!-- 播单列表 -->
-        <el-card style="margin-top: 16px">
+        <el-card>
             <template #header>
                 <div style="display: flex; justify-content: space-between; align-items: center">
                     <span>
@@ -296,14 +278,12 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Refresh, List, Plus, VideoPlay, CaretRight, VideoPause, FolderOpened } from '@element-plus/icons-vue'
+import { List, Plus, VideoPlay, CaretRight, VideoPause, FolderOpened } from '@element-plus/icons-vue'
 import { api, type Device, type Playlist, type PlaylistIndex, type PlaylistItem, type DirectoryInfo, type ImportResult } from '@/api'
 import PathSelector from '@/components/PathSelector.vue'
+import { useDevices } from '@/composables/useDevices'
 
-// 设备相关
-const devices = ref<Device[]>([])
-const deviceId = ref<string>('')
-const devicesLoading = ref(false)
+const { deviceId } = useDevices()
 
 // 播单列表（索引信息）
 const playlists = ref<PlaylistIndex[]>([])
@@ -351,36 +331,6 @@ const importForm = ref({
     recursive: true,
     file_extensions: ['.mp3', '.m4a', '.flac', '.wav', '.ogg', '.aac', '.wma'] as string[],
 })
-
-// 加载设备列表
-async function loadDevices() {
-    devicesLoading.value = true
-    try {
-        const data = await api.listDevices(true)
-        devices.value = data.devices
-
-        // 如果还没有设置设备且有默认设备，则设置默认设备
-        if (!deviceId.value && data.devices.length > 0) {
-            // 尝试从配置获取默认设备
-            try {
-                const config = await api.getConfig()
-                if (config.MI_DID) {
-                    // 查找匹配的设备
-                    const defaultDevice = data.devices.find(d => d.deviceID === config.MI_DID)
-                    if (defaultDevice) {
-                        deviceId.value = config.MI_DID
-                    }
-                }
-            } catch (error) {
-                // 如果获取配置失败，忽略错误
-            }
-        }
-    } catch (error: any) {
-        ElMessage.error(`加载设备失败: ${error.message}`)
-    } finally {
-        devicesLoading.value = false
-    }
-}
 
 // 加载播单列表
 async function loadPlaylists() {
@@ -523,7 +473,6 @@ function getPlayModeName(mode: string): string {
 
 // 页面加载时
 onMounted(() => {
-    loadDevices()
     loadPlaylists()
 })
 
@@ -737,7 +686,6 @@ function closeBatchImportDialog() {
 
 // 页面加载时
 onMounted(() => {
-    loadDevices()
     loadPlaylists()
 })
 
@@ -759,7 +707,6 @@ watch(showBatchImportDialog, (val) => {
 
 <style scoped>
 .playlist-manager {
-    padding: 20px;
     max-width: 1400px;
     margin: 0 auto;
 }

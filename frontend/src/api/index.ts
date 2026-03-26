@@ -217,6 +217,8 @@ export const api = {
     http.post('/music/resume', { device_id: deviceId }).then(r => r.data),
   getPlaylist: (deviceId?: string) =>
     http.get<PlaylistState>('/music/playlist', { params: { device_id: deviceId } }).then(r => r.data),
+  getPlayerStatus: (deviceId?: string) =>
+    http.get('/music/status', { params: { device_id: deviceId } }).then(r => r.data),
 
   // Music: Smart voice command & announce
   voiceCommand: (text: string, deviceId?: string) =>

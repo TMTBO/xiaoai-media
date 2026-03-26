@@ -61,10 +61,17 @@
     </el-aside>
 
     <el-main class="main">
-      <router-view />
+      <GlobalDeviceSelector />
+      <div class="main-content">
+        <router-view />
+      </div>
     </el-main>
   </el-container>
 </template>
+
+<script setup lang="ts">
+import GlobalDeviceSelector from '@/components/GlobalDeviceSelector.vue'
+</script>
 
 <style>
 html,
@@ -103,5 +110,14 @@ body,
 
 .main {
   background: #f5f7fa;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
 }
 </style>

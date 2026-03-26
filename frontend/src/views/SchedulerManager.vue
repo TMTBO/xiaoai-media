@@ -1006,7 +1006,6 @@ onMounted(() => {
 
 <style scoped>
 .scheduler-manager {
-  padding: 20px;
   max-width: 1400px;
   margin: 0 auto;
 }

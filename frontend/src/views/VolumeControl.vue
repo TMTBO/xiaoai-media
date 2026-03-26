@@ -2,17 +2,6 @@
   <el-card>
     <template #header>音量控制</template>
     <el-form label-width="100px">
-      <el-form-item label="目标设备">
-        <el-select v-model="deviceId" placeholder="留空则使用默认设备" clearable style="flex: 1; margin-right: 8px"
-          :loading="devicesLoading" no-data-text="暂无设备，请先在配置页填写账号后点击刷新">
-          <el-option v-for="d in devices" :key="d.deviceID" :label="`${d.name} (${d.deviceID})`" :value="d.deviceID" />
-        </el-select>
-        <el-button :loading="devicesLoading" @click="loadDevices">
-          <el-icon>
-            <Refresh />
-          </el-icon>
-        </el-button>
-      </el-form-item>
       <el-form-item label="音量">
         <el-slider v-model="volume" :min="0" :max="100" show-input style="width: 400px" />
       </el-form-item>
@@ -27,7 +16,6 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
-import { Refresh } from '@element-plus/icons-vue'
 import { api } from '@/api'
 import { useDevices } from '@/composables/useDevices'
 
@@ -36,7 +24,7 @@ const loading = ref(false)
 const error = ref('')
 const success = ref(false)
 const lastVolume = ref(0)
-const { devices, devicesLoading, loadDevices, deviceId } = useDevices()
+const { deviceId } = useDevices()
 
 async function loadCurrentVolume() {
   try {

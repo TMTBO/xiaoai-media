@@ -1,25 +1,7 @@
 <template>
     <div class="music-panel">
-        <!-- Device selector -->
-        <el-card shadow="never" class="device-selector">
-            <el-form inline>
-                <el-form-item label="目标设备">
-                    <el-select v-model="deviceId" placeholder="留空则使用默认设备" clearable style="width: 240px"
-                        :loading="devicesLoading" no-data-text="暂无设备，请先在配置页填写账号后点击刷新">
-                        <el-option v-for="d in devices" :key="d.deviceID" :label="`${d.name} (${d.deviceID})`"
-                            :value="d.deviceID" />
-                    </el-select>
-                    <el-button :loading="devicesLoading" style="margin-left: 8px" @click="loadDevices">
-                        <el-icon>
-                            <Refresh />
-                        </el-icon>
-                    </el-button>
-                </el-form-item>
-            </el-form>
-        </el-card>
-
         <!-- Smart voice command -->
-        <el-card style="margin-top: 16px">
+        <el-card>
             <template #header>
                 <span>
                     <el-icon style="vertical-align: middle; margin-right: 6px">
@@ -234,7 +216,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import {
-    Refresh,
     Search,
     CaretLeft,
     CaretRight,
@@ -248,7 +229,7 @@ import { ElMessageBox, ElMessage } from 'element-plus'
 import { api, type Song, type SongQuality, type Chart, type PlaylistItem } from '@/api'
 import { useDevices } from '@/composables/useDevices'
 
-const { devices, devicesLoading, loadDevices, deviceId } = useDevices()
+const { deviceId } = useDevices()
 const activeTab = ref('search')
 const error = ref('')
 
