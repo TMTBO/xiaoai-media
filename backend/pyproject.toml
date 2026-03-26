@@ -15,6 +15,7 @@ dependencies = [
     "uvicorn[standard]",
     "httpx",
     "requests",
+    "apscheduler>=3.10.0",
 ]
 
 [project.optional-dependencies]

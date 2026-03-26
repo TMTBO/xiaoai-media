@@ -30,6 +30,7 @@ from xiaoai_media.api.routes import (
     music,
     playlist,
     proxy,
+    scheduler,
 )
 from xiaoai_media.conversation import ConversationPoller
 from xiaoai_media.command_handler import CommandHandler
@@ -37,6 +38,8 @@ from xiaoai_media.playback_monitor import PlaybackMonitor
 from xiaoai_media.client import XiaoAiClient
 from xiaoai_media.api.dependencies import set_global_client
 from xiaoai_media import config as app_config
+from xiaoai_media.services.scheduler_service import get_scheduler_service, TaskType
+from xiaoai_media.scheduler_executor import get_scheduler_executor
 
 app = FastAPI(
     title="XiaoAI Media API",
@@ -92,6 +95,20 @@ async def startup_event():
     else:
         logging.getLogger(__name__).info("播放监控已禁用")
     
+    # Initialize scheduler service
+    scheduler_service = get_scheduler_service()
+    executor = get_scheduler_executor()
+    
+    # Register task callbacks
+    scheduler_service.register_callback(TaskType.PLAY_MUSIC, executor.execute_play_music)
+    scheduler_service.register_callback(TaskType.PLAY_PLAYLIST, executor.execute_play_playlist)
+    scheduler_service.register_callback(TaskType.REMINDER, executor.execute_reminder)
+    scheduler_service.register_callback(TaskType.COMMAND, executor.execute_command)
+    
+    # Start scheduler
+    await scheduler_service.start()
+    logging.getLogger(__name__).info("定时任务调度器已启动")
+    
     logging.getLogger(__name__).info("应用启动完成")
 
 
@@ -100,6 +117,11 @@ async def shutdown_event():
     """Stop background tasks on application shutdown."""
     await conversation_poller.stop()
     await playback_monitor.stop()
+    
+    # Stop scheduler
+    scheduler_service = get_scheduler_service()
+    await scheduler_service.stop()
+    logging.getLogger(__name__).info("定时任务调度器已停止")
     
     # Note: XiaoAiClient will be closed automatically when the app shuts down
     # No need to explicitly close it here as it's managed by the dependency system
@@ -116,6 +138,7 @@ app.include_router(config.router, prefix="/api")
 app.include_router(music.router, prefix="/api")
 app.include_router(playlist.router, prefix="/api")
 app.include_router(proxy.router, prefix="/api")
+app.include_router(scheduler.router, prefix="/api")
 
 # Serve frontend static files in production (built by Docker)
 _static_dir = Path(__file__).resolve().parents[4] / "static"

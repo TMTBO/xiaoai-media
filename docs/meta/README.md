@@ -12,6 +12,8 @@
 - **DOCUMENTATION_STATUS.md** - 文档状态跟踪
 - **DOCUMENTATION_SUMMARY.md** - 文档总结
 - **DOCUMENTATION_UPDATE.md** - 文档更新记录
+- **DOCUMENTATION_CLEANUP_SUMMARY.md** - 文档清理总结
+- **ORGANIZATION_COMPLETE.md** - 文件整理完成报告
 
 ### 项目维护
 

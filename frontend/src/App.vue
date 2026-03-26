@@ -45,6 +45,12 @@
           </el-icon>
           <span>播单管理</span>
         </el-menu-item>
+        <el-menu-item index="/scheduler">
+          <el-icon>
+            <Clock />
+          </el-icon>
+          <span>定时任务</span>
+        </el-menu-item>
         <el-menu-item index="/settings">
           <el-icon>
             <Setting />
