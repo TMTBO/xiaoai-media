@@ -100,8 +100,6 @@ class PlaylistService:
             "artist": item.artist,
             "album": item.album,
             "audio_id": item.audio_id,
-            "interval": item.interval,
-            "pic_url": item.pic_url,
             **item.custom_params,  # custom_params 中的值会覆盖上面的默认值
         }
 
@@ -142,8 +140,6 @@ class PlaylistService:
             items=[],
             created_at=now,
             updated_at=now,
-            interval=req.interval,
-            pic_url=req.pic_url,
         )
 
         PlaylistStorage.save_playlist(playlist)
@@ -170,10 +166,6 @@ class PlaylistService:
             playlist.description = req.description
         if req.voice_keywords is not None:
             playlist.voice_keywords = req.voice_keywords
-        if req.interval is not None:
-            playlist.interval = req.interval
-        if req.pic_url is not None:
-            playlist.pic_url = req.pic_url
         if req.play_mode is not None:
             if req.play_mode not in ["loop", "single", "random"]:
                 raise ValueError(f"Invalid play_mode: {req.play_mode}")

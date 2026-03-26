@@ -76,8 +76,6 @@ export interface PlaylistItem {
   audio_id: string       // 音频ID
   url?: string           // 音频URL
   custom_params: Record<string, any>
-  interval?: number | string  // 播放间隔（秒）或时长字符串 "04:32"
-  pic_url?: string       // 封面图片URL
 }
 
 export interface PlaylistIndex {
@@ -89,8 +87,6 @@ export interface PlaylistIndex {
   item_count: number
   created_at: string
   updated_at: string
-  interval?: number | string  // 播放间隔（秒）或时长字符串
-  pic_url?: string       // 封面图片URL
   play_mode: string      // 播放模式：loop, single, random
   current_index: number  // 当前播放索引
 }
@@ -104,8 +100,6 @@ export interface Playlist {
   voice_keywords: string[]
   created_at: string
   updated_at: string
-  interval?: number | string  // 播放间隔（秒）或时长字符串
-  pic_url?: string       // 封面图片URL
   play_mode: string      // 播放模式：loop, single, random
   current_index: number  // 当前播放索引
 }
@@ -115,8 +109,6 @@ export interface CreatePlaylistRequest {
   type?: string
   description?: string
   voice_keywords?: string[]
-  interval?: number | string
-  pic_url?: string
 }
 
 export interface UpdatePlaylistRequest {
@@ -124,8 +116,6 @@ export interface UpdatePlaylistRequest {
   type?: string
   description?: string
   voice_keywords?: string[]
-  interval?: number | string
-  pic_url?: string
   play_mode?: string
   current_index?: number
 }

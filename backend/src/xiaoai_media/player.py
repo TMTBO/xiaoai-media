@@ -294,8 +294,6 @@ class PlaylistPlayer:
                 "qualities": song.get("qualities", []),
                 "meta": song.get("meta", {}),
             },
-            interval=song.get("interval"),
-            pic_url=song.get("meta", {}).get("picUrl", "") if isinstance(song.get("meta"), dict) else None,
         )
 
 

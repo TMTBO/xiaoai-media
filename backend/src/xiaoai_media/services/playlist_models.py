@@ -23,8 +23,6 @@ class PlaylistItem(BaseModel):
         default_factory=dict,
         description="自定义参数，用于调用 user_config.py 中的 get_audio_url 函数",
     )
-    interval: int | str | None = Field(None, description="播放间隔（秒）或时长字符串（如 '04:32'），可选")
-    pic_url: str | None = Field(None, description="封面图片URL，可选")
 
 
 class PlaylistIndex(BaseModel):
@@ -41,8 +39,6 @@ class PlaylistIndex(BaseModel):
     item_count: int = Field(0, description="播单项数量")
     created_at: str = ""
     updated_at: str = ""
-    interval: int | str | None = Field(None, description="播放间隔（秒）或时长字符串（如 '04:32'），可选")
-    pic_url: str | None = Field(None, description="封面图片URL，可选")
     play_mode: str = Field("loop", description="播放模式：loop(列表循环), single(单曲循环), random(随机播放)")
     current_index: int = Field(0, description="当前播放的索引位置")
 
@@ -61,8 +57,6 @@ class Playlist(BaseModel):
     )
     created_at: str = ""
     updated_at: str = ""
-    interval: int | str | None = Field(None, description="播放间隔（秒）或时长字符串（如 '04:32'），可选")
-    pic_url: str | None = Field(None, description="封面图片URL，可选")
     play_mode: str = Field("loop", description="播放模式：loop(列表循环), single(单曲循环), random(随机播放)")
     current_index: int = Field(0, description="当前播放的索引位置")
 
@@ -74,8 +68,6 @@ class CreatePlaylistRequest(BaseModel):
     type: str = ""
     description: str = ""
     voice_keywords: list[str] = []
-    interval: int | str | None = None
-    pic_url: str | None = None
 
 
 class UpdatePlaylistRequest(BaseModel):
@@ -85,8 +77,6 @@ class UpdatePlaylistRequest(BaseModel):
     type: str | None = None
     description: str | None = None
     voice_keywords: list[str] | None = None
-    interval: int | str | None = None
-    pic_url: str | None = None
     play_mode: str | None = None
     current_index: int | None = None
 

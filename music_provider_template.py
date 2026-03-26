@@ -235,8 +235,6 @@ async def get_music_url(custom_params: dict, music_api_base_url: str) -> str:
             - artist: 艺术家/歌手
             - album: 专辑名
             - audio_id: 音频ID
-            - interval: 播放间隔（秒）或时长
-            - pic_url: 封面图片URL
             
             音乐特定字段（来自 custom_params）：
             - type: 类型（通常为 "music"）

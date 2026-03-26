@@ -4,8 +4,10 @@
 """
 
 import logging
+from pathlib import Path
+from urllib.parse import unquote, urlparse
 from fastapi import APIRouter, HTTPException, Query
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse
 import httpx
 
 _log = logging.getLogger(__name__)
@@ -17,19 +19,43 @@ async def proxy_audio_stream(url: str = Query(..., description="原始音频URL"
     """代理音频流，添加必要的请求头以绕过防盗链限制。
 
     Args:
-        url: 音乐平台的原始音频URL
+        url: 音乐平台的原始音频URL或本地文件URL (file://)
 
     Returns:
         StreamingResponse: 音频流响应
 
     Example:
         GET /api/proxy/stream?url=https://music.qq.com/xxx.mp3
+        GET /api/proxy/stream?url=file:///data/audiobooks/song.mp3
     """
     if not url:
         raise HTTPException(status_code=422, detail="URL parameter is required")
 
     _log.info("Proxying audio stream from: %s", url[:100])
 
+    # 处理 file:// 协议的本地文件
+    parsed_url = urlparse(url)
+    if parsed_url.scheme == "file":
+        file_path = unquote(parsed_url.path)
+        _log.info("Serving local file: %s", file_path)
+        
+        path = Path(file_path)
+        if not path.exists():
+            _log.error("File not found: %s", file_path)
+            raise HTTPException(status_code=404, detail=f"File not found: {file_path}")
+        
+        if not path.is_file():
+            _log.error("Path is not a file: %s", file_path)
+            raise HTTPException(status_code=400, detail=f"Path is not a file: {file_path}")
+        
+        # 返回文件响应
+        return FileResponse(
+            path=path,
+            media_type="audio/mpeg",
+            filename=path.name
+        )
+
+    # 处理 HTTP/HTTPS 协议的远程文件
     try:
         # 使用 httpx 请求原始 URL，添加必要的请求头
         async with httpx.AsyncClient(timeout=30.0) as client:

@@ -224,8 +224,6 @@ async def get_audio_url(custom_params: dict) -> str:
             - artist: 艺术家/歌手
             - album: 专辑名
             - audio_id: 音频ID
-            - interval: 播放间隔（秒）或时长
-            - pic_url: 封面图片URL
             
             音乐类型特定字段（来自 custom_params）：
             - type: 类型（music, audiobook, podcast 等）
