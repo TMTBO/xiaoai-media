@@ -233,41 +233,8 @@
             />
 
             <el-form :model="importForm" label-width="120px">
-                <!-- 导入模式选择 -->
-                <el-form-item label="导入模式">
-                    <el-radio-group v-model="importMode">
-                        <el-radio label="path">从服务器路径导入</el-radio>
-                        <el-radio label="upload">从浏览器上传</el-radio>
-                    </el-radio-group>
-                    <div style="font-size: 12px; color: #909399; margin-top: 4px">
-                        <div v-if="importMode === 'path'">从服务器文件系统导入（适合Docker或本地服务器）</div>
-                        <div v-else>直接从浏览器上传文件（适合少量文件）</div>
-                    </div>
-                </el-form-item>
-
-                <!-- 路径导入模式 -->
-                <template v-if="importMode === 'path'">
-                    <!-- 统一的路径选择器 -->
-                    <el-form-item label="选择路径" required>
-                        <PathSelector 
-                            v-model:directory="importForm.directory"
-                            v-model:files="importForm.files"
-                            placeholder="点击选择目录或文件"
-                            hint="可以选择一个目录批量导入，或选择一个或多个文件精确导入"
-                        />
-                    </el-form-item>
-
-                <!-- 导入选项（仅目录模式） -->
-                <el-form-item v-if="importForm.directory" label="扫描选项">
-                    <el-checkbox v-model="importForm.recursive">
-                        递归扫描子目录
-                    </el-checkbox>
-                    <div style="font-size: 12px; color: #909399; margin-top: 4px">
-                        开启后会扫描所有子目录中的音频文件
-                    </div>
-                </el-form-item>
-
-                <el-form-item v-if="importForm.directory" label="文件格式">
+                <!-- 音频格式选择 -->
+                <el-form-item label="音频格式" required>
                     <el-checkbox-group v-model="importForm.file_extensions">
                         <el-checkbox label=".mp3">MP3</el-checkbox>
                         <el-checkbox label=".m4a">M4A</el-checkbox>
@@ -278,42 +245,30 @@
                         <el-checkbox label=".wma">WMA</el-checkbox>
                     </el-checkbox-group>
                     <div style="font-size: 12px; color: #909399; margin-top: 4px">
-                        选择要导入的音频文件格式
+                        选择要导入的音频文件格式，PathSelector中只会显示选中格式的文件
                     </div>
                 </el-form-item>
-                </template>
 
-                <!-- 上传模式 -->
-                <template v-else>
-                    <el-form-item label="选择文件">
-                        <el-upload
-                            ref="uploadRef"
-                            :auto-upload="false"
-                            :file-list="uploadFileList"
-                            :on-change="handleFileChange"
-                            :on-remove="handleFileRemove"
-                            multiple
-                            accept=".mp3,.m4a,.flac,.wav,.ogg,.aac,.wma"
-                            drag
-                        >
-                            <el-icon class="el-icon--upload"><upload-filled /></el-icon>
-                            <div class="el-upload__text">
-                                将文件拖到此处，或<em>点击选择文件</em>
-                            </div>
-                            <template #tip>
-                                <div class="el-upload__tip">
-                                    支持 MP3, M4A, FLAC, WAV, OGG, AAC, WMA 格式
-                                </div>
-                            </template>
-                        </el-upload>
-                    </el-form-item>
+                <!-- 统一的路径选择器 -->
+                <el-form-item label="选择路径" required>
+                    <PathSelector 
+                        v-model:directories="importForm.directories"
+                        v-model:files="importForm.files"
+                        :audio-extensions="importForm.file_extensions"
+                        placeholder="点击选择目录或文件"
+                        hint="可以选择一个或多个目录批量导入，或选择一个或多个文件精确导入"
+                    />
+                </el-form-item>
 
-                    <el-form-item label="文件信息">
-                        <div style="font-size: 12px; color: #606266">
-                            已选择 <strong>{{ uploadFileList.length }}</strong> 个文件
-                        </div>
-                    </el-form-item>
-                </template>
+                <!-- 导入选项（仅目录模式） -->
+                <el-form-item v-if="importForm.directories.length > 0" label="扫描选项">
+                    <el-checkbox v-model="importForm.recursive">
+                        递归扫描子目录
+                    </el-checkbox>
+                    <div style="font-size: 12px; color: #909399; margin-top: 4px">
+                        开启后会扫描所有子目录中的音频文件
+                    </div>
+                </el-form-item>
             </el-form>
 
             <!-- 导入结果 -->
@@ -344,22 +299,12 @@
             <template #footer>
                 <el-button @click="showBatchImportDialog = false">关闭</el-button>
                 <el-button 
-                    v-if="importMode === 'path'"
                     type="primary" 
                     @click="handleBatchImport" 
                     :loading="importing"
-                    :disabled="(!importForm.directory && (!importForm.files || importForm.files.length === 0)) || (importForm.directory && importForm.file_extensions.length === 0)"
+                    :disabled="(importForm.directories.length === 0 && importForm.files.length === 0) || importForm.file_extensions.length === 0"
                 >
                     {{ importing ? '导入中...' : '开始导入' }}
-                </el-button>
-                <el-button 
-                    v-else
-                    type="primary" 
-                    @click="handleUploadImport" 
-                    :loading="importing"
-                    :disabled="uploadFileList.length === 0"
-                >
-                    {{ importing ? '上传中...' : '上传并导入' }}
                 </el-button>
             </template>
         </el-dialog>
@@ -369,7 +314,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Refresh, List, Plus, VideoPlay, CaretRight, VideoPause, FolderOpened, UploadFilled } from '@element-plus/icons-vue'
+import { Refresh, List, Plus, VideoPlay, CaretRight, VideoPause, FolderOpened } from '@element-plus/icons-vue'
 import { api, type Device, type Playlist, type PlaylistIndex, type PlaylistItem, type DirectoryInfo, type ImportResult } from '@/api'
 import PathSelector from '@/components/PathSelector.vue'
 
@@ -417,19 +362,16 @@ const itemForm = ref<PlaylistItem>({
 const customParamsText = ref('')
 
 // 批量导入相关
-const uploadRef = ref()
-const importMode = ref<'path' | 'upload'>('path')
 const isDockerEnv = ref(false)
 const environmentMessage = ref('')
 const importing = ref(false)
 const importResult = ref<ImportResult | null>(null)
-const uploadFileList = ref<any[]>([])
 
 const importForm = ref({
-    directory: '',
+    directories: [] as string[],
     files: [] as string[],
     recursive: true,
-    file_extensions: ['.mp3', '.m4a', '.flac', '.wav', '.ogg', '.aac'] as string[],
+    file_extensions: ['.mp3', '.m4a', '.flac', '.wav', '.ogg', '.aac', '.wma'] as string[],
 })
 
 // 加载设备列表
@@ -721,15 +663,15 @@ async function loadEnvironmentInfo() {
 // 批量导入
 async function handleBatchImport() {
     // 验证输入
-    const hasDirectory = !!importForm.value.directory
+    const hasDirectories = importForm.value.directories && importForm.value.directories.length > 0
     const hasFiles = importForm.value.files && importForm.value.files.length > 0
     
-    if (!hasDirectory && !hasFiles) {
+    if (!hasDirectories && !hasFiles) {
         ElMessage.error('请选择目录或文件')
         return
     }
     
-    if (hasDirectory && importForm.value.file_extensions.length === 0) {
+    if (importForm.value.file_extensions.length === 0) {
         ElMessage.error('请至少选择一种文件格式')
         return
     }
@@ -743,24 +685,46 @@ async function handleBatchImport() {
     importResult.value = null
 
     try {
-        const requestData: any = {}
+        // 如果选择了多个目录，需要分别导入
+        let totalImported = 0
+        let totalSkipped = 0
+        let totalScanned = 0
         
-        if (hasDirectory) {
-            requestData.directory = importForm.value.directory
-            requestData.recursive = importForm.value.recursive
-            requestData.file_extensions = importForm.value.file_extensions
+        if (hasDirectories) {
+            for (const directory of importForm.value.directories) {
+                const requestData: any = {
+                    directory: directory,
+                    recursive: importForm.value.recursive,
+                    file_extensions: importForm.value.file_extensions
+                }
+                
+                const result = await api.importFromDirectory(currentPlaylist.value.id, requestData)
+                totalImported += result.imported
+                totalSkipped += result.skipped
+                totalScanned += result.total_scanned
+            }
         }
         
         if (hasFiles) {
-            requestData.files = importForm.value.files
+            const requestData: any = {
+                files: importForm.value.files
+            }
+            
+            const result = await api.importFromDirectory(currentPlaylist.value.id, requestData)
+            totalImported += result.imported
+            totalSkipped += result.skipped
+            totalScanned += result.total_scanned
         }
 
-        const result = await api.importFromDirectory(currentPlaylist.value.id, requestData)
+        importResult.value = {
+            imported: totalImported,
+            skipped: totalSkipped,
+            total_scanned: totalScanned,
+            playlist_total_items: currentPlaylist.value.items.length + totalImported,
+        }
 
-        importResult.value = result
-
-        if (result.imported > 0) {
-            ElMessage.success(`成功导入 ${result.imported} 个文件`)
+        if (totalImported > 0) {
+            ElMessage.success(`成功导入 ${totalImported} 个文件`)
             
             // 重新加载播单列表
             await loadPlaylists()
@@ -771,9 +735,6 @@ async function handleBatchImport() {
             
             // 关闭批量导入对话框
             showBatchImportDialog.value = false
-            
-            // 确保项目列表对话框保持打开状态
-            // showItemsDialog 已经是 true，无需额外操作
         } else {
             ElMessage.warning('没有文件被导入，请检查路径和文件格式')
         }
@@ -786,121 +747,13 @@ async function handleBatchImport() {
 
 // 重置批量导入表单
 function resetImportForm() {
-    importMode.value = 'path'
     importForm.value = {
-        directory: '',
+        directories: [],
         files: [],
         recursive: true,
-        file_extensions: ['.mp3', '.m4a', '.flac', '.wav', '.ogg', '.aac'],
-    }
-    uploadFileList.value = []
-    if (uploadRef.value) {
-        uploadRef.value.clearFiles()
+        file_extensions: ['.mp3', '.m4a', '.flac', '.wav', '.ogg', '.aac', '.wma'],
     }
     importResult.value = null
-}
-
-// 处理文件变化
-function handleFileChange(_file: any, fileList: any[]) {
-    uploadFileList.value = fileList
-}
-
-// 处理文件移除
-function handleFileRemove(_file: any, fileList: any[]) {
-    uploadFileList.value = fileList
-}
-
-// 处理上传导入
-async function handleUploadImport() {
-    if (uploadFileList.value.length === 0) {
-        ElMessage.error('请选择要上传的文件')
-        return
-    }
-
-    if (!currentPlaylist.value) {
-        ElMessage.error('请先选择一个播单')
-        return
-    }
-
-    importing.value = true
-    importResult.value = null
-
-    try {
-        // 从上传的文件中提取信息并创建播单项
-        const items: PlaylistItem[] = []
-        
-        for (const fileItem of uploadFileList.value) {
-            const file = fileItem.raw as File
-            
-            // 从文件名提取信息
-            const fileName = file.name
-            const nameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.')) || fileName
-            
-            // 尝试从文件路径提取艺术家和专辑
-            const webkitPath = (file as any).webkitRelativePath || fileName
-            const pathParts = webkitPath.split('/')
-            
-            let artist = ''
-            let album = ''
-            
-            if (pathParts.length >= 3) {
-                artist = pathParts[pathParts.length - 3]
-                album = pathParts[pathParts.length - 2]
-            } else if (pathParts.length === 2) {
-                album = pathParts[0]
-            }
-            
-            // 读取文件内容并转换为base64或创建临时URL
-            // 注意：这里我们创建一个临时的对象URL
-            const fileUrl = URL.createObjectURL(file)
-            
-            items.push({
-                title: nameWithoutExt,
-                artist: artist,
-                album: album,
-                audio_id: '',
-                url: fileUrl,
-                custom_params: {
-                    file_name: fileName,
-                    file_size: file.size,
-                    file_type: file.type,
-                    uploaded: true,
-                },
-                interval: undefined,
-                pic_url: undefined,
-            })
-        }
-
-        // 添加到播单
-        await api.addPlaylistItems(currentPlaylist.value.id, { items })
-        
-        // 设置结果
-        importResult.value = {
-            imported: items.length,
-            skipped: 0,
-            total_scanned: uploadFileList.value.length,
-            playlist_total_items: currentPlaylist.value.items.length + items.length,
-        }
-
-        ElMessage.success(`成功上传 ${items.length} 个文件`)
-        
-        // 重新加载播单列表
-        await loadPlaylists()
-        
-        // 重新加载当前播单
-        const fullPlaylist = await api.getPlaylistById(currentPlaylist.value.id)
-        currentPlaylist.value = fullPlaylist
-        
-        // 清空上传列表
-        uploadFileList.value = []
-        if (uploadRef.value) {
-            uploadRef.value.clearFiles()
-        }
-    } catch (error: any) {
-        ElMessage.error(`上传失败: ${error.response?.data?.detail || error.message}`)
-    } finally {
-        importing.value = false
-    }
 }
 
 // 页面加载时

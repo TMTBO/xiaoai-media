@@ -226,6 +226,7 @@ interface Props {
     files?: string[]
     placeholder?: string
     hint?: string
+    audioExtensions?: string[]
 }
 
 interface Emits {
@@ -239,7 +240,8 @@ const props = withDefaults(defineProps<Props>(), {
     directories: () => [],
     files: () => [],
     placeholder: '点击输入框或浏览按钮选择目录或文件',
-    hint: '可以选择一个或多个目录，或选择一个或多个文件'
+    hint: '可以选择一个或多个目录，或选择一个或多个文件',
+    audioExtensions: () => ['.mp3', '.m4a', '.flac', '.wav', '.ogg', '.aac', '.wma']
 })
 
 const emit = defineEmits<Emits>()
@@ -268,8 +270,8 @@ const hasSelection = computed(() =>
     selectedFiles.value.length > 0
 )
 
-// 音频文件扩展名
-const audioExtensions = ['.mp3', '.m4a', '.flac', '.wav', '.ogg', '.aac', '.wma']
+// 使用传入的音频文件扩展名
+const audioExtensions = computed(() => props.audioExtensions || ['.mp3', '.m4a', '.flac', '.wav', '.ogg', '.aac', '.wma'])
 
 // 显示文本
 const displayText = computed(() => {
@@ -311,7 +313,7 @@ function formatSize(bytes: number): string {
 // 检查是否为音频文件
 function isAudioFile(filename: string): boolean {
     const ext = filename.substring(filename.lastIndexOf('.')).toLowerCase()
-    return audioExtensions.includes(ext)
+    return audioExtensions.value.includes(ext)
 }
 
 // 计算属性：当前目录是否已选中
