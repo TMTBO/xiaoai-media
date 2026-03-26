@@ -95,7 +95,8 @@
                         <el-checkbox 
                             :model-value="tempSelectedDirectory === dir.path"
                             :disabled="!dir.is_accessible"
-                            @change="selectDirectory(dir.path)"
+                            @change="() => selectDirectory(dir.path)"
+                            @click.stop
                             style="margin-right: 8px"
                         />
                         <el-icon style="margin-right: 8px; font-size: 18px; color: #67c23a">
@@ -133,7 +134,8 @@
                         <el-checkbox 
                             :model-value="isFileSelected(file.path)"
                             :disabled="!file.is_audio"
-                            @change="file.is_audio && toggleFile(file.path)"
+                            @change="() => toggleFile(file.path)"
+                            @click.stop
                             style="margin-right: 8px"
                         />
                         <el-icon 
@@ -346,9 +348,24 @@ function selectDirectory(path: string) {
     }
 }
 
-// 检查文件是否已选择
+// 检查文件是否已选择（考虑目录选择）
 function isFileSelected(path: string): boolean {
-    return tempSelectedFiles.value.includes(path)
+    // 如果文件在选中列表中
+    if (tempSelectedFiles.value.includes(path)) {
+        return true
+    }
+    
+    // 如果选中了目录，检查文件是否在该目录下且是音频文件
+    if (tempSelectedDirectory.value) {
+        const isInDirectory = path.startsWith(tempSelectedDirectory.value + '/')
+        if (isInDirectory) {
+            // 检查是否为音频文件
+            const fileName = path.split('/').pop() || ''
+            return isAudioFile(fileName)
+        }
+    }
+    
+    return false
 }
 
 // 切换文件选择状态
