@@ -33,6 +33,58 @@ _log = logging.getLogger(__name__)
 
 class PlaylistService:
     """播单业务逻辑服务"""
+    
+    # 章节目录识别的正则表达式模式
+    # 用于识别目录名中的章节信息，支持多种命名格式
+    CHAPTER_PATTERNS = [
+        r'第\s*(\d+)\s*章',      # 第01章、第 1 章
+        r'chapter\s*(\d+)',      # Chapter 1、Chapter01
+        r'stage[\-_\s]*(\d+)',   # stage-02、stage_02、stage 02、stage02
+        r'episode[\-_\s]*(\d+)', # episode-02、episode_02、episode 02
+        r'ep[\-_\s]*(\d+)',      # ep-02、ep_02、ep 02
+        r'^(\d+)\s*章',          # 01章、1 章
+        r'^(\d+)[_\-\s]',        # 01-、01_、01 开头
+        r'^(\d+)$',              # 纯数字目录名
+    ]
+
+    @staticmethod
+    def _is_chapter_directory(dir_name: str) -> bool:
+        """检查目录名是否包含章节信息
+        
+        Args:
+            dir_name: 目录名称
+            
+        Returns:
+            是否为章节目录
+        """
+        import re
+        
+        for pattern in PlaylistService.CHAPTER_PATTERNS:
+            if re.search(pattern, dir_name.lower()):
+                return True
+        return False
+    
+    @staticmethod
+    def _extract_chapter_number(dir_name: str) -> int | float:
+        """从目录名中提取章节号
+        
+        Args:
+            dir_name: 目录名称
+            
+        Returns:
+            章节号（整数），如果没有找到则返回 float('inf')
+        """
+        import re
+        
+        for pattern in PlaylistService.CHAPTER_PATTERNS:
+            match = re.search(pattern, dir_name.lower())
+            if match:
+                try:
+                    return int(match.group(1))
+                except (ValueError, IndexError):
+                    continue
+        
+        return float('inf')  # 没有章节号，排在最后
 
     @staticmethod
     def generate_playlist_id(name: str) -> str:
@@ -644,7 +696,6 @@ class PlaylistService:
         Returns:
             (目录章节号, 目录名, 文件名) 元组，用于排序
         """
-        import re
         from pathlib import Path
         
         path = Path(file_path)
@@ -653,29 +704,8 @@ class PlaylistService:
         parent_dir = path.parent.name if path.parent else ""
         file_name = path.name
         
-        # 尝试从目录名中提取章节号
-        # 匹配模式：第XX章、Chapter XX、ChapterXX、XX章、stage-02等
-        chapter_patterns = [
-            r'第\s*(\d+)\s*章',      # 第01章、第 1 章
-            r'chapter\s*(\d+)',      # Chapter 1、Chapter01
-            r'stage[\-_\s]*(\d+)',   # stage-02、stage_02、stage 02、stage02
-            r'episode[\-_\s]*(\d+)', # episode-02、episode_02、episode 02
-            r'ep[\-_\s]*(\d+)',      # ep-02、ep_02、ep 02
-            r'^(\d+)\s*章',          # 01章、1 章
-            r'^(\d+)[_\-\s]',        # 01-、01_、01 开头
-            r'^(\d+)$',              # 纯数字目录名
-        ]
-        
-        chapter_num = float('inf')  # 默认排在最后
-        
-        for pattern in chapter_patterns:
-            match = re.search(pattern, parent_dir.lower())
-            if match:
-                try:
-                    chapter_num = int(match.group(1))
-                    break
-                except (ValueError, IndexError):
-                    continue
+        # 提取章节号
+        chapter_num = PlaylistService._extract_chapter_number(parent_dir)
         
         return (chapter_num, parent_dir, file_name)
 
@@ -859,15 +889,33 @@ class PlaylistService:
         title = file_path.stem
         
         # 尝试从文件路径提取艺术家和专辑信息
-        # 假设目录结构为：艺术家/专辑/歌曲.mp3
         parts = file_path.parts
         artist = ""
         album = ""
         
         if len(parts) >= 2:
-            album = parts[-2]  # 父目录作为专辑
-        if len(parts) >= 3:
-            artist = parts[-3]  # 祖父目录作为艺术家
+            parent_dir = parts[-2]  # 父目录
+            
+            # 检查父目录是否是章节目录（包含章节信息）
+            is_chapter_dir = PlaylistService._is_chapter_directory(parent_dir)
+            
+            if is_chapter_dir:
+                # 父目录是章节目录，使用它作为专辑
+                album = parent_dir
+                # 祖父目录作为艺术家（如果存在）
+                if len(parts) >= 3:
+                    artist = parts[-3]
+            else:
+                # 父目录不是章节目录，按传统方式处理
+                album = parent_dir
+                if len(parts) >= 3:
+                    artist = parts[-3]
+        
+        # 获取文件大小（如果文件存在）
+        try:
+            file_size = file_path.stat().st_size
+        except (FileNotFoundError, OSError):
+            file_size = 0
         
         # 创建播单项
         # 使用文件的绝对路径作为URL
@@ -879,7 +927,7 @@ class PlaylistService:
             audio_id="",
             custom_params={
                 "file_path": str(file_path.absolute()),
-                "file_size": file_path.stat().st_size,
+                "file_size": file_size,
                 "file_extension": file_path.suffix,
                 "file_name": file_path.name  # 保存完整文件名用于排序
             }
