@@ -617,6 +617,69 @@ class PlaylistService:
         return result
 
     @staticmethod
+    def _extract_directory_sort_key(file_path: str) -> tuple:
+        """
+        从文件路径中提取目录排序键
+        
+        用于多目录导入时，优先按目录名中的章节信息排序
+        
+        支持的章节格式：
+        - 中文：第01章、第 1 章、01章
+        - 英文：Chapter 1、Chapter01
+        - Stage：stage-02、stage_02、stage 02、stage02
+        - Episode：episode-05、episode_05、ep-08、ep_08
+        - 纯数字：01、1
+        - 前缀数字：01-标题、01_标题
+        
+        示例:
+        - "/data/第01章/001.mp3" -> (1, "第01章", "001.mp3")
+        - "/data/Chapter 10/track.mp3" -> (10, "Chapter 10", "track.mp3")
+        - "/data/stage-02/audio.mp3" -> (2, "stage-02", "audio.mp3")
+        - "/data/episode-05/track.mp3" -> (5, "episode-05", "track.mp3")
+        - "/data/音乐/歌曲.mp3" -> (float('inf'), "音乐", "歌曲.mp3")
+        
+        Args:
+            file_path: 文件路径
+            
+        Returns:
+            (目录章节号, 目录名, 文件名) 元组，用于排序
+        """
+        import re
+        from pathlib import Path
+        
+        path = Path(file_path)
+        
+        # 获取父目录名和文件名
+        parent_dir = path.parent.name if path.parent else ""
+        file_name = path.name
+        
+        # 尝试从目录名中提取章节号
+        # 匹配模式：第XX章、Chapter XX、ChapterXX、XX章、stage-02等
+        chapter_patterns = [
+            r'第\s*(\d+)\s*章',      # 第01章、第 1 章
+            r'chapter\s*(\d+)',      # Chapter 1、Chapter01
+            r'stage[\-_\s]*(\d+)',   # stage-02、stage_02、stage 02、stage02
+            r'episode[\-_\s]*(\d+)', # episode-02、episode_02、episode 02
+            r'ep[\-_\s]*(\d+)',      # ep-02、ep_02、ep 02
+            r'^(\d+)\s*章',          # 01章、1 章
+            r'^(\d+)[_\-\s]',        # 01-、01_、01 开头
+            r'^(\d+)$',              # 纯数字目录名
+        ]
+        
+        chapter_num = float('inf')  # 默认排在最后
+        
+        for pattern in chapter_patterns:
+            match = re.search(pattern, parent_dir.lower())
+            if match:
+                try:
+                    chapter_num = int(match.group(1))
+                    break
+                except (ValueError, IndexError):
+                    continue
+        
+        return (chapter_num, parent_dir, file_name)
+
+    @staticmethod
     def _should_sort_files(playlist_type: str) -> bool:
         """判断是否需要对文件进行排序
         
@@ -730,11 +793,34 @@ class PlaylistService:
             
             # 根据播单类型决定是否排序
             if imported_items and PlaylistService._should_sort_files(playlist.type):
-                # 使用自然排序算法按文件名排序
-                imported_items.sort(key=lambda item: PlaylistService._natural_sort_key(
-                    item.custom_params.get("file_name", item.title)
-                ))
-                _log.info("Sorted %d items using natural sort algorithm", len(imported_items))
+                # 判断是否为多目录导入
+                unique_dirs = set()
+                for item in imported_items:
+                    file_path = item.custom_params.get("file_path", "")
+                    if file_path:
+                        parent_dir = str(Path(file_path).parent)
+                        unique_dirs.add(parent_dir)
+                
+                is_multi_directory = len(unique_dirs) > 1
+                
+                if is_multi_directory:
+                    # 多目录导入：先按目录章节号排序，再按文件名排序
+                    imported_items.sort(key=lambda item: (
+                        PlaylistService._extract_directory_sort_key(
+                            item.custom_params.get("file_path", "")
+                        ),
+                        PlaylistService._natural_sort_key(
+                            item.custom_params.get("file_name", item.title)
+                        )
+                    ))
+                    _log.info("Sorted %d items from %d directories using directory chapter sort", 
+                             len(imported_items), len(unique_dirs))
+                else:
+                    # 单目录导入：只按文件名排序
+                    imported_items.sort(key=lambda item: PlaylistService._natural_sort_key(
+                        item.custom_params.get("file_name", item.title)
+                    ))
+                    _log.info("Sorted %d items using natural sort algorithm", len(imported_items))
             
             # 添加到播单
             if imported_items:

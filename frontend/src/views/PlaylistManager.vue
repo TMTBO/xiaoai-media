@@ -279,12 +279,12 @@
             </el-alert>
 
             <template #footer>
-                <el-button @click="showBatchImportDialog = false">关闭</el-button>
+                <el-button @click="closeBatchImportDialog">关闭</el-button>
                 <el-button 
                     type="primary" 
                     @click="handleBatchImport" 
                     :loading="importing"
-                    :disabled="(importForm.directories.length === 0 && importForm.files.length === 0) || importForm.file_extensions.length === 0"
+                    :disabled="(importForm.directories.length === 0 && importForm.files.length === 0) || importForm.file_extensions.length === 0 || importResult !== null"
                 >
                     {{ importing ? '导入中...' : '开始导入' }}
                 </el-button>
@@ -705,8 +705,8 @@ async function handleBatchImport() {
             const fullPlaylist = await api.getPlaylistById(currentPlaylist.value.id)
             currentPlaylist.value = fullPlaylist
             
-            // 关闭批量导入对话框
-            showBatchImportDialog.value = false
+            // 不自动关闭对话框，让用户查看导入结果
+            // showBatchImportDialog.value = false
         } else {
             ElMessage.warning('没有文件被导入，请检查路径和文件格式')
         }
@@ -728,6 +728,13 @@ function resetImportForm() {
     importResult.value = null
 }
 
+// 关闭批量导入对话框
+function closeBatchImportDialog() {
+    showBatchImportDialog.value = false
+    // 关闭时重置表单
+    resetImportForm()
+}
+
 // 页面加载时
 onMounted(() => {
     loadDevices()
@@ -745,10 +752,8 @@ watch(showBatchImportDialog, (val) => {
     if (val) {
         // 打开对话框时加载环境信息
         loadEnvironmentInfo()
-    } else {
-        // 关闭对话框时重置表单
-        resetImportForm()
     }
+    // 移除关闭时自动重置表单的逻辑，改为在关闭按钮点击时手动重置
 })
 </script>
 
