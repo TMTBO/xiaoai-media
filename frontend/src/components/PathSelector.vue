@@ -22,7 +22,7 @@
 
         <!-- 已选择的内容 -->
         <div v-if="hasSelection" style="margin-top: 8px">
-            <!-- 已选择的目录 -->
+            <!-- 已选择的目录（旧版单目录支持） -->
             <el-tag 
                 v-if="selectedDirectory"
                 closable
@@ -32,6 +32,19 @@
             >
                 <el-icon style="margin-right: 4px"><Folder /></el-icon>
                 {{ getFileName(selectedDirectory) }}
+            </el-tag>
+            
+            <!-- 已选择的目录（新版多目录支持） -->
+            <el-tag 
+                v-for="(dir, index) in selectedDirectories" 
+                :key="dir"
+                closable
+                @close="removeDirectory(index)"
+                type="success"
+                style="margin-right: 8px; margin-bottom: 8px"
+            >
+                <el-icon style="margin-right: 4px"><Folder /></el-icon>
+                {{ getFileName(dir) }}
             </el-tag>
             
             <!-- 已选择的文件 -->
@@ -70,10 +83,13 @@
                     <el-button 
                         v-if="currentPath"
                         size="small" 
-                        type="primary"
+                        :type="isCurrentDirectorySelected ? 'success' : 'primary'"
                         @click="selectCurrentDirectory"
                     >
-                        <el-icon><Folder /></el-icon>
+                        <el-icon style="margin-right: 4px">
+                            <Select v-if="isCurrentDirectorySelected" />
+                            <Folder v-else />
+                        </el-icon>
                         选择当前目录
                     </el-button>
                 </div>
@@ -89,13 +105,13 @@
                         class="item directory-item"
                         :class="{ 
                             'item-disabled': !dir.is_accessible,
-                            'item-selected': tempSelectedDirectory === dir.path
+                            'item-selected': isDirectorySelected(dir.path)
                         }"
                     >
                         <el-checkbox 
-                            :model-value="tempSelectedDirectory === dir.path"
+                            :model-value="isDirectorySelected(dir.path)"
                             :disabled="!dir.is_accessible"
-                            @change="() => selectDirectory(dir.path)"
+                            @change="() => toggleDirectory(dir.path)"
                             @click.stop
                             style="margin-right: 8px"
                         />
@@ -165,11 +181,11 @@
             <template #footer>
                 <div style="display: flex; justify-content: space-between; align-items: center">
                     <span style="font-size: 14px; color: #606266">
-                        <span v-if="tempSelectedDirectory && tempSelectedFiles.length > 0">
-                            已选择 1 个目录和 {{ tempSelectedFiles.length }} 个文件
+                        <span v-if="tempSelectedDirectories.length > 0 && tempSelectedFiles.length > 0">
+                            已选择 {{ tempSelectedDirectories.length }} 个目录和 {{ tempSelectedFiles.length }} 个文件
                         </span>
-                        <span v-else-if="tempSelectedDirectory">
-                            已选择 1 个目录
+                        <span v-else-if="tempSelectedDirectories.length > 0">
+                            已选择 {{ tempSelectedDirectories.length }} 个目录
                         </span>
                         <span v-else-if="tempSelectedFiles.length > 0">
                             已选择 {{ tempSelectedFiles.length }} 个文件
@@ -183,7 +199,7 @@
                         <el-button 
                             type="primary" 
                             @click="confirmSelection"
-                            :disabled="!tempSelectedDirectory && tempSelectedFiles.length === 0"
+                            :disabled="tempSelectedDirectories.length === 0 && tempSelectedFiles.length === 0"
                         >
                             确定
                         </el-button>
@@ -197,7 +213,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { FolderOpened, Document, Folder, ArrowRight, ArrowUp, Lock } from '@element-plus/icons-vue'
+import { FolderOpened, Document, Folder, ArrowRight, ArrowUp, Lock, Select } from '@element-plus/icons-vue'
 import { api, type DirectoryInfo, type FileInfo } from '@/api'
 
 interface FileInfoExtended extends FileInfo {
@@ -206,6 +222,7 @@ interface FileInfoExtended extends FileInfo {
 
 interface Props {
     directory?: string
+    directories?: string[]
     files?: string[]
     placeholder?: string
     hint?: string
@@ -213,14 +230,16 @@ interface Props {
 
 interface Emits {
     (e: 'update:directory', value: string): void
+    (e: 'update:directories', value: string[]): void
     (e: 'update:files', value: string[]): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
     directory: '',
+    directories: () => [],
     files: () => [],
     placeholder: '点击输入框或浏览按钮选择目录或文件',
-    hint: '可以选择一个目录，或选择一个或多个文件'
+    hint: '可以选择一个或多个目录，或选择一个或多个文件'
 })
 
 const emit = defineEmits<Emits>()
@@ -234,22 +253,28 @@ const directories = ref<DirectoryInfo[]>([])
 const allFiles = ref<FileInfoExtended[]>([])
 
 // 临时选择状态
-const tempSelectedDirectory = ref('')
+const tempSelectedDirectories = ref<string[]>([])
 const tempSelectedFiles = ref<string[]>([])
 
 // 已确认的选择
 const selectedDirectory = computed(() => props.directory || '')
+const selectedDirectories = computed(() => props.directories || [])
 const selectedFiles = computed(() => props.files || [])
 
 // 是否有选择
-const hasSelection = computed(() => selectedDirectory.value || selectedFiles.value.length > 0)
+const hasSelection = computed(() => 
+    selectedDirectory.value || 
+    selectedDirectories.value.length > 0 || 
+    selectedFiles.value.length > 0
+)
 
 // 音频文件扩展名
 const audioExtensions = ['.mp3', '.m4a', '.flac', '.wav', '.ogg', '.aac', '.wma']
 
 // 显示文本
 const displayText = computed(() => {
-    const dirCount = selectedDirectory.value ? 1 : 0
+    const legacyDirCount = selectedDirectory.value ? 1 : 0
+    const dirCount = selectedDirectories.value.length + legacyDirCount
     const fileCount = selectedFiles.value.length
     
     if (dirCount === 0 && fileCount === 0) {
@@ -257,7 +282,8 @@ const displayText = computed(() => {
     }
     
     if (dirCount === 1 && fileCount === 0) {
-        return getFileName(selectedDirectory.value)
+        const singleDir = selectedDirectory.value || selectedDirectories.value[0]
+        return getFileName(singleDir)
     }
     
     if (dirCount === 0 && fileCount === 1) {
@@ -288,10 +314,19 @@ function isAudioFile(filename: string): boolean {
     return audioExtensions.includes(ext)
 }
 
+// 计算属性：当前目录是否已选中
+const isCurrentDirectorySelected = computed(() => {
+    return tempSelectedDirectories.value.includes(currentPath.value)
+})
+
 // 打开浏览器
 function openBrowser() {
     // 初始化临时选择状态
-    tempSelectedDirectory.value = selectedDirectory.value
+    tempSelectedDirectories.value = [...selectedDirectories.value]
+    // 兼容旧版单目录
+    if (selectedDirectory.value && !tempSelectedDirectories.value.includes(selectedDirectory.value)) {
+        tempSelectedDirectories.value.push(selectedDirectory.value)
+    }
     tempSelectedFiles.value = [...selectedFiles.value]
     showBrowser.value = true
 }
@@ -327,24 +362,43 @@ async function browseParent() {
 // 选择当前目录
 function selectCurrentDirectory() {
     if (currentPath.value) {
-        if (tempSelectedDirectory.value === currentPath.value) {
-            // 取消选择
-            tempSelectedDirectory.value = ''
-        } else {
-            // 选择当前目录
-            tempSelectedDirectory.value = currentPath.value
-        }
+        toggleDirectory(currentPath.value)
     }
 }
 
-// 选择目录
-function selectDirectory(path: string) {
-    if (tempSelectedDirectory.value === path) {
+// 检查目录是否已选中（包括父目录被选中的情况）
+function isDirectorySelected(path: string): boolean {
+    // 标准化路径（移除尾部斜杠）
+    const normalizedPath = path.endsWith('/') ? path.slice(0, -1) : path
+    
+    // 直接选中
+    if (tempSelectedDirectories.value.some(dir => {
+        const normalizedDir = dir.endsWith('/') ? dir.slice(0, -1) : dir
+        return normalizedDir === normalizedPath
+    })) {
+        return true
+    }
+    
+    // 检查是否有父目录被选中
+    for (const selectedDir of tempSelectedDirectories.value) {
+        const normalizedSelectedDir = selectedDir.endsWith('/') ? selectedDir.slice(0, -1) : selectedDir
+        if (normalizedPath.startsWith(normalizedSelectedDir + '/')) {
+            return true
+        }
+    }
+    
+    return false
+}
+
+// 切换目录选择状态
+function toggleDirectory(path: string) {
+    const index = tempSelectedDirectories.value.indexOf(path)
+    if (index > -1) {
         // 取消选择
-        tempSelectedDirectory.value = ''
+        tempSelectedDirectories.value.splice(index, 1)
     } else {
         // 选择该目录
-        tempSelectedDirectory.value = path
+        tempSelectedDirectories.value.push(path)
     }
 }
 
@@ -355,13 +409,15 @@ function isFileSelected(path: string): boolean {
         return true
     }
     
-    // 如果选中了目录，检查文件是否在该目录下且是音频文件
-    if (tempSelectedDirectory.value) {
-        const isInDirectory = path.startsWith(tempSelectedDirectory.value + '/')
+    // 如果选中了目录，检查文件是否在任一选中目录下且是音频文件
+    for (const dir of tempSelectedDirectories.value) {
+        const isInDirectory = path.startsWith(dir + '/')
         if (isInDirectory) {
             // 检查是否为音频文件
             const fileName = path.split('/').pop() || ''
-            return isAudioFile(fileName)
+            if (isAudioFile(fileName)) {
+                return true
+            }
         }
     }
     
@@ -378,9 +434,16 @@ function toggleFile(path: string) {
     }
 }
 
-// 清除目录选择
+// 清除目录选择（旧版单目录）
 function clearDirectory() {
     emit('update:directory', '')
+}
+
+// 移除目录（新版多目录）
+function removeDirectory(index: number) {
+    const newDirs = [...selectedDirectories.value]
+    newDirs.splice(index, 1)
+    emit('update:directories', newDirs)
 }
 
 // 移除文件
@@ -392,8 +455,8 @@ function removeFile(index: number) {
 
 // 确认选择
 function confirmSelection() {
-    // 更新目录
-    emit('update:directory', tempSelectedDirectory.value)
+    // 更新目录（新版多目录）
+    emit('update:directories', [...tempSelectedDirectories.value])
     
     // 更新文件
     emit('update:files', [...tempSelectedFiles.value])
@@ -401,13 +464,13 @@ function confirmSelection() {
     showBrowser.value = false
     
     // 显示成功消息
-    const dirCount = tempSelectedDirectory.value ? 1 : 0
+    const dirCount = tempSelectedDirectories.value.length
     const fileCount = tempSelectedFiles.value.length
     
     if (dirCount > 0 && fileCount > 0) {
         ElMessage.success(`已选择 ${dirCount} 个目录和 ${fileCount} 个文件`)
     } else if (dirCount > 0) {
-        ElMessage.success(`已选择目录: ${tempSelectedDirectory.value}`)
+        ElMessage.success(`已选择 ${dirCount} 个目录`)
     } else if (fileCount > 0) {
         ElMessage.success(`已选择 ${fileCount} 个文件`)
     }
