@@ -55,10 +55,7 @@ install-frontend:
 .PHONY: backend frontend dev
 
 backend: $(VENV)
-	HOME=. PYTHONPATH=backend/src $(UVICORN) xiaoai_media.api.main:app \
-		--reload \
-		--host 127.0.0.1 \
-		--port 8000
+	HOME=. PYTHONPATH=backend/src HOST=127.0.0.1 PORT=8000 RELOAD=true $(PYTHON) backend/run.py
 
 frontend:
 	cd frontend && npm run dev
@@ -66,8 +63,7 @@ frontend:
 dev:
 	@echo "Starting backend and frontend..."
 	@trap 'kill 0' INT; \
-	HOME=. PYTHONPATH=backend/src $(UVICORN) xiaoai_media.api.main:app \
-		--reload --host 127.0.0.1 --port 8000 & \
+	HOME=. PYTHONPATH=backend/src HOST=127.0.0.1 PORT=8000 RELOAD=true $(PYTHON) backend/run.py & \
 	cd frontend && npm run dev & \
 	wait
 

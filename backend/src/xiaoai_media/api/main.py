@@ -1,13 +1,19 @@
 from __future__ import annotations
 
 import logging
+import os
 from pathlib import Path
 
 from fastapi import FastAPI
 
+# 配置日志格式，与uvicorn保持一致
+# 格式: 时间 日志级别 模块名 - 消息
+# 从环境变量或默认值获取日志级别
+log_level = os.getenv("LOG_LEVEL", "INFO").upper()
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(name)s — %(message)s",
+    level=getattr(logging, log_level, logging.INFO),
+    format="%(asctime)s %(levelname)-8s %(name)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
 # miservice logs every HTTP request at INFO; suppress to WARNING to reduce noise
 logging.getLogger("miservice").setLevel(logging.WARNING)

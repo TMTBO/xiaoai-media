@@ -34,6 +34,9 @@ RUN pip install --no-cache-dir -e backend/
 # Copy built frontend into static/ so FastAPI can serve it
 COPY --from=frontend-builder /build/frontend/dist ./static/
 
+# Copy run script
+COPY backend/run.py ./
+
 # Ensure appuser can read /app directory (but not write)
 RUN chown -R root:root /app && chmod -R 755 /app
 
@@ -53,4 +56,4 @@ VOLUME ["/data"]
 # Start as root to fix permissions, then switch to appuser
 ENTRYPOINT ["docker-entrypoint.sh"]
 
-CMD ["uvicorn", "xiaoai_media.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "run.py"]
