@@ -149,7 +149,7 @@ class AccessFormatter(logging.Formatter):
 def get_log_config() -> dict:
     """获取日志配置字典"""
     log_level = os.getenv("LOG_LEVEL", "INFO").upper()
-    # 检查是否禁用颜色
+    # 检查是否禁用颜色（Docker环境建议设置 LOG_COLORS=false）
     use_colors = os.getenv("LOG_COLORS", "true").lower() != "false"
     
     return {
@@ -197,9 +197,14 @@ def get_log_config() -> dict:
                 "level": log_level,
                 "propagate": False
             },
+            "fastapi": {
+                "handlers": ["default"],
+                "level": log_level,
+                "propagate": False
+            },
             "watchfiles": {
                 "handlers": ["default"],
-                "level": "WARNING",  # 只显示WARNING及以上级别，隐藏INFO级别的文件变化通知
+                "level": "WARNING",
                 "propagate": False
             }
         },

@@ -6,17 +6,11 @@ from pathlib import Path
 
 from fastapi import FastAPI
 
-# 配置日志格式，与uvicorn保持一致
-# 格式: 时间 日志级别 模块名 - 消息
-# 从环境变量或默认值获取日志级别
-log_level = os.getenv("LOG_LEVEL", "INFO").upper()
-logging.basicConfig(
-    level=getattr(logging, log_level, logging.INFO),
-    format="%(asctime)s %(levelname)-8s %(name)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
+# 注意：日志配置由 run.py 中的 uvicorn.run(log_config=...) 统一管理
+# 这里只设置特定库的日志级别
 # miservice logs every HTTP request at INFO; suppress to WARNING to reduce noise
 logging.getLogger("miservice").setLevel(logging.WARNING)
+
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse

@@ -47,6 +47,9 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 # Set HOME to data directory (affects Path.home() used by config.py)
 ENV HOME=/data
 
+# Disable color codes in Docker logs for cleaner output
+ENV LOG_COLORS=false
+
 # Expose port
 EXPOSE 8000
 

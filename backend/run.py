@@ -21,4 +21,5 @@ if __name__ == "__main__":
         port=port,
         reload=reload,
         log_config=get_log_config(),
+        access_log=True,  # 确保使用我们的自定义访问日志格式
     )
