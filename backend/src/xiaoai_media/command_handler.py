@@ -3,10 +3,9 @@
 import logging
 import re
 
-import aiohttp
-
 from xiaoai_media import config
 from xiaoai_media.api.dependencies import get_client_sync
+from xiaoai_media.services.voice_command_service import VoiceCommandService
 
 _log = logging.getLogger(__name__)
 
@@ -42,39 +41,13 @@ class CommandHandler:
         processed_query = config.preprocess_command(query)
         _log.debug("预处理后的指令: %s", processed_query)
 
-        # Use the unified voice-command endpoint from music.py
-        # This handles playlists, charts, search, and other commands
+        # 直接调用 VoiceCommandService 处理命令
         try:
-            url = f"{self.music_api_base_url}/api/music/voice-command"
-
-            _log.info("调用统一语音命令端点: %s", url)
-
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    url,
-                    json={"text": processed_query, "device_id": device_id},
-                    timeout=aiohttp.ClientTimeout(total=30),
-                ) as resp:
-                    if resp.status != 200:
-                        error_text = await resp.text()
-                        _log.error(
-                            "语音命令 API 返回错误: status=%d, body=%s",
-                            resp.status,
-                            error_text,
-                        )
-
-                        # Send error feedback to speaker
-                        client = get_client_sync()
-                        if resp.status == 404:
-                            await client.text_to_speech(
-                                "没有找到匹配的内容", device_id
-                            )
-                        else:
-                            await client.text_to_speech("命令处理失败", device_id)
-                        return
-
-                    result = await resp.json(content_type=None)
-                    _log.info("语音命令处理成功: action=%s", result.get("action"))
+            result = await VoiceCommandService.execute_command(
+                text=processed_query,
+                device_id=device_id
+            )
+            _log.info("语音命令处理成功: action=%s", result.get("action"))
 
         except Exception as e:
             _log.error("语音命令处理失败: %s", e, exc_info=True)

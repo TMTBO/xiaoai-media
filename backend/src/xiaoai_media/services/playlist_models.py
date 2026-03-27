@@ -19,6 +19,8 @@ class PlaylistItem(BaseModel):
     url: str | None = Field(
         None, description="音频URL，如果为空则需要通过 audio_id 或 custom_params 动态获取"
     )
+    duration: int = Field(0, description="音频时长（秒）")
+    cover_url: str = Field("", description="封面图片URL")
     custom_params: dict[str, Any] = Field(
         default_factory=dict,
         description="自定义参数，用于调用 user_config.py 中的 get_audio_url 函数",

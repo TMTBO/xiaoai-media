@@ -7,13 +7,21 @@ from __future__ import annotations
 
 import logging
 import re
+from datetime import datetime
 
 from fastapi import HTTPException
 
 from xiaoai_media import config
 from xiaoai_media.api.dependencies import get_client_sync
 from .music_service import MusicService
-from .playlist_loader import PlaylistLoaderService
+from .playlist_service import PlaylistService
+from .playlist_storage import PlaylistStorage
+from .playlist_models import (
+    PlaylistItem,
+    CreatePlaylistRequest,
+    AddItemRequest,
+    PlayPlaylistRequest,
+)
 
 _log = logging.getLogger(__name__)
 
@@ -98,58 +106,52 @@ class VoiceCommandService:
             playlist_keyword = re.sub(r"(播单|列表|有声书|播客)\s*$", "", playlist_keyword).strip()
 
             # 加载播放列表并查找匹配项
-            from xiaoai_media.services.playlist_storage import PlaylistStorage
-
             index = PlaylistStorage.load_index()
-            matched_playlist = None
+            matched_playlist_id = None
 
             # 尝试按名称或语音关键词匹配
             for pid, playlist_idx in index.items():
                 # 检查播放列表名称是否包含关键词
                 if playlist_keyword.lower() in playlist_idx.name.lower():
-                    matched_playlist = (pid, playlist_idx)
+                    matched_playlist_id = pid
                     break
                 # 检查语音关键词
                 for vk in playlist_idx.voice_keywords:
                     if vk.lower() in text.lower():
-                        matched_playlist = (pid, playlist_idx)
+                        matched_playlist_id = pid
                         break
-                if matched_playlist:
+                if matched_playlist_id:
                     break
 
-            if not matched_playlist:
+            if not matched_playlist_id:
                 raise HTTPException(
                     status_code=404,
                     detail=f"找不到匹配的播单: {playlist_keyword}",
                 )
 
-            playlist_id, playlist_idx = matched_playlist
-
-            # 加载播放列表
-            load_result = await PlaylistLoaderService.load_from_saved_playlist(
-                playlist_id=playlist_id,
-                device_id=device_id,
-                auto_play=True,
+            # 通过 playlist_service 播放
+            result = await PlaylistService.play_playlist(
+                matched_playlist_id,
+                PlayPlaylistRequest(device_id=device_id, start_index=0, announce=True)
             )
 
             _log.info(
-                "VoiceCommand: loaded playlist %r for device %s",
-                playlist_idx.name,
+                "VoiceCommand: playing playlist %r for device %s",
+                result.get("playlist"),
                 device_id,
             )
 
             return {
                 "action": "play_playlist",
-                "playlist_name": playlist_idx.name,
-                "playlist_id": playlist_id,
+                "playlist_id": matched_playlist_id,
                 "device_id": device_id,
-                "result": load_result,
+                "result": result,
             }
 
         except HTTPException:
             raise
         except Exception as e:
-            _log.error("Failed to load playlist: %s", e, exc_info=True)
+            _log.error("Failed to play playlist: %s", e, exc_info=True)
             raise HTTPException(status_code=502, detail=str(e))
 
     @staticmethod
@@ -172,20 +174,84 @@ class VoiceCommandService:
         )
 
         try:
-            # 使用播放列表加载服务
-            load_result = await PlaylistLoaderService.load_from_chart(
-                chart_keyword=chart_keyword,
-                device_id=device_id,
-                platform=plat,
-                auto_play=True,
+            # 获取排行榜列表
+            charts_data = await MusicService.get_ranks(plat)
+            chart_list: list[dict] = charts_data.get("data", {}).get("list", []) or []
+
+            if not chart_list:
+                raise HTTPException(
+                    status_code=404, detail=f"平台 {plat} 没有可用的排行榜"
+                )
+
+            # 查找匹配的排行榜
+            matched_chart = MusicService.find_chart(chart_list, chart_keyword or "")
+            if not matched_chart:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"找不到排行榜: {chart_keyword}",
+                )
+
+            rank_id = str(matched_chart.get("id", ""))
+            chart_name = matched_chart.get("name", "")
+
+            # 获取排行榜歌曲
+            _log.info("Loading songs from chart: %s (id=%s)", chart_name, rank_id)
+            songs_data = await MusicService.get_rank_songs(rank_id, plat, page=1, limit=50)
+            songs_raw: list[dict] = songs_data.get("data", {}).get("list", []) or []
+            
+            if not songs_raw:
+                raise HTTPException(status_code=404, detail=f"排行榜 {chart_name} 没有歌曲")
+
+            # 创建临时播放列表
+            temp_playlist_id = f"temp_chart_{plat}_{rank_id}_{int(datetime.now().timestamp())}"
+            playlist = PlaylistService.create_playlist(
+                CreatePlaylistRequest(
+                    name=f"{chart_name}（{plat}）",
+                    type="chart",
+                    description=f"临时排行榜播放列表",
+                )
+            )
+            temp_playlist_id = playlist.id
+
+            # 转换歌曲为 PlaylistItem
+            items = []
+            for s in songs_raw:
+                try:
+                    items.append(
+                        PlaylistItem(
+                            title=str(s.get("name", "")),
+                            artist=str(s.get("singer", "")),
+                            album=s.get("meta", {}).get("albumName", ""),
+                            audio_id=str(s.get("id", "")),
+                            url=None,  # 需要动态获取
+                            duration=s.get("interval", 0),
+                            cover_url=s.get("meta", {}).get("picUrl", ""),
+                            custom_params={"platform": plat, "song_id": str(s.get("id", ""))},
+                        )
+                    )
+                except Exception as e:
+                    _log.warning("Failed to parse song: %s", e)
+                    continue
+
+            if not items:
+                raise HTTPException(status_code=404, detail="无法解析排行榜歌曲")
+
+            # 添加歌曲到播放列表
+            PlaylistService.add_items(temp_playlist_id, AddItemRequest(items=items))
+
+            # 通过 playlist_service 播放
+            result = await PlaylistService.play_playlist(
+                temp_playlist_id,
+                PlayPlaylistRequest(device_id=device_id, start_index=0, announce=True)
             )
 
             return {
                 "action": "play_chart",
-                "chart_name": load_result.get("chart_name"),
+                "chart_name": chart_name,
                 "platform": plat,
                 "device_id": device_id,
-                "result": load_result,
+                "playlist_id": temp_playlist_id,
+                "result": result,
             }
 
         except HTTPException:
@@ -208,24 +274,70 @@ class VoiceCommandService:
         _log.info("VoiceCommand: search intent detected, query=%r", search_query)
 
         try:
-            # 使用播放列表加载服务
-            load_result = await PlaylistLoaderService.load_from_search(
-                query=search_query,
-                device_id=device_id,
-                auto_play=True,
+            plat = config.MUSIC_DEFAULT_PLATFORM
+
+            # 搜索音乐
+            search_data = await MusicService.search_music(search_query, plat, page=1, limit=50)
+            songs_raw: list[dict] = search_data.get("data", {}).get("list", []) or []
+            
+            if not songs_raw:
+                raise HTTPException(status_code=404, detail=f"没有找到歌曲: {search_query}")
+
+            # 创建临时播放列表
+            temp_playlist_id = f"temp_search_{search_query}_{int(datetime.now().timestamp())}"
+            playlist = PlaylistService.create_playlist(
+                CreatePlaylistRequest(
+                    name=f"搜索: {search_query}",
+                    type="search",
+                    description=f"临时搜索结果播放列表",
+                )
+            )
+            temp_playlist_id = playlist.id
+
+            # 转换歌曲为 PlaylistItem
+            items = []
+            for s in songs_raw:
+                try:
+                    items.append(
+                        PlaylistItem(
+                            title=str(s.get("name", "")),
+                            artist=str(s.get("singer", "")),
+                            album=s.get("meta", {}).get("albumName", ""),
+                            audio_id=str(s.get("id", "")),
+                            url=None,  # 需要动态获取
+                            duration=s.get("interval", 0),
+                            cover_url=s.get("meta", {}).get("picUrl", ""),
+                            custom_params={"platform": plat, "song_id": str(s.get("id", ""))},
+                        )
+                    )
+                except Exception as e:
+                    _log.warning("Failed to parse song: %s", e)
+                    continue
+
+            if not items:
+                raise HTTPException(status_code=404, detail="无法解析搜索结果")
+
+            # 添加歌曲到播放列表
+            PlaylistService.add_items(temp_playlist_id, AddItemRequest(items=items))
+
+            # 通过 playlist_service 播放
+            result = await PlaylistService.play_playlist(
+                temp_playlist_id,
+                PlayPlaylistRequest(device_id=device_id, start_index=0, announce=True)
             )
 
             return {
                 "action": "search_and_play",
                 "query": search_query,
                 "device_id": device_id,
-                "result": load_result,
+                "playlist_id": temp_playlist_id,
+                "result": result,
             }
 
         except HTTPException:
             raise
         except Exception as e:
-            _log.error("Failed to search and load: %s", e, exc_info=True)
+            _log.error("Failed to search and play: %s", e, exc_info=True)
             raise HTTPException(status_code=502, detail=str(e))
 
     @staticmethod
