@@ -25,13 +25,15 @@ class PlaybackMonitor:
     3. 立即播放下一曲
     """
 
-    def __init__(self, poll_interval: float = 3.0):
+    def __init__(self, poll_interval: float = 3.0, max_paused_checks: int = 5):
         """初始化播放监控器
         
         Args:
             poll_interval: 轮询间隔（秒），默认 3.0 秒
+            max_paused_checks: 暂停状态最大检查次数，超过后停止监控该设备，默认 5 次（15秒）
         """
         self.poll_interval = poll_interval
+        self.max_paused_checks = max_paused_checks
         self.running = False
         self._task: Optional[asyncio.Task] = None
         self._state_service = get_state_service()
@@ -43,6 +45,10 @@ class PlaybackMonitor:
         # 记录每个设备是否正在切换下一曲（防止重复触发）
         # device_id -> bool
         self._switching: Dict[str, bool] = {}
+        
+        # 记录每个设备连续暂停的次数
+        # device_id -> int
+        self._paused_count: Dict[str, int] = {}
 
     async def start(self):
         """启动播放监控"""
@@ -243,16 +249,50 @@ class PlaybackMonitor:
             # 转换状态码为字符串
             play_status = {0: "stopped", 1: "playing", 2: "paused"}.get(status_code, "unknown")
             
-            _log.info(
-                "设备 %s 播放状态: status=%s(%d), audio_id=%s, position=%d/%d, media_type=%d",
-                device_id,
-                play_status,
-                status_code,
-                audio_id,
-                position,
-                duration,
-                media_type,
-            )
+            # 检测暂停状态
+            if play_status == "paused":
+                self._paused_count[device_id] = self._paused_count.get(device_id, 0) + 1
+                
+                # 如果连续暂停次数超过阈值，停止监控该设备
+                if self._paused_count[device_id] >= self.max_paused_checks:
+                    _log.info(
+                        "设备 %s 已暂停 %d 次（%.1f秒），停止监控该设备",
+                        device_id,
+                        self._paused_count[device_id],
+                        self._paused_count[device_id] * self.poll_interval
+                    )
+                    # 清除该设备的播放状态
+                    self._state_service.set(f"current_playlist_{device_id}", None)
+                    if device_id in self._last_status:
+                        del self._last_status[device_id]
+                    if device_id in self._paused_count:
+                        del self._paused_count[device_id]
+                    return
+                else:
+                    _log.debug(
+                        "设备 %s 暂停中 (%d/%d): audio_id=%s, position=%d/%d",
+                        device_id,
+                        self._paused_count[device_id],
+                        self.max_paused_checks,
+                        audio_id,
+                        position,
+                        duration,
+                    )
+            else:
+                # 如果不是暂停状态，重置暂停计数
+                if device_id in self._paused_count:
+                    self._paused_count[device_id] = 0
+                
+                _log.info(
+                    "设备 %s 播放状态: status=%s(%d), audio_id=%s, position=%d/%d, media_type=%d",
+                    device_id,
+                    play_status,
+                    status_code,
+                    audio_id,
+                    position,
+                    duration,
+                    media_type,
+                )
             
             # 获取上次状态
             last_status = self._last_status.get(device_id, {})
