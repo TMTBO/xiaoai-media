@@ -22,4 +22,6 @@ if __name__ == "__main__":
         reload=reload,
         log_config=get_log_config(),
         access_log=True,  # 确保使用我们的自定义访问日志格式
+        timeout_graceful_shutdown=2,  # 减少优雅关闭超时时间（默认是无限等待）
+        timeout_keep_alive=5,  # 减少 keep-alive 超时
     )

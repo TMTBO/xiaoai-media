@@ -119,10 +119,13 @@ async def stream_global_state(
                     
                 except asyncio.TimeoutError:
                     # 发送心跳保持连接
-                    yield f"event: heartbeat\ndata: {json.dumps({'timestamp': asyncio.get_event_loop().time()})}\n\n"
+                    heartbeat_data = {"timestamp": asyncio.get_event_loop().time()}
+                    yield f"event: heartbeat\ndata: {json.dumps(heartbeat_data)}\n\n"
                     
         except asyncio.CancelledError:
             _log.info("SSE 全局状态连接被取消: device_id=%s", device_id)
+        except Exception as e:
+            _log.error("SSE 事件生成器异常: %s", e, exc_info=True)
         finally:
             # 清理：移除回调
             monitor.remove_status_callback(status_callback)

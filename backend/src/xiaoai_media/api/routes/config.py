@@ -58,4 +58,9 @@ async def update_config(body: ConfigUpdate):
     # 重新加载配置模块
     ConfigService.reload_config_module()
 
-    return {"message": "Configuration updated successfully"}
+    # 注意：如果 uvicorn 启用了 reload 模式，修改 user_config.py 会触发自动重启
+    # 这是正常行为，客户端应该在收到响应后等待服务重启完成
+    return {
+        "message": "Configuration updated successfully",
+        "note": "Service will reload automatically if reload mode is enabled"
+    }

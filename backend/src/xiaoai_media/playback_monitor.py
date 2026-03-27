@@ -521,3 +521,13 @@ def get_monitor() -> PlaybackMonitor:
         from xiaoai_media import config as app_config
         _monitor = PlaybackMonitor(poll_interval=app_config.PLAYBACK_MONITOR_INTERVAL)
     return _monitor
+
+
+def reset_monitor():
+    """重置全局监控器实例（用于测试或重启）"""
+    global _monitor
+    if _monitor is not None and _monitor.running:
+        # 注意：这是同步函数，不能 await
+        # 只是标记停止，不等待任务完成
+        _monitor.running = False
+    _monitor = None
