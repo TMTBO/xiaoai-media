@@ -331,6 +331,43 @@ class PlaylistService:
             if not monitor.running:
                 await monitor.start()
                 _log.info("播放监控器已自动启动")
+            
+            # 立即触发一次状态检查和推送
+            try:
+                # 等待一小段时间让设备开始播放
+                await asyncio.sleep(0.5)
+                
+                # 获取当前播放状态
+                status_result = await client.player_get_status(req.device_id)
+                status_data = status_result.get("status", {})
+                data = status_data.get("data", {})
+                info_str = data.get("info", "{}")
+                
+                try:
+                    import json
+                    info = json.loads(info_str)
+                except (json.JSONDecodeError, TypeError):
+                    info = {}
+                
+                # 提取播放状态
+                status_code = info.get("status", 0)
+                play_status = {0: "stopped", 1: "playing", 2: "paused"}.get(status_code, "unknown")
+                play_song_detail = info.get("play_song_detail", {})
+                
+                # 构建状态信息
+                new_status = {
+                    "status": play_status,
+                    "audio_id": play_song_detail.get("audio_id", ""),
+                    "position": play_song_detail.get("position", 0),
+                    "duration": play_song_detail.get("duration", 0),
+                    "media_type": info.get("media_type", 0),
+                }
+                
+                # 立即通知状态变化
+                await monitor._notify_status_change(req.device_id or "default", new_status)
+                _log.info("已立即推送播放状态: %s", new_status)
+            except Exception as e:
+                _log.warning("立即推送播放状态失败: %s", e)
 
         return {
             "message": "Playing",

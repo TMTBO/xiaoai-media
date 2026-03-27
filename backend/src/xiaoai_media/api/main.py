@@ -25,6 +25,7 @@ from xiaoai_media.api.routes import (
     playlist,
     proxy,
     scheduler,
+    state,
 )
 from xiaoai_media.conversation import ConversationPoller
 from xiaoai_media.command_handler import CommandHandler
@@ -133,6 +134,7 @@ app.include_router(music.router, prefix="/api")
 app.include_router(playlist.router, prefix="/api")
 app.include_router(proxy.router, prefix="/api")
 app.include_router(scheduler.router, prefix="/api")
+app.include_router(state.router, prefix="/api")
 
 # Serve frontend static files in production (built by Docker)
 _static_dir = Path(__file__).resolve().parents[4] / "static"

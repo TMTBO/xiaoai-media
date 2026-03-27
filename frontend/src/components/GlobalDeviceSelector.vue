@@ -61,24 +61,33 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
+import { computed, ref } from 'vue'
 import { Monitor, Connection, CircleClose, Refresh } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { useDevices } from '@/composables/useDevices'
+import { useGlobalState } from '@/composables/useGlobalState'
 import { api } from '@/api'
 
 const { devices, deviceId, devicesLoading, loadDevices } = useDevices()
+const { state, isPlaying } = useGlobalState(deviceId)
 const stopping = ref(false)
-const playStatus = ref<number>(0) // 0=停止, 1=播放中, 2=暂停
-let statusTimer: number | null = null
 
 const selectedDevice = computed(() => {
   if (!deviceId.value) return null
   return devices.value.find(d => d.deviceID === deviceId.value) || null
 })
 
-const isPlaying = computed(() => {
-  return playStatus.value === 1 || playStatus.value === 2
+// 从全局状态中获取播放状态
+const playStatus = computed(() => {
+  if (!state.value) return 0
+  
+  const statusMap: Record<string, number> = {
+    'stopped': 0,
+    'playing': 1,
+    'paused': 2
+  }
+  
+  return statusMap[state.value.play_status] ?? 0
 })
 
 const playStatusText = computed(() => {
@@ -99,82 +108,17 @@ const playStatusType = computed(() => {
   return typeMap[playStatus.value] || 'info'
 })
 
-async function fetchPlayStatus() {
-  if (!deviceId.value) return
-  
-  try {
-    const result = await api.getPlayerStatus(deviceId.value)
-    const statusData = result?.status?.data
-    
-    if (statusData?.info) {
-      try {
-        const info = typeof statusData.info === 'string' 
-          ? JSON.parse(statusData.info) 
-          : statusData.info
-        playStatus.value = info.status ?? 0
-      } catch (e) {
-        console.error('Failed to parse player status:', e)
-        playStatus.value = 0
-      }
-    } else {
-      playStatus.value = 0
-    }
-  } catch (e) {
-    // 静默失败，不显示错误
-    playStatus.value = 0
-  }
-}
-
-function startStatusPolling() {
-  stopStatusPolling()
-  fetchPlayStatus()
-  statusTimer = window.setInterval(() => {
-    fetchPlayStatus()
-  }, 3000) // 每3秒更新一次状态
-}
-
-function stopStatusPolling() {
-  if (statusTimer) {
-    clearInterval(statusTimer)
-    statusTimer = null
-  }
-}
-
 async function stopPlayback() {
   stopping.value = true
   try {
     await api.sendCommand('停止播放', deviceId.value || undefined)
     ElMessage.success('已发送停止指令')
-    // 立即更新状态
-    await fetchPlayStatus()
   } catch (e: unknown) {
     ElMessage.error(e instanceof Error ? e.message : '停止失败')
   } finally {
     stopping.value = false
   }
 }
-
-// 监听设备变化
-watch(deviceId, () => {
-  playStatus.value = 0
-  if (deviceId.value) {
-    startStatusPolling()
-  } else {
-    stopStatusPolling()
-  }
-})
-
-// 组件挂载时开始轮询
-onMounted(() => {
-  if (deviceId.value) {
-    startStatusPolling()
-  }
-})
-
-// 组件卸载时停止轮询
-onUnmounted(() => {
-  stopStatusPolling()
-})
 </script>
 
 <style scoped>

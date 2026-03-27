@@ -62,6 +62,7 @@
 
     <el-main class="main">
       <GlobalDeviceSelector />
+      <GlobalPlayerBar />
       <div class="main-content">
         <router-view />
       </div>
@@ -70,7 +71,19 @@
 </template>
 
 <script setup lang="ts">
+import { 
+  Monitor, 
+  ChatDotRound, 
+  Headset, 
+  Mic, 
+  ChatLineRound, 
+  VideoPlay, 
+  List, 
+  Clock, 
+  Setting 
+} from '@element-plus/icons-vue'
 import GlobalDeviceSelector from '@/components/GlobalDeviceSelector.vue'
+import GlobalPlayerBar from '@/components/GlobalPlayerBar.vue'
 </script>
 
 <style>

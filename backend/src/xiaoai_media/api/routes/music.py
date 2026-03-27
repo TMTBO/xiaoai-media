@@ -5,9 +5,12 @@
 
 from __future__ import annotations
 
+import asyncio
+import json
 import logging
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from xiaoai_media.player import get_player
@@ -222,6 +225,86 @@ async def get_player_status(device_id: str | None = None):
         return await player.get_status(device_id)
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))
+
+
+@router.get("/status/stream")
+async def stream_player_status(
+    request: Request,
+    device_id: str | None = Query(None, description="设备ID，不指定则监听所有设备")
+):
+    """SSE 流式推送播放器状态变化
+    
+    当播放状态发生变化时，主动推送给前端，避免轮询。
+    
+    返回格式：
+        event: status
+        data: {"device_id": "xxx", "status": "playing", "audio_id": "xxx", ...}
+    """
+    from xiaoai_media.playback_monitor import get_monitor
+    
+    async def event_generator():
+        """SSE 事件生成器"""
+        queue: asyncio.Queue = asyncio.Queue()
+        
+        async def status_callback(dev_id: str, status: dict):
+            """状态变化回调，将状态推送到队列"""
+            # 如果指定了 device_id，只推送该设备的状态
+            if device_id and dev_id != device_id:
+                return
+            
+            await queue.put({
+                "device_id": dev_id,
+                **status
+            })
+        
+        # 注册回调
+        monitor = get_monitor()
+        monitor.add_status_callback(status_callback)
+        _log.info("SSE 客户端已连接: device_id=%s", device_id)
+        
+        try:
+            # 首次连接时，立即发送当前状态
+            try:
+                player = get_player()
+                current_status = await player.get_status(device_id)
+                yield f"event: status\ndata: {json.dumps(current_status)}\n\n"
+            except Exception as e:
+                _log.warning("获取初始状态失败: %s", e)
+            
+            # 持续推送状态变化
+            while True:
+                # 检查客户端是否断开连接
+                if await request.is_disconnected():
+                    _log.info("SSE 客户端已断开连接: device_id=%s", device_id)
+                    break
+                
+                try:
+                    # 等待状态变化，设置超时以便定期检查连接状态
+                    status_data = await asyncio.wait_for(queue.get(), timeout=30.0)
+                    
+                    # 发送 SSE 事件
+                    yield f"event: status\ndata: {json.dumps(status_data)}\n\n"
+                    
+                except asyncio.TimeoutError:
+                    # 发送心跳保持连接
+                    yield f": heartbeat\n\n"
+                    
+        except asyncio.CancelledError:
+            _log.info("SSE 连接被取消: device_id=%s", device_id)
+        finally:
+            # 清理：移除回调
+            monitor.remove_status_callback(status_callback)
+            _log.info("SSE 客户端已清理: device_id=%s", device_id)
+    
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # 禁用 nginx 缓冲
+        }
+    )
 
 
 # ---------------------------------------------------------------------------

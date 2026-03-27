@@ -2,18 +2,22 @@
 
 监控设备播放状态，在歌曲播放完成时自动播放下一曲。
 采用轮询 + position 回退检测机制。
+支持 SSE 状态推送。
 """
 
 import asyncio
 import json
 import logging
-from typing import Dict, Optional
+from typing import Dict, Optional, Set, Callable, Awaitable
 
 from xiaoai_media.api.dependencies import get_client_sync
 from xiaoai_media.services.state_service import get_state_service
 from xiaoai_media.services.playlist_service import PlaylistService
 
 _log = logging.getLogger(__name__)
+
+# 状态变化回调类型
+StatusChangeCallback = Callable[[str, dict], Awaitable[None]]
 
 
 class PlaybackMonitor:
@@ -49,6 +53,10 @@ class PlaybackMonitor:
         # 记录每个设备连续暂停的次数
         # device_id -> int
         self._paused_count: Dict[str, int] = {}
+        
+        # SSE 状态变化回调
+        # 当状态变化时，会调用所有注册的回调函数
+        self._status_callbacks: Set[StatusChangeCallback] = set()
 
     async def start(self):
         """启动播放监控"""
@@ -97,11 +105,24 @@ class PlaybackMonitor:
                     # 如果设备正在播放音乐（status=1, media_type=3）且有有效时长
                     if status_code == 1 and media_type == 3 and duration > 0:
                         _log.info(
-                            "检测到设备 %s 正在播放音乐，尝试恢复监听状态",
+                            "检测到设备 %s 正在播放音乐，恢复监听状态",
                             device_id
                         )
                         
-                        # 检查是否有保存的播放状态（尝试两种 key）
+                        has_active_playback = True
+                        
+                        # 初始化该设备的状态（这样 _check_all_devices 就会监控它）
+                        position = play_song_detail.get("position", 0)
+                        audio_id = play_song_detail.get("audio_id", "")
+                        self._last_status[device_id] = {
+                            "status": "playing",
+                            "audio_id": audio_id,
+                            "position": position,
+                            "duration": duration,
+                            "media_type": media_type,
+                        }
+                        
+                        # 检查是否有保存的播放状态
                         current_playlist_id = (
                             self._state_service.get(f"current_playlist_{device_id}") or
                             self._state_service.get("current_playlist_default")
@@ -109,18 +130,14 @@ class PlaybackMonitor:
                         
                         if current_playlist_id:
                             _log.info(
-                                "设备 %s 的播放状态已存在: %s，将恢复监听",
+                                "设备 %s 有播单信息: %s，将支持自动播放下一曲",
                                 device_id,
                                 current_playlist_id
                             )
-                            has_active_playback = True
                         else:
-                            _log.warning(
-                                "设备 %s 正在播放但没有保存的播放状态，无法自动恢复自动播放下一曲功能",
-                                device_id
-                            )
                             _log.info(
-                                "提示：如果需要自动播放下一曲，请通过 API 重新开始播放播单"
+                                "设备 %s 没有播单信息（可能是语音播放），将监控状态但不自动播放下一曲",
+                                device_id
                             )
                             
                 except Exception as e:
@@ -150,6 +167,42 @@ class PlaybackMonitor:
             except asyncio.CancelledError:
                 pass
         _log.info("播放监控器已停止")
+    
+    def add_status_callback(self, callback: StatusChangeCallback):
+        """添加状态变化回调
+        
+        Args:
+            callback: 回调函数，接收 (device_id, status_dict) 参数
+        """
+        self._status_callbacks.add(callback)
+        _log.debug("添加状态变化回调，当前回调数: %d", len(self._status_callbacks))
+    
+    def remove_status_callback(self, callback: StatusChangeCallback):
+        """移除状态变化回调
+        
+        Args:
+            callback: 要移除的回调函数
+        """
+        self._status_callbacks.discard(callback)
+        _log.debug("移除状态变化回调，当前回调数: %d", len(self._status_callbacks))
+    
+    async def _notify_status_change(self, device_id: str, status: dict):
+        """通知所有订阅者状态已变化
+        
+        Args:
+            device_id: 设备 ID
+            status: 状态信息
+        """
+        if not self._status_callbacks:
+            return
+        
+        _log.debug("通知 %d 个订阅者设备 %s 状态变化", len(self._status_callbacks), device_id)
+        
+        # 并发调用所有回调
+        await asyncio.gather(
+            *[callback(device_id, status) for callback in self._status_callbacks],
+            return_exceptions=True
+        )
 
     async def _monitor_loop(self):
         """主监控循环"""
@@ -168,6 +221,7 @@ class PlaybackMonitor:
     async def _check_all_devices(self):
         """检查所有设备的播放状态
         
+        监控所有正在播放的设备（不管是否有播单）。
         如果没有任何设备有活动的播放，自动停止监听。
         """
         has_active_playback = False
@@ -185,7 +239,19 @@ class PlaybackMonitor:
                 current_playlist_id = self._state_service.get(
                     f"current_playlist_{device_id}"
                 )
-                if not current_playlist_id:
+                
+                # 检查设备上次的播放状态
+                last_status = self._last_status.get(device_id, {})
+                last_play_status = last_status.get("status", "stopped")
+                
+                # 如果设备有播单，或者上次在播放/暂停状态，则检查状态
+                # 这样可以监控所有正在播放的设备，不管是否通过播单系统
+                should_check = (
+                    current_playlist_id or  # 有播单
+                    last_play_status in ["playing", "paused"]  # 上次在播放
+                )
+                
+                if not should_check:
                     continue
                 
                 has_active_playback = True
@@ -211,14 +277,14 @@ class PlaybackMonitor:
         self,
         client,
         device_id: str,
-        playlist_id: str,
+        playlist_id: str | None = None,
     ):
         """检查单个设备的播放状态
         
         Args:
             client: XiaoAI 客户端
             device_id: 设备 ID
-            playlist_id: 当前播放的播单 ID
+            playlist_id: 当前播放的播单 ID（可选，如果为空则不自动播放下一曲）
         """
         try:
             # 获取播放状态
@@ -283,7 +349,7 @@ class PlaybackMonitor:
                 if device_id in self._paused_count:
                     self._paused_count[device_id] = 0
                 
-                _log.info(
+                _log.debug(
                     "设备 %s 播放状态: status=%s(%d), audio_id=%s, position=%d/%d, media_type=%d",
                     device_id,
                     play_status,
@@ -325,8 +391,8 @@ class PlaybackMonitor:
             
             position_rollback = position_rollback_with_duration or position_reset_to_zero
             
-            # 更新当前状态
-            self._last_status[device_id] = {
+            # 构建新状态
+            new_status = {
                 "status": play_status,
                 "audio_id": audio_id,
                 "position": position,
@@ -334,31 +400,52 @@ class PlaybackMonitor:
                 "media_type": media_type,
             }
             
-            # 如果检测到 position 回退，说明歌曲播放完成，立即播放下一曲
+            # 检查状态是否变化
+            status_changed = (
+                last_status.get("status") != play_status or
+                last_status.get("audio_id") != audio_id or
+                abs(last_status.get("position", 0) - position) > 1000  # 位置变化超过1秒
+            )
+            
+            # 更新当前状态
+            self._last_status[device_id] = new_status
+            
+            # 如果状态变化，通知订阅者
+            if status_changed:
+                await self._notify_status_change(device_id, new_status)
+            
+            # 如果检测到 position 回退，说明歌曲播放完成
             if position_rollback:
-                # 检查是否正在切换下一曲（防止重复触发）
-                if self._switching.get(device_id, False):
-                    _log.debug("设备 %s 正在切换下一曲，跳过本次触发", device_id)
-                    return
-                
-                _log.info(
-                    "检测到设备 %s 歌曲播放完成 (position 回退: %d -> %d)，立即播放下一曲",
-                    device_id,
-                    last_position,
-                    position
-                )
-                
-                # 设置切换标志
-                self._switching[device_id] = True
-                
-                try:
-                    # 立即播放下一曲
-                    await self._play_next(device_id, playlist_id)
-                except Exception as e:
-                    _log.error("播放下一曲过程出错: %s", e, exc_info=True)
-                finally:
-                    # 清除切换标志
-                    self._switching[device_id] = False
+                # 只有在有播单时才自动播放下一曲
+                if playlist_id:
+                    # 检查是否正在切换下一曲（防止重复触发）
+                    if self._switching.get(device_id, False):
+                        _log.debug("设备 %s 正在切换下一曲，跳过本次触发", device_id)
+                        return
+                    
+                    _log.info(
+                        "检测到设备 %s 歌曲播放完成 (position 回退: %d -> %d)，立即播放下一曲",
+                        device_id,
+                        last_position,
+                        position
+                    )
+                    
+                    # 设置切换标志
+                    self._switching[device_id] = True
+                    
+                    try:
+                        # 立即播放下一曲
+                        await self._play_next(device_id, playlist_id)
+                    except Exception as e:
+                        _log.error("播放下一曲过程出错: %s", e, exc_info=True)
+                    finally:
+                        # 清除切换标志
+                        self._switching[device_id] = False
+                else:
+                    _log.debug(
+                        "检测到设备 %s 歌曲播放完成，但没有播单信息，不自动播放下一曲",
+                        device_id
+                    )
                 
                 return
             
@@ -415,3 +502,19 @@ class PlaybackMonitor:
             _log.error("自动播放下一曲失败: %s", e, exc_info=True)
             # 如果播放失败，清除当前播单状态
             self._state_service.set(f"current_playlist_{device_id}", None)
+
+
+# 全局监控器实例
+_monitor: Optional[PlaybackMonitor] = None
+
+
+def get_monitor() -> PlaybackMonitor:
+    """获取全局播放监控器实例
+    
+    Returns:
+        PlaybackMonitor 实例
+    """
+    global _monitor
+    if _monitor is None:
+        _monitor = PlaybackMonitor()
+    return _monitor
