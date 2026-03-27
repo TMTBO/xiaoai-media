@@ -518,5 +518,6 @@ def get_monitor() -> PlaybackMonitor:
     """
     global _monitor
     if _monitor is None:
-        _monitor = PlaybackMonitor()
+        from xiaoai_media import config as app_config
+        _monitor = PlaybackMonitor(poll_interval=app_config.PLAYBACK_MONITOR_INTERVAL)
     return _monitor

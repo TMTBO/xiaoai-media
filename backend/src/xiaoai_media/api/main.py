@@ -29,7 +29,7 @@ from xiaoai_media.api.routes import (
 )
 from xiaoai_media.conversation import ConversationPoller
 from xiaoai_media.command_handler import CommandHandler
-from xiaoai_media.playback_monitor import PlaybackMonitor
+from xiaoai_media.playback_monitor import get_monitor
 from xiaoai_media.client import XiaoAiClient
 from xiaoai_media.api.dependencies import set_global_client
 from xiaoai_media import config as app_config
@@ -49,15 +49,8 @@ conversation_poller = ConversationPoller(
 command_handler = CommandHandler()
 conversation_poller.set_command_callback(command_handler.handle_command)
 
-# Initialize playback monitor for auto-play next track
-playback_monitor = PlaybackMonitor(
-    poll_interval=app_config.PLAYBACK_MONITOR_INTERVAL
-)
-
-
-def get_playback_monitor() -> PlaybackMonitor:
-    """获取全局播放监控器实例"""
-    return playback_monitor
+# Get global playback monitor instance (singleton)
+playback_monitor = get_monitor()
 
 app.add_middleware(
     CORSMiddleware,

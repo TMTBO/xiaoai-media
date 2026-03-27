@@ -326,8 +326,8 @@ class PlaylistService:
         # 启动播放监控器（如果已启用）
         from xiaoai_media import config as app_config
         if app_config.ENABLE_PLAYBACK_MONITOR:
-            from xiaoai_media.api.main import get_playback_monitor
-            monitor = get_playback_monitor()
+            from xiaoai_media.playback_monitor import get_monitor
+            monitor = get_monitor()
             if not monitor.running:
                 await monitor.start()
                 _log.info("播放监控器已自动启动")
