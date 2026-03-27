@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>诊断页面</title>
+</head>
+<body>
+  <h1>前端诊断</h1>
+  <div id="status"></div>
+  <script>
+    const status = document.getElementById('status');
+    status.innerHTML = '<p>✅ HTML 加载成功</p>';
+    
+    // 测试 Vue
+    import('/src/main.ts')
+      .then(() => {
+        status.innerHTML += '<p>✅ main.ts 加载成功</p>';
+      })
+      .catch(err => {
+        status.innerHTML += `<p>❌ main.ts 加载失败: ${err.message}</p>`;
+        console.error('main.ts error:', err);
+      });
+  </script>
+</body>
+</html>

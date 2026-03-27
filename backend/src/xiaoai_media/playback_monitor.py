@@ -319,7 +319,7 @@ class PlaybackMonitor:
             if play_status == "paused":
                 self._paused_count[device_id] = self._paused_count.get(device_id, 0) + 1
                 
-                # 如果连续暂停次数超过阈值，停止监控该设备
+                # 如果连续暂停次数超过阈值，停止监控该设备（但不清除播放列表状态）
                 if self._paused_count[device_id] >= self.max_paused_checks:
                     _log.info(
                         "设备 %s 已暂停 %d 次（%.1f秒），停止监控该设备",
@@ -327,8 +327,8 @@ class PlaybackMonitor:
                         self._paused_count[device_id],
                         self._paused_count[device_id] * self.poll_interval
                     )
-                    # 清除该设备的播放状态
-                    self._state_service.set(f"current_playlist_{device_id}", None)
+                    # 清除该设备的监控状态，但保留播放列表信息
+                    # 这样用户恢复播放时，播放列表信息仍然存在
                     if device_id in self._last_status:
                         del self._last_status[device_id]
                     if device_id in self._paused_count:
@@ -449,9 +449,11 @@ class PlaybackMonitor:
                 
                 return
             
-            # 如果播放已停止且没有播放进度，清除播放状态
+            # 如果播放已完全停止（没有播放进度），清除播放状态
+            # 注意：只有在 duration 和 position 都为 0 时才清除
+            # 暂停状态不应该清除播放列表信息
             if play_status == "stopped" and duration == 0 and position == 0:
-                _log.info("设备 %s 播放已停止，清除播放状态", device_id)
+                _log.info("设备 %s 播放已完全停止，清除播放状态", device_id)
                 self._state_service.set(f"current_playlist_{device_id}", None)
                 # 清除该设备的状态记录
                 if device_id in self._last_status:
