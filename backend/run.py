@@ -15,13 +15,13 @@ if __name__ == "__main__":
     reload = os.getenv("RELOAD", "false").lower() == "true"
     
     # 启动uvicorn
+    # 注意：不要设置 access_log 参数，让 log_config 完全控制日志格式
     uvicorn.run(
         "xiaoai_media.api.main:app",
         host=host,
         port=port,
         reload=reload,
         log_config=get_log_config(),
-        access_log=True,  # 确保使用我们的自定义访问日志格式
         timeout_graceful_shutdown=2,  # 减少优雅关闭超时时间（默认是无限等待）
         timeout_keep_alive=5,  # 减少 keep-alive 超时
     )

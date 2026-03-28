@@ -87,8 +87,13 @@ class AccessFormatter(logging.Formatter):
             self.use_colors = use_colors
     
     def format(self, record):
-        # 保存原始levelname
+        # 保存原始值
         levelname_orig = record.levelname
+        name_orig = record.name
+        
+        # uvicorn.access 的日志消息格式通常是：
+        # '{client_addr} - "{method} {full_path} {http_version}" {status_code}'
+        # 我们需要确保时间戳被添加
         
         # 从record中提取uvicorn的访问日志信息
         if hasattr(record, 'args') and len(record.args) >= 5:
@@ -97,11 +102,21 @@ class AccessFormatter(logging.Formatter):
             method = record.args[1]
             full_path = record.args[2]
             http_version = record.args[3]
-            status_code = record.args[4]
+            status_code = record.args[4]  # 可能是 int 或 str (如 "200 OK")
+            
+            # 提取状态码数字（用于颜色选择）
+            if isinstance(status_code, str):
+                # 从 "200 OK" 中提取 200
+                try:
+                    status_num = int(status_code.split()[0])
+                except (ValueError, IndexError):
+                    status_num = 0
+            else:
+                status_num = status_code
             
             if self.use_colors:
                 # 根据状态码选择颜色
-                status_class = status_code // 100
+                status_class = status_num // 100 if status_num > 0 else 0
                 status_color = self.STATUS_COLORS.get(status_class, Colors.RESET)
                 
                 # 格式化消息（带颜色）
@@ -115,14 +130,10 @@ class AccessFormatter(logging.Formatter):
                 record.levelname = f"{Colors.BLUE}{record.levelname:<8}{Colors.RESET}"
                 
                 # 模块名颜色
-                name_orig = record.name
                 record.name = f"{Colors.CYAN}{record.name}{Colors.RESET}"
                 
                 record.args = ()
                 result = super().format(record)
-                
-                # 恢复原始值
-                record.name = name_orig
             else:
                 # 不使用颜色
                 record.msg = f'{client_addr} - "{method} {full_path} {http_version}" {status_code}'
@@ -130,19 +141,18 @@ class AccessFormatter(logging.Formatter):
                 record.args = ()
                 result = super().format(record)
         else:
-            # 普通消息，使用CustomFormatter的逻辑
+            # 普通消息或已经格式化的消息，使用标准格式
             if self.use_colors:
                 record.levelname = f"{Colors.BLUE}{record.levelname:<8}{Colors.RESET}"
-                name_orig = record.name
                 record.name = f"{Colors.CYAN}{record.name}{Colors.RESET}"
                 result = super().format(record)
-                record.name = name_orig
             else:
                 record.levelname = f"{record.levelname:<8}"
                 result = super().format(record)
         
-        # 恢复原始levelname
+        # 恢复原始值
         record.levelname = levelname_orig
+        record.name = name_orig
         return result
 
 
@@ -205,6 +215,11 @@ def get_log_config() -> dict:
             "watchfiles": {
                 "handlers": ["default"],
                 "level": "WARNING",
+                "propagate": False
+            },
+            "xiaoai_media": {
+                "handlers": ["default"],
+                "level": log_level,
                 "propagate": False
             }
         },
