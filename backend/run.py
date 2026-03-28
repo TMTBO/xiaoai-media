@@ -4,24 +4,27 @@
 """
 import os
 import sys
+import logging.config
 import uvicorn
 from xiaoai_media.log_config import get_log_config
 
 
 if __name__ == "__main__":
-    # 获取配置
+    # 获取日志配置
+    log_config = get_log_config()
+    
+    # 获取启动配置
     host = os.getenv("HOST", "0.0.0.0")
     port = int(os.getenv("PORT", "8000"))
     reload = os.getenv("RELOAD", "false").lower() == "true"
     
-    # 启动uvicorn
-    # 注意：不要设置 access_log 参数，让 log_config 完全控制日志格式
+    # 启动uvicorn，传递日志配置
     uvicorn.run(
         "xiaoai_media.api.main:app",
         host=host,
         port=port,
         reload=reload,
-        log_config=get_log_config(),
-        timeout_graceful_shutdown=2,  # 减少优雅关闭超时时间（默认是无限等待）
-        timeout_keep_alive=5,  # 减少 keep-alive 超时
+        log_config=log_config,
+        timeout_graceful_shutdown=2,
+        timeout_keep_alive=5,
     )
