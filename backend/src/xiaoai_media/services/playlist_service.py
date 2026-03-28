@@ -328,11 +328,9 @@ class PlaylistService:
         if app_config.ENABLE_PLAYBACK_MONITOR:
             from xiaoai_media.playback_monitor import get_monitor
             monitor = get_monitor()
-            if not monitor.running:
-                await monitor.start()
-                _log.info("播放监控器已自动启动")
             
-            # 立即触发一次状态检查和推送
+            # 先获取初始播放状态，再启动监控器
+            initial_status = None
             try:
                 # 等待一小段时间让设备开始播放
                 await asyncio.sleep(0.5)
@@ -355,7 +353,7 @@ class PlaylistService:
                 play_song_detail = info.get("play_song_detail", {})
                 
                 # 构建状态信息
-                new_status = {
+                initial_status = {
                     "status": play_status,
                     "audio_id": play_song_detail.get("audio_id", ""),
                     "position": play_song_detail.get("position", 0),
@@ -363,11 +361,22 @@ class PlaylistService:
                     "media_type": info.get("media_type", 0),
                 }
                 
-                # 立即通知状态变化
-                await monitor._notify_status_change(req.device_id or "default", new_status)
-                _log.info("已立即推送播放状态: %s", new_status)
+                _log.info("获取到初始播放状态: %s", initial_status)
             except Exception as e:
-                _log.warning("立即推送播放状态失败: %s", e)
+                _log.warning("获取初始播放状态失败: %s", e)
+            
+            # 启动监控器并传入初始状态
+            if not monitor.running:
+                await monitor.start(device_id=req.device_id, initial_status=initial_status)
+                _log.info("播放监控器已自动启动")
+            
+            # 立即推送状态变化
+            if initial_status:
+                try:
+                    await monitor._notify_status_change(req.device_id or "default", initial_status)
+                    _log.info("已立即推送播放状态: %s", initial_status)
+                except Exception as e:
+                    _log.warning("立即推送播放状态失败: %s", e)
 
         return {
             "message": "Playing",

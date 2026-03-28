@@ -62,11 +62,21 @@ class PlaybackMonitor:
         # 当状态变化时，会调用所有注册的回调函数
         self._status_callbacks: Set[StatusChangeCallback] = set()
 
-    async def start(self):
-        """启动播放监控"""
+    async def start(self, device_id: str = None, initial_status: dict = None):
+        """启动播放监控
+        
+        Args:
+            device_id: 可选的设备ID，用于初始化监控状态
+            initial_status: 可选的初始播放状态，用于避免启动时误判
+        """
         if self.running:
             _log.warning("播放监控器已在运行")
             return
+        
+        # 如果提供了初始状态，先设置到 _last_status
+        if device_id and initial_status:
+            self._last_status[device_id] = initial_status
+            _log.debug("初始化设备 %s 的播放状态: %s", device_id, initial_status)
         
         self.running = True
         self._task = asyncio.create_task(self._monitor_loop())
