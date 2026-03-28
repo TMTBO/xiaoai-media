@@ -158,13 +158,13 @@ def get_log_config() -> dict:
         "formatters": {
             "default": {
                 "()": "xiaoai_media.log_config.CustomFormatter",
-                "format": "%(asctime)s %(levelname)s %(name)s - %(message)s",
+                "format": "%(asctime)s.%(msecs)03d %(levelname)s %(name)s - %(message)s",
                 "datefmt": "%Y-%m-%d %H:%M:%S",
                 "use_colors": use_colors,
             },
             "access": {
                 "()": "xiaoai_media.log_config.AccessFormatter",
-                "format": "%(asctime)s %(levelname)s %(name)s - %(message)s",
+                "format": "%(asctime)s.%(msecs)03d %(levelname)s %(name)s - %(message)s",
                 "datefmt": "%Y-%m-%d %H:%M:%S",
                 "use_colors": use_colors,
             }

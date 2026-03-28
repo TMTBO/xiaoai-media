@@ -222,12 +222,30 @@ class PlaybackMonitor:
         """主监控循环"""
         try:
             while self.running:
+                # 记录开始时间
+                start_time = asyncio.get_event_loop().time()
+                
                 try:
                     await self._check_all_devices()
                 except Exception as e:
                     _log.error("播放监控出错: %s", e, exc_info=True)
                 
-                await asyncio.sleep(self.poll_interval)
+                # 计算实际耗时
+                elapsed = asyncio.get_event_loop().time() - start_time
+                
+                # 计算剩余的 sleep 时间，确保循环总时间为 poll_interval
+                sleep_time = max(0, self.poll_interval - elapsed)
+
+                _log.debug("elapsed: %s, sleep_time: %s", elapsed, sleep_time)
+                
+                if sleep_time > 0:
+                    await asyncio.sleep(sleep_time)
+                else:
+                    _log.warning(
+                        "设备检查耗时 %.2f 秒超过轮询间隔 %.2f 秒",
+                        elapsed,
+                        self.poll_interval
+                    )
         except asyncio.CancelledError:
             _log.info("播放监控已取消")
             raise
