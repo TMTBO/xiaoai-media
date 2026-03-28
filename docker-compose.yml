@@ -19,6 +19,12 @@ services:
       # - /path/to/your/music:/data/music
       # Audiobooks 目录挂载示例
       - /mnt/NAS/audiobooks:/data/audiobooks
+    
+    # 环境变量配置
+    environment:
+      # Docker 环境建议禁用颜色输出
+      - LOG_COLORS=false
+    
     restart: unless-stopped
     
     # 健康检查

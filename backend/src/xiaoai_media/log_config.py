@@ -158,7 +158,13 @@ class AccessFormatter(logging.Formatter):
 
 def get_log_config() -> dict:
     """获取日志配置字典"""
-    log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+    # 优先使用 user_config 中的 LOG_LEVEL，其次使用环境变量
+    try:
+        from xiaoai_media import config
+        log_level = config.LOG_LEVEL.upper()
+    except (ImportError, AttributeError):
+        log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+    
     # 检查是否禁用颜色（Docker环境建议设置 LOG_COLORS=false）
     use_colors = os.getenv("LOG_COLORS", "true").lower() != "false"
     
@@ -215,11 +221,6 @@ def get_log_config() -> dict:
             "watchfiles": {
                 "handlers": ["default"],
                 "level": "WARNING",
-                "propagate": False
-            },
-            "xiaoai_media": {
-                "handlers": ["default"],
-                "level": log_level,
                 "propagate": False
             }
         },
