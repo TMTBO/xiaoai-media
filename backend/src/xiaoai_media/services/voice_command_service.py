@@ -70,9 +70,10 @@ class VoiceCommandService:
         if "下一首" in text:
             return await VoiceCommandService._handle_next_command(device_id)
 
-        # 模式1: 播放列表 - "播放音乐播单", "打开我的有声书"
-        if re.search(r"播单|列表|有声书|播客", text):
-            return await VoiceCommandService._handle_playlist_command(text, device_id)
+        # 模式1: 播放列表 - 优先从所有播单的voice_keywords中匹配
+        playlist_result = await VoiceCommandService._try_match_playlist(text, device_id)
+        if playlist_result:
+            return playlist_result
 
         # 模式2: 排行榜播放 - 包含"榜"或"排行"
         if re.search(r"(榜|排行)", text):
@@ -89,8 +90,65 @@ class VoiceCommandService:
         return await VoiceCommandService._relay_raw_command(text, device_id)
 
     @staticmethod
+    async def _try_match_playlist(text: str, device_id: str | None) -> dict | None:
+        """尝试匹配播放列表（不抛出异常）
+        
+        优先从所有播单的voice_keywords中匹配，匹配到则返回结果，
+        匹配不到返回None进入下一步
+        
+        Args:
+            text: 命令文本
+            device_id: 设备ID
+            
+        Returns:
+            执行结果或None（未匹配到）
+        """
+        try:
+            # 加载播放列表索引
+            index = PlaylistStorage.load_index()
+            matched_playlist_id = None
+
+            # 优先从所有播单的voice_keywords中匹配
+            for pid, playlist_idx in index.items():
+                for vk in playlist_idx.voice_keywords:
+                    if vk.lower() in text.lower():
+                        matched_playlist_id = pid
+                        _log.info("Matched playlist by voice_keyword: %r -> %s", vk, pid)
+                        break
+                if matched_playlist_id:
+                    break
+
+            # 如果没有匹配到，返回None进入下一步
+            if not matched_playlist_id:
+                _log.debug("No playlist matched by voice_keywords for text=%r", text)
+                return None
+
+            # 通过 playlist_service 播放
+            result = await PlaylistService.play_playlist(
+                matched_playlist_id,
+                PlayPlaylistRequest(device_id=device_id, start_index=0, announce=True)
+            )
+
+            _log.info(
+                "VoiceCommand: playing playlist %r for device %s",
+                result.get("playlist"),
+                device_id,
+            )
+
+            return {
+                "action": "play_playlist",
+                "playlist_id": matched_playlist_id,
+                "device_id": device_id,
+                "result": result,
+            }
+
+        except Exception as e:
+            _log.error("Failed to match/play playlist: %s", e, exc_info=True)
+            return None
+
+    @staticmethod
     async def _handle_playlist_command(text: str, device_id: str | None) -> dict:
-        """处理播放列表命令
+        """处理播放列表命令（按名称匹配，作为后备方案）
         
         Args:
             text: 命令文本
@@ -99,34 +157,27 @@ class VoiceCommandService:
         Returns:
             执行结果
         """
-        _log.info("VoiceCommand: playlist intent detected for text=%r", text)
+        _log.info("VoiceCommand: trying playlist name match for text=%r", text)
         try:
             # 从命令中提取播放列表名称/关键词
             playlist_keyword = text
             playlist_keyword = re.sub(r"(播单|列表|有声书|播客)\s*$", "", playlist_keyword).strip()
 
-            # 加载播放列表并查找匹配项
+            # 加载播放列表并按名称查找匹配项
             index = PlaylistStorage.load_index()
             matched_playlist_id = None
 
-            # 尝试按名称或语音关键词匹配
             for pid, playlist_idx in index.items():
                 # 检查播放列表名称是否包含关键词
                 if playlist_keyword.lower() in playlist_idx.name.lower():
                     matched_playlist_id = pid
-                    break
-                # 检查语音关键词
-                for vk in playlist_idx.voice_keywords:
-                    if vk.lower() in text.lower():
-                        matched_playlist_id = pid
-                        break
-                if matched_playlist_id:
+                    _log.info("Matched playlist by name: %r -> %s", playlist_keyword, pid)
                     break
 
             if not matched_playlist_id:
                 raise HTTPException(
                     status_code=404,
-                    detail=f"找不到匹配的播单: {playlist_keyword}",
+                    detail=f"找不到匹配的播单",
                 )
 
             # 通过 playlist_service 播放

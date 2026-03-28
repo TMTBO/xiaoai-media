@@ -54,6 +54,10 @@ class PlaybackMonitor:
         # device_id -> int
         self._paused_count: Dict[str, int] = {}
         
+        # 记录因长时间暂停而停止监控的设备
+        # device_id -> bool
+        self._paused_stopped: Set[str] = set()
+        
         # SSE 状态变化回调
         # 当状态变化时，会调用所有注册的回调函数
         self._status_callbacks: Set[StatusChangeCallback] = set()
@@ -240,6 +244,10 @@ class PlaybackMonitor:
                     f"current_playlist_{device_id}"
                 )
                 
+                # 如果设备已因长时间暂停而停止监控，跳过
+                if device_id in self._paused_stopped:
+                    continue
+                
                 # 检查设备上次的播放状态
                 last_status = self._last_status.get(device_id, {})
                 last_play_status = last_status.get("status", "stopped")
@@ -327,6 +335,8 @@ class PlaybackMonitor:
                         self._paused_count[device_id],
                         self._paused_count[device_id] * self.poll_interval
                     )
+                    # 标记该设备已停止监控
+                    self._paused_stopped.add(device_id)
                     # 清除该设备的监控状态，但保留播放列表信息
                     # 这样用户恢复播放时，播放列表信息仍然存在
                     if device_id in self._last_status:
@@ -345,9 +355,12 @@ class PlaybackMonitor:
                         duration,
                     )
             else:
-                # 如果不是暂停状态，重置暂停计数
+                # 如果不是暂停状态，重置暂停计数和停止监控标记
                 if device_id in self._paused_count:
                     self._paused_count[device_id] = 0
+                if device_id in self._paused_stopped:
+                    self._paused_stopped.discard(device_id)
+                    _log.info("设备 %s 恢复播放，重新开始监控", device_id)
                 
                 _log.debug(
                     "设备 %s 播放状态: status=%s(%d), audio_id=%s, position=%d/%d, media_type=%d",
