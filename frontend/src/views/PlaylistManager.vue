@@ -19,7 +19,11 @@
 
             <el-table :data="playlists" v-loading="playlistsLoading" style="width: 100%" empty-text="暂无播单，点击上方按钮创建新播单">
                 <el-table-column prop="name" label="播单名称" min-width="150" />
-                <el-table-column prop="type" label="类型" width="120" />
+                <el-table-column label="类型" width="120">
+                    <template #default="{ row }">
+                        {{ getPlaylistTypeName(row.type) }}
+                    </template>
+                </el-table-column>
                 <el-table-column label="项目数" width="100">
                     <template #default="{ row }">
                         {{ row.item_count }}
@@ -469,6 +473,19 @@ function getPlayModeName(mode: string): string {
         random: '随机播放',
     }
     return modeMap[mode] || mode
+}
+
+// 获取播单类型名称
+function getPlaylistTypeName(type: string): string {
+    const typeMap: Record<string, string> = {
+        music: '音乐',
+        chart: '音乐',  // chart 类型也显示为音乐
+        audiobook: '有声书',
+        podcast: '播客',
+        radio_drama: '广播剧',
+        other: '其他',
+    }
+    return typeMap[type] || type || '其他'
 }
 
 // 页面加载时
