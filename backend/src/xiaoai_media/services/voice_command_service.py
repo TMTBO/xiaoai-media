@@ -8,6 +8,7 @@ from __future__ import annotations
 import logging
 import re
 from datetime import datetime
+from typing import Any
 
 from fastapi import HTTPException
 
@@ -24,6 +25,35 @@ from .playlist_models import (
 )
 
 _log = logging.getLogger(__name__)
+
+
+def _parse_duration(duration_value: Any) -> int:
+    """解析duration字段，支持整数和时间字符串格式
+    
+    Args:
+        duration_value: duration值，可能是整数（秒）或字符串（如 "04:00"）
+        
+    Returns:
+        duration的秒数（整数）
+    """
+    if isinstance(duration_value, int):
+        return duration_value
+    
+    if isinstance(duration_value, str):
+        # 尝试解析 "MM:SS" 或 "HH:MM:SS" 格式
+        parts = duration_value.split(":")
+        try:
+            if len(parts) == 2:  # MM:SS
+                minutes, seconds = int(parts[0]), int(parts[1])
+                return minutes * 60 + seconds
+            elif len(parts) == 3:  # HH:MM:SS
+                hours, minutes, seconds = int(parts[0]), int(parts[1]), int(parts[2])
+                return hours * 3600 + minutes * 60 + seconds
+        except (ValueError, IndexError):
+            pass
+    
+    # 默认返回0
+    return 0
 
 
 class VoiceCommandService:
@@ -123,10 +153,14 @@ class VoiceCommandService:
                 _log.debug("No playlist matched by voice_keywords for text=%r", text)
                 return None
 
-            # 通过 playlist_service 播放
+            # 加载播单获取current_index
+            playlist = PlaylistStorage.load_playlist(matched_playlist_id)
+            start_index = playlist.current_index if playlist else 0
+
+            # 通过 playlist_service 播放（从current_index开始）
             result = await PlaylistService.play_playlist(
                 matched_playlist_id,
-                PlayPlaylistRequest(device_id=device_id, start_index=0, announce=True)
+                PlayPlaylistRequest(device_id=device_id, start_index=start_index, announce=True)
             )
 
             _log.info(
@@ -275,9 +309,9 @@ class VoiceCommandService:
                             album=s.get("meta", {}).get("albumName", ""),
                             audio_id=str(s.get("id", "")),
                             url=None,  # 需要动态获取
-                            duration=s.get("interval", 0),
+                            duration=_parse_duration(s.get("interval", 0)),
                             cover_url=s.get("meta", {}).get("picUrl", ""),
-                            custom_params={"platform": plat, "song_id": str(s.get("id", ""))},
+                            custom_params={"type": "music", "platform": plat, "song_id": str(s.get("id", ""))},
                         )
                     )
                 except Exception as e:
@@ -356,9 +390,9 @@ class VoiceCommandService:
                             album=s.get("meta", {}).get("albumName", ""),
                             audio_id=str(s.get("id", "")),
                             url=None,  # 需要动态获取
-                            duration=s.get("interval", 0),
+                            duration=_parse_duration(s.get("interval", 0)),
                             cover_url=s.get("meta", {}).get("picUrl", ""),
-                            custom_params={"platform": plat, "song_id": str(s.get("id", ""))},
+                            custom_params={"type": "music", "platform": plat, "song_id": str(s.get("id", ""))},
                         )
                     )
                 except Exception as e:

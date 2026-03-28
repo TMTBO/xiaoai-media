@@ -303,11 +303,11 @@ class PlaylistService:
         play_url = await PlaylistService.get_item_url(item)
 
         _log.info(
-            "Playing playlist item: %s - %s (url=%s)",
+            "Playing playlist item: %s - %s",
             playlist.name,
             item.title,
-            play_url[:100],
         )
+        _log.info("Full play URL: %s", play_url)
 
         # 发送播放命令
         client = get_client_sync()
@@ -316,8 +316,13 @@ class PlaylistService:
             announce_text = f"正在播放{playlist.name}，{item.title}"
             if item.artist:
                 announce_text += f"，{item.artist}"
-            await client.text_to_speech(announce_text, req.device_id)
-            await asyncio.sleep(1)  # 等待播报完成
+            try:
+                await client.text_to_speech(announce_text, req.device_id)
+                # 增加等待时间，确保TTS播报完全结束
+                await asyncio.sleep(2.5)
+                _log.info("TTS播报完成，等待2.5秒后开始播放")
+            except Exception as e:
+                _log.warning("TTS播报失败，跳过播报直接播放: %s", e)
 
         # 直接使用 play_url 播放
         result = await client.play_url(play_url, req.device_id, _type=1)

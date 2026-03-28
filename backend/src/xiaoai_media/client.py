@@ -475,6 +475,8 @@ class XiaoAiClient:
             device_id: Target device ID
             _type: Play type (1=MUSIC with light on, 2=normal)
         """
+        import asyncio
+        
         assert self._na_service is not None
         did = await self._resolve_device_id(device_id)
         devices = await self.list_devices()
@@ -493,6 +495,17 @@ class XiaoAiClient:
             len(url),
         )
         _log.debug("Full URL: %s", url)
+        
+        # 验证URL可访问性（仅对代理URL进行检查）
+        if '/api/proxy/stream' in url:
+            try:
+                import aiohttp
+                async with aiohttp.ClientSession() as session:
+                    async with session.head(url, timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                        if resp.status != 200:
+                            _log.warning("Proxy URL returned status %d, may cause playback issues", resp.status)
+            except Exception as e:
+                _log.warning("Failed to verify proxy URL accessibility: %s", e)
 
         try:
             # Ensure device hardware mapping is initialized
@@ -523,9 +536,38 @@ class XiaoAiClient:
                 audio_id, cp_id
             )
 
-            result = await self._na_service.play_by_music_url(
-                did, url, _type, audio_id, cp_id
-            )
+            # 添加重试机制处理超时问题
+            max_retries = 2
+            retry_delay = 1.5
+            last_error = None
+            
+            for attempt in range(max_retries + 1):
+                try:
+                    if attempt > 0:
+                        _log.info("Retry attempt %d/%d after %s seconds", attempt, max_retries, retry_delay)
+                        await asyncio.sleep(retry_delay)
+                    
+                    result = await self._na_service.play_by_music_url(
+                        did, url, _type, audio_id, cp_id
+                    )
+                    # 成功则跳出循环
+                    break
+                except Exception as e:
+                    last_error = e
+                    error_msg = str(e)
+                    # 只对超时错误进行重试
+                    if "3012" in error_msg or "超时" in error_msg:
+                        if attempt < max_retries:
+                            _log.warning("Play command timeout (attempt %d/%d), will retry: %s", 
+                                       attempt + 1, max_retries + 1, e)
+                            continue
+                    # 其他错误直接抛出
+                    raise
+            
+            # 如果所有重试都失败，抛出最后一个错误
+            if last_error and attempt == max_retries:
+                _log.error("All retry attempts failed")
+                raise last_error
             # _log.info("MiService: play_by_music_url result: %s", result)
 
             # Check if the result indicates success
