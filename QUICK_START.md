@@ -1,5 +1,9 @@
 # 快速开始
 
+<div align="center">
+  <img src="logo.svg" alt="XiaoAI Media Logo" width="120" />
+</div>
+
 ## 开发环境
 
 ### 1. 安装依赖

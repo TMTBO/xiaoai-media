@@ -1,7 +1,10 @@
 <template>
   <el-container class="app-layout">
     <el-aside width="200px" class="aside">
-      <div class="logo">🎵 XiaoAI Media</div>
+      <div class="logo">
+        <img src="/logo.svg" alt="XiaoAI Media Logo" />
+        <span>XiaoAI Media</span>
+      </div>
       <el-menu :default-active="$route.path" router>
         <el-menu-item index="/devices">
           <el-icon>
@@ -111,6 +114,14 @@ body,
   font-weight: bold;
   color: #ffffff;
   border-bottom: 1px solid #2e4060;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.aside .logo img {
+  width: 32px;
+  height: 32px;
 }
 
 .aside .el-menu {

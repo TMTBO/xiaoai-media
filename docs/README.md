@@ -1,5 +1,9 @@
 # XiaoAI Media 文档中心
 
+<div align="center">
+  <img src="logo.svg" alt="XiaoAI Media Logo" width="120" />
+</div>
+
 欢迎使用 XiaoAI Media！这里是完整的文档索引。
 
 ---

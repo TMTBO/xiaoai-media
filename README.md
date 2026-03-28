@@ -1,6 +1,9 @@
 # XiaoAI Media
 
-小爱音箱媒体控制系统 - 让你的小爱音箱更智能
+<div align="center">
+  <img src="logo.svg" alt="XiaoAI Media Logo" width="150" />
+  <p><strong>小爱音箱媒体控制系统 - 让你的小爱音箱更智能</strong></p>
+</div>
 
 ---
 
