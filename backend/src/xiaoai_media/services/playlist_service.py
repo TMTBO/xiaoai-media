@@ -180,6 +180,14 @@ class PlaylistService:
     @staticmethod
     def create_playlist(req: CreatePlaylistRequest) -> Playlist:
         """创建新播单"""
+        # 检查是否已存在同名播单
+        index = PlaylistStorage.load_index()
+        for playlist_idx in index.values():
+            if playlist_idx.name == req.name:
+                _log.info("Playlist with name '%s' already exists (id=%s), skipping creation", req.name, playlist_idx.id)
+                existing_playlist = PlaylistStorage.load_playlist(playlist_idx.id)
+                return existing_playlist
+        
         playlist_id = PlaylistService.generate_playlist_id(req.name)
         now = datetime.now().isoformat()
 
