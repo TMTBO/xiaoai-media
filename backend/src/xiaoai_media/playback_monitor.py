@@ -268,8 +268,10 @@ class PlaybackMonitor:
                     continue
                 
                 # 检查该设备是否有正在播放的播单
-                current_playlist_id = self._state_service.get(
-                    f"current_playlist_{device_id}"
+                # 优先检查设备专属的播单，如果没有则检查默认播单
+                current_playlist_id = (
+                    self._state_service.get(f"current_playlist_{device_id}") or
+                    self._state_service.get("current_playlist_default")
                 )
                 
                 # 如果设备已因长时间暂停而停止监控，跳过
