@@ -5,34 +5,65 @@
   <p><strong>小爱音箱媒体控制系统 - 让你的小爱音箱更智能</strong></p>
 </div>
 
+一个功能强大的小米/小爱音箱控制系统，提供 Web 管理界面和 REST API，支持音乐播放、播放列表管理、定时任务、语音命令等功能。
+
+[![GitHub stars](https://img.shields.io/github/stars/tmtbo/xiaoai-media?style=social)](https://github.com/tmtbo/xiaoai-media)
+[![Docker Pulls](https://img.shields.io/docker/pulls/thrillerone/xiaoai-media)](https://hub.docker.com/r/thrillerone/xiaoai-media)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 ---
 
 ## ✨ 功能特性
 
-- 🎵 音乐播放控制
-- 🔊 音量控制
-- 💬 TTS 文本转语音
-- 🎤 语音命令执行
-- 📱 设备管理
-- 🎧 对话监听 - 自动拦截音箱播放指令
-- 📋 播放列表管理
-- 📁 批量导入 - 从目录批量导入音频文件
+### 核心功能
+- 🎵 **音乐播放** - 搜索和播放音乐，支持多平台（QQ音乐、网易云等）
+- 📋 **播放列表** - 创建和管理播放列表，支持语音命令播放
+- 📁 **批量导入** - 从目录批量导入音频文件，支持自然排序
+- ⏰ **定时任务** - 定时播放音乐、播放列表，定时提醒
+- 🎤 **语音命令** - 执行自定义语音命令，支持智能解析
+
+### 控制功能
+- 🔊 **音量控制** - 调节设备音量
+- 💬 **TTS 播报** - 文本转语音播报
+- 🎧 **对话监听** - 自动拦截和处理音箱播放指令
+- 📱 **设备管理** - 管理多个小爱音箱设备
+
+### 管理界面
+- 🖥️ **Web 界面** - 现代化的 Vue 3 管理界面
+- 📊 **实时状态** - 实时显示设备状态和播放信息
+- 🎨 **响应式设计** - 支持桌面和移动设备
 
 ---
 
 ## 🚀 快速开始
 
-### Docker 部署（推荐）
+### 方式一：Docker 部署（推荐）
 
-#### 方式 1：使用预构建镜像
+使用 Docker Compose 一键启动：
 
 ```bash
-# 1. 创建数据目录和配置文件
+# 1. 克隆项目
+git clone https://github.com/tmtbo/xiaoai-media.git
+cd xiaoai-media
+
+# 2. 创建配置文件
 mkdir -p ./data
 cp user_config_template.py ./data/user_config.py
-vim ./data/user_config.py  # 编辑配置
+cp music_provider_template.py ./data/music_provider.py
 
-# 2. 拉取并运行镜像
+# 3. 编辑配置（填入小米账号信息）
+vim ./data/user_config.py
+
+# 4. 启动服务
+docker-compose up -d
+
+# 5. 访问管理界面
+# 浏览器打开 http://localhost:8000
+```
+
+也可以直接使用预构建镜像：
+
+```bash
 docker run -d \
   --name xiaoai-media \
   -p 8000:8000 \
@@ -44,34 +75,29 @@ docker run -d \
 - `ghcr.io/tmtbo/xiaoai-media:latest` (GitHub Container Registry)
 - `thrillerone/xiaoai-media:latest` (Docker Hub)
 
-#### 方式 2：使用 Docker Compose
-
-```bash
-# 1. 创建数据目录和配置文件
-mkdir -p ./data
-cp user_config_template.py ./data/user_config.py
-vim ./data/user_config.py  # 编辑配置
-
-# 2. 启动服务
-docker-compose up -d
-```
-
-访问 http://localhost:8000 即可使用。
-
 详见：[Docker 部署指南](docs/deployment/DOCKER_GUIDE.md)
 
-### 本地开发
+### 方式二：本地开发
 
 ```bash
-# 1. 安装依赖
+# 1. 克隆项目
+git clone https://github.com/tmtbo/xiaoai-media.git
+cd xiaoai-media
+
+# 2. 安装依赖
 make install
 
-# 2. 配置服务
+# 3. 配置服务
 cp user_config_template.py user_config.py
+cp music_provider_template.py music_provider.py
 vim user_config.py  # 编辑配置
 
-# 3. 启动服务
+# 4. 启动服务
 make dev
+
+# 5. 访问管理界面
+# 后端：http://localhost:8000
+# 前端：http://localhost:5173
 ```
 
 详见：[快速开始指南](QUICK_START.md)
@@ -80,30 +106,52 @@ make dev
 
 ## ⚙️ 配置说明
 
-### 必填配置
+### 基础配置
+
+在 `user_config.py` 中配置小米账号信息：
 
 ```python
-# user_config.py
-MI_USER = "你的小米账号"
-MI_PASS = "你的密码"
-MI_DID = "设备ID"  # 可选
+# 小米账号（必填）
+MI_USER = "your_account@example.com"
+MI_PASS = "your_password"
+
+# 默认设备ID（可选，不填则使用第一个设备）
+MI_DID = "123456789"
+
+# 本服务地址（必填，必须使用音箱可访问的局域网 IP）
+SERVER_BASE_URL = "http://192.168.1.100:8000"
 ```
 
-### 可选配置
+### 音乐服务配置
+
+在 `music_provider.py` 中配置音乐 API：
 
 ```python
-# 音乐 API 地址
+# 音乐 API 地址（如使用 NeteaseCloudMusicApi）
 MUSIC_API_BASE_URL = "http://localhost:5050"
 
-# 本服务地址（必须使用音箱可访问的局域网 IP）
-SERVER_BASE_URL = "http://192.168.1.100:8000"
+# 或使用其他音乐服务
+# MUSIC_API_BASE_URL = "http://your-music-api.com"
+```
 
+### 高级配置
+
+```python
 # 唤醒词配置
 WAKE_WORDS = ["小爱", "播放"]
 ENABLE_WAKE_WORD_FILTER = True
+
+# 日志配置
+LOG_LEVEL = "INFO"
+VERBOSE_PLAYBACK_LOG = False
+
+# 自定义音频 URL 获取（可选）
+def get_audio_url(audio_id: str, custom_params: dict = None) -> str:
+    """自定义音频 URL 获取逻辑"""
+    return f"http://your-music-api.com/song/{audio_id}"
 ```
 
-详见：[配置指南](docs/config/README.md)
+详见：[配置指南](docs/config/README.md) | [用户配置详解](docs/config/USER_CONFIG_GUIDE.md)
 
 ---
 
@@ -133,98 +181,174 @@ $HOME/
 
 ---
 
-## 📚 文档
+## 📚 文档导航
 
-### 核心文档
+### 🚀 快速上手
+- [入门指南](docs/GETTING_STARTED.md) - 快速了解和开始使用
 - [快速开始](QUICK_START.md) - 5 分钟快速上手
-- [文档中心](docs/README.md) - 完整文档索引
-- [配置指南](docs/config/README.md) - 配置文件详解
-- [项目结构](docs/STRUCTURE.md) - 代码结构说明
-
-### 功能文档
-- [播放列表管理](docs/playlist/README.md) - 播放列表功能
-- [批量导入功能](docs/playlist/README_BATCH_IMPORT.md) - 从目录批量导入音频文件 ⭐
-- [对话监听](docs/conversation/README.md) - 对话监听功能
-- [TTS 语音](docs/tts/README.md) - 文字转语音
-- [音乐播放](docs/playback/README.md) - 音乐播放功能
-
-### 部署文档
+- [用户使用指南](docs/USER_GUIDE.md) - 完整使用指南
 - [Docker 部署](docs/deployment/DOCKER_GUIDE.md) - Docker 完整指南
-- [开发环境](docs/config/DEV_ENVIRONMENT.md) - 本地开发配置
+- [配置指南](docs/config/README.md) - 配置文件详解
 
-### 开发文档
-- [API 参考](docs/api/README.md) - REST API 文档
+### 📖 功能文档
+- [功能特性详解](docs/FEATURES.md) - 所有功能的详细说明
+- [播放列表管理](docs/playlist/README.md) - 创建和管理播放列表
+- [批量导入功能](docs/playlist/README_BATCH_IMPORT.md) - 从目录批量导入音频文件
+- [定时任务](docs/scheduler/README.md) - 定时播放和提醒功能
+- [对话监听](docs/conversation/README.md) - 自动拦截播放指令
+- [TTS 语音](docs/tts/README.md) - 文字转语音播报
+- [音乐播放](docs/playback/README.md) - 音乐搜索和播放
+
+### 💻 开发文档
+- [API 参考](docs/api/README.md) - REST API 完整文档
+- [项目结构](docs/STRUCTURE.md) - 代码结构说明
+- [服务层架构](backend/src/xiaoai_media/services/README.md) - 服务层设计
+- [前端开发](docs/frontend/README.md) - 前端开发文档
+- [重构文档](docs/refactor/README.md) - 架构重构说明
+
+### 🔄 升级指南
 - [迁移指南](docs/migration/README.md) - 版本升级说明
-- [重构总结](REFACTOR_SUMMARY.md) - 架构重构说明 ✨
-- [重构文档](docs/refactor/README.md) - 详细重构文档
+- [更新日志](CHANGELOG.md) - 版本更新记录
+
+### 📑 完整索引
+- [文档中心](docs/README.md) - 所有文档的完整索引
+- [文档索引表](docs/INDEX.md) - 文档快速查找表
 
 ---
 
 ## 🔌 API 示例
 
-### TTS 播报
+### 基础控制
+
 ```bash
-POST /api/tts
-{
-  "text": "您好",
-  "device_id": "xxx"
-}
+# TTS 播报
+curl -X POST http://localhost:8000/api/tts \
+  -H "Content-Type: application/json" \
+  -d '{"text": "您好", "device_id": "xxx"}'
+
+# 执行语音命令
+curl -X POST http://localhost:8000/api/command \
+  -H "Content-Type: application/json" \
+  -d '{"text": "播放周杰伦的歌", "device_id": "xxx"}'
+
+# 音量控制
+curl -X POST http://localhost:8000/api/volume \
+  -H "Content-Type: application/json" \
+  -d '{"volume": 50, "device_id": "xxx"}'
+
+# 获取设备列表
+curl http://localhost:8000/api/devices
 ```
 
-### 执行命令
+### 播放列表
+
 ```bash
-POST /api/command
-{
-  "text": "播放音乐",
-  "device_id": "xxx",
-  "silent": false
-}
+# 创建播放列表
+curl -X POST http://localhost:8000/api/playlists \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "我的音乐",
+    "type": "music",
+    "voice_keywords": ["音乐", "歌曲"]
+  }'
+
+# 播放播放列表
+curl -X POST http://localhost:8000/api/playlists/{id}/play \
+  -H "Content-Type: application/json" \
+  -d '{"device_id": "xxx", "start_index": 0}'
 ```
 
-### 音量控制
+### 定时任务
+
 ```bash
-POST /api/volume
-{
-  "volume": 50,
-  "device_id": "xxx"
-}
+# 创建定时播放任务
+curl -X POST http://localhost:8000/api/scheduler/quick/play-music \
+  -H "Content-Type: application/json" \
+  -d '{
+    "song_name": "晴天",
+    "artist": "周杰伦",
+    "cron_expression": "0 7 * * *"
+  }'
+
+# 创建延迟提醒
+curl -X POST http://localhost:8000/api/scheduler/quick/reminder \
+  -H "Content-Type: application/json" \
+  -d '{"message": "该喝水了", "delay_minutes": 30}'
 ```
 
-### 设备列表
-```bash
-GET /api/devices
-```
-
-详见：[API 文档](docs/api/README.md)
+详见：[API 完整文档](docs/api/README.md)
 
 ---
 
 ## 🛠️ 技术栈
 
 ### 后端
-- Python 3.11+
-- FastAPI
-- SQLite
-- aiohttp
+- **Python 3.11+** - 现代 Python 特性
+- **FastAPI** - 高性能 Web 框架
+- **SQLite** - 轻量级数据库
+- **aiohttp** - 异步 HTTP 客户端
+- **APScheduler** - 定时任务调度
 
 ### 前端
-- Vue 3
-- TypeScript
-- Vite
-- Element Plus
+- **Vue 3** - 渐进式 JavaScript 框架
+- **TypeScript** - 类型安全
+- **Vite** - 快速构建工具
+- **Element Plus** - UI 组件库
+- **Vue Router** - 路由管理
 
 ### 部署
-- Docker
-- Docker Compose
+- **Docker** - 容器化部署
+- **Docker Compose** - 多容器编排
+
+### 架构设计
+- **分层架构** - 路由层、服务层、数据层分离
+- **服务化设计** - 可复用的服务组件
+- **RESTful API** - 标准化接口设计
+
+详见：[项目结构](docs/STRUCTURE.md) | [服务层架构](backend/src/xiaoai_media/services/README.md)
 
 ---
 
 ## 📱 支持的设备
 
-支持所有小米/小爱音箱系列：
+支持所有小米/小爱音箱系列设备：
+
 - 小米智能音箱 Pro (OH2P)
-- 小爱音箱系列 (LX06, LX01, LX04)
-- Redmi 小爱音箱系列 (X10A, X6A)
+- 小米智能音箱 (LX06)
+- 小爱音箱 Play (LX01)
+- 小爱音箱 mini (LX04)
+- Redmi 小爱音箱 Play (X10A)
+- Redmi 小爱音箱 (X6A)
+- 其他小米生态链音箱设备
+
+通过 MiService 协议与设备通信，理论上支持所有小米 IoT 音箱设备。
+
+---
+
+## 💡 使用场景
+
+### 场景 1：智能音乐播放
+创建多个播放列表（音乐、有声书、播客等），通过语音命令快速切换：
+- "小爱，播放音乐播单"
+- "小爱，播放有声书"
+
+### 场景 2：定时播放
+设置定时任务，让音箱在指定时间自动播放：
+- 每天早上 7 点播放起床音乐
+- 工作日晚上 8 点播放放松音乐
+- 每 2 小时提醒喝水
+
+### 场景 3：批量导入音频
+从本地目录批量导入音频文件，自动创建播放列表：
+- 导入有声书章节（支持自然排序）
+- 导入播客节目
+- 导入音乐专辑
+
+### 场景 4：自定义音频源
+通过 `get_audio_url()` 函数集成任意音频源：
+- 本地 NAS 音乐库
+- 自建音乐服务
+- 第三方音频平台
 
 ---
 
@@ -252,11 +376,24 @@ docker pull thrillerone/xiaoai-media:latest
 
 ---
 
+## 🤝 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+在提交 PR 之前，请确保：
+- 代码通过类型检查和测试
+- 遵循项目的代码风格
+- 更新相关文档
+
+详见：[贡献指南](docs/CONTRIBUTING.md)
+
+---
+
 ## 🔗 相关链接
 
 - [GitHub 仓库](https://github.com/tmtbo/xiaoai-media)
-- [更新日志](CHANGELOG.md)
 - [问题反馈](https://github.com/tmtbo/xiaoai-media/issues)
+- [更新日志](CHANGELOG.md)
 - [MiService Fork](https://github.com/yihong0618/MiService)
 
 ---
@@ -264,3 +401,9 @@ docker pull thrillerone/xiaoai-media:latest
 ## 📄 许可证
 
 MIT License
+
+---
+
+## ⭐ Star History
+
+如果这个项目对你有帮助，欢迎给个 Star！

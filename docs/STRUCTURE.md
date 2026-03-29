@@ -2,7 +2,7 @@
 
 XiaoAI Media 项目的目录结构说明。
 
-> **最新更新** ✨: 项目已完成架构重构，采用分层架构设计。详见 [重构总览](../REFACTOR_SUMMARY.md)
+> **最新更新** ✨: 项目已完成架构重构，采用分层架构设计。详见 [重构总览](refactor/REFACTOR_SUMMARY.md)
 
 ---
 
@@ -427,7 +427,7 @@ async def search_music(query: str):
 - [Docker 部署](deployment/DOCKER_GUIDE.md)
 
 ### 架构文档 ✨
-- [重构总览](../REFACTOR_SUMMARY.md)
+- [重构总览](refactor/REFACTOR_SUMMARY.md)
 - [服务层架构](../backend/src/xiaoai_media/services/README.md)
 - [API重构文档](refactor/API_SERVICES_REFACTOR.md)
 - [服务层快速参考](refactor/SERVICES_QUICK_REFERENCE.md)
