@@ -155,11 +155,18 @@ app.include_router(state.router, prefix="/api")
 # Serve frontend static files in production (built by Docker)
 _static_dir = Path(__file__).resolve().parents[4] / "static"
 if _static_dir.is_dir():
+    # Mount assets directory for JS/CSS bundles
     app.mount(
         "/assets", StaticFiles(directory=str(_static_dir / "assets")), name="assets"
     )
 
     @app.get("/{full_path:path}", include_in_schema=False)
     async def serve_spa(full_path: str):
+        # Check if the requested file exists in static directory (e.g., logo.svg, favicon.ico)
+        file_path = _static_dir / full_path
+        if file_path.is_file():
+            return FileResponse(str(file_path))
+        
+        # Otherwise, serve the SPA index.html for client-side routing
         index = _static_dir / "index.html"
         return FileResponse(str(index))
