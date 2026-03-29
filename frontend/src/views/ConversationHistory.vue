@@ -35,7 +35,7 @@
         <el-card>
           <div class="conversation-item">
             <div class="question">
-              <el-icon class="icon" color="#409eff">
+              <el-icon class="icon" :color="'var(--color-icon-primary)'">
                 <User />
               </el-icon>
               <div class="content">
@@ -49,7 +49,7 @@
             </div>
             <el-divider />
             <div class="answer" v-if="conv.content">
-              <el-icon class="icon" color="#67c23a">
+              <el-icon class="icon" :color="'var(--color-icon-success)'">
                 <ChatDotRound />
               </el-icon>
               <div class="content">
@@ -58,12 +58,12 @@
               </div>
             </div>
             <div class="answer" v-else>
-              <el-icon class="icon" color="#909399">
+              <el-icon class="icon" :color="'var(--color-icon-secondary)'">
                 <ChatDotRound />
               </el-icon>
               <div class="content">
                 <div class="label">小爱回答</div>
-                <div class="text" style="color: #909399; font-style: italic">暂无回答记录</div>
+                <div class="text" :style="{ color: 'var(--color-text-secondary)', fontStyle: 'italic' }">暂无回答记录</div>
               </div>
             </div>
           </div>
@@ -75,7 +75,7 @@
       <el-icon class="is-loading" :size="40">
         <Loading />
       </el-icon>
-      <div style="margin-top: 16px; color: #909399">加载中...</div>
+      <div :style="{ marginTop: '16px', color: 'var(--color-text-secondary)' }">加载中...</div>
     </div>
   </el-card>
 </template>
@@ -221,19 +221,19 @@ async function fetchConversations(silent = false) {
 
 .label {
   font-size: 12px;
-  color: #909399;
+  color: var(--color-text-secondary);
   margin-bottom: 4px;
 }
 
 .text {
   font-size: 14px;
-  color: #303133;
+  color: var(--color-text-primary);
   line-height: 1.6;
   word-break: break-word;
 }
 
 :deep(.el-timeline-item__timestamp) {
-  color: #909399;
+  color: var(--color-text-secondary);
   font-size: 13px;
 }
 

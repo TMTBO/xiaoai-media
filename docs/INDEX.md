@@ -106,6 +106,7 @@
 | 文档 | 说明 | 路径 |
 |------|------|------|
 | 前端开发总览 | 前端开发文档 | [frontend/README.md](frontend/README.md) |
+| 主题系统 | 主题系统完整文档 | [frontend/THEME_SYSTEM.md](frontend/THEME_SYSTEM.md) ⭐ |
 | 设备选择器更新 | 全局设备选择器 | [frontend/DEVICE_SELECTOR_UPDATE.md](frontend/DEVICE_SELECTOR_UPDATE.md) |
 | 布局规范 | 页面布局一致性 | [frontend/LAYOUT_FIX.md](frontend/LAYOUT_FIX.md) |
 | UI布局对比 | 登录页面布局说明 | [frontend/UI_LAYOUT_COMPARISON.md](frontend/UI_LAYOUT_COMPARISON.md) |
@@ -169,4 +170,4 @@
 
 ---
 
-**最后更新**：2026-03-28
+**最后更新**：2026-03-29

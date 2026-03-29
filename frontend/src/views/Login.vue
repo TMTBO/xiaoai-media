@@ -103,7 +103,7 @@ const handleLogin = async () => {
   align-items: center;
   min-height: 100vh;
   width: 100%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-gradient-start) 0%, var(--color-gradient-end) 100%);
 }
 
 .login-card {
@@ -124,7 +124,7 @@ const handleLogin = async () => {
 
 .logo-section h2 {
   margin: 0;
-  color: #303133;
+  color: var(--color-text-primary);
 }
 
 .default-info {

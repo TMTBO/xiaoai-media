@@ -186,11 +186,11 @@ async function playPrev() {
 
 <style scoped>
 .global-player-bar {
-  background: #ffffff;
-  color: #333;
+  background: var(--color-player-bg);
+  color: var(--color-text-primary);
   padding: 12px 20px;
-  border-bottom: 1px solid #e4e7ed;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  border-bottom: 1px solid var(--color-border-light);
+  box-shadow: var(--color-shadow-sm);
 }
 
 .player-content {
@@ -206,7 +206,7 @@ async function playPrev() {
   height: 48px;
   border-radius: 6px;
   overflow: hidden;
-  background: #f5f7fa;
+  background: var(--color-player-control-bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -221,7 +221,7 @@ async function playPrev() {
 
 .default-cover {
   font-size: 24px;
-  color: #909399;
+  color: var(--color-text-secondary);
 }
 
 .song-info {
@@ -237,12 +237,12 @@ async function playPrev() {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: #303133;
+  color: var(--color-text-primary);
 }
 
 .song-meta {
   font-size: 13px;
-  color: #909399;
+  color: var(--color-text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -264,34 +264,34 @@ async function playPrev() {
   height: 36px;
   padding: 0;
   border: none;
-  background: #f5f7fa;
-  color: #606266;
+  background: var(--color-player-control-bg);
+  color: var(--color-text-regular);
   font-size: 18px;
   transition: all 0.2s;
 }
 
 .control-btn:hover:not(.is-disabled) {
-  background: #e4e7ed;
-  color: #409eff;
+  background: var(--color-player-control-hover-bg);
+  color: var(--color-primary);
   transform: scale(1.05);
 }
 
 .control-btn.is-disabled {
-  background: #f5f7fa;
-  color: #c0c4cc;
+  background: var(--color-button-disabled-bg);
+  color: var(--color-button-disabled-text);
   cursor: not-allowed;
 }
 
 .play-btn {
   width: 42px;
   height: 42px;
-  background: #409eff;
-  color: #ffffff;
+  background: var(--color-primary);
+  color: var(--color-text-white);
   font-size: 20px;
 }
 
 .play-btn:hover {
-  background: #66b1ff;
+  background: var(--color-primary-light);
   transform: scale(1.08);
 }
 
@@ -305,7 +305,7 @@ async function playPrev() {
 
 .time {
   font-size: 12px;
-  color: #909399;
+  color: var(--color-text-secondary);
   min-width: 40px;
   text-align: center;
 }
@@ -315,15 +315,15 @@ async function playPrev() {
 }
 
 .progress-slider :deep(.el-slider__runway) {
-  background: #e4e7ed;
+  background: var(--color-player-progress-bg);
 }
 
 .progress-slider :deep(.el-slider__bar) {
-  background: #409eff;
+  background: var(--color-player-progress-bar);
 }
 
 .progress-slider :deep(.el-slider__button) {
-  border-color: #409eff;
+  border-color: var(--color-player-progress-bar);
 }
 
 .playlist-info {
@@ -331,22 +331,22 @@ async function playPrev() {
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: #909399;
+  color: var(--color-text-secondary);
   flex-shrink: 0;
   padding: 6px 12px;
-  background: #f5f7fa;
+  background: var(--color-player-control-bg);
   border-radius: 16px;
 }
 
 .close-btn {
-  color: #909399;
+  color: var(--color-text-secondary);
   font-size: 16px;
   flex-shrink: 0;
   margin-left: 8px;
 }
 
 .close-btn:hover {
-  color: #606266;
+  color: var(--color-text-regular);
 }
 
 /* 动画效果 */

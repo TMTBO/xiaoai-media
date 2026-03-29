@@ -127,9 +127,9 @@ async function stopPlayback() {
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  background: #ffffff;
-  border-bottom: 1px solid #e4e7ed;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  background: var(--color-bg-primary);
+  border-bottom: 1px solid var(--color-border-light);
+  box-shadow: var(--color-shadow-sm);
 }
 
 .device-info {
@@ -144,12 +144,12 @@ async function stopPlayback() {
   align-items: center;
   gap: 6px;
   font-size: 14px;
-  color: #606266;
+  color: var(--color-text-regular);
 }
 
 .info-item .el-icon {
   font-size: 16px;
-  color: #909399;
+  color: var(--color-text-secondary);
 }
 
 .device-selector {

@@ -380,7 +380,7 @@
           <li><code>0 */2 * * *</code> - 每2小时</li>
           <li><code>0 12 * * 0</code> - 每周日中午12点</li>
         </ul>
-        <div style="margin-top: 10px; color: #909399; font-size: 13px;">
+        <div :style="{ marginTop: '10px', color: 'var(--color-text-secondary)', fontSize: '13px' }">
           💡 提示：执行指令功能支持所有语音命令，如播放音乐、播放列表、搜索、控制等
         </div>
       </el-alert>
@@ -517,7 +517,7 @@
             />
           </el-select>
           <template #extra>
-            <span style="font-size: 12px; color: #909399;">
+            <span :style="{ fontSize: '12px', color: 'var(--color-text-secondary)' }">
               不选择则使用默认设备
             </span>
           </template>
@@ -1085,7 +1085,7 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   font-size: 14px;
-  color: #606266;
+  color: var(--color-text-regular);
 }
 
 .detail-item .label {
@@ -1093,7 +1093,7 @@ onMounted(() => {
 }
 
 .detail-item .value {
-  color: #909399;
+  color: var(--color-text-secondary);
 }
 
 .task-actions {
@@ -1136,10 +1136,10 @@ onMounted(() => {
 
 .cron-help code {
   padding: 2px 6px;
-  background: #f5f7fa;
+  background: var(--color-code-bg);
   border-radius: 3px;
   font-family: 'Courier New', monospace;
-  color: #e6a23c;
+  color: var(--color-code-text);
   font-weight: 500;
 }
 

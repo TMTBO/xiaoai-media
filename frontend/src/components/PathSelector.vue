@@ -16,7 +16,7 @@
                 浏览
             </el-button>
         </div>
-        <div v-if="hint" style="font-size: 12px; color: #909399; margin-top: 4px">
+        <div v-if="hint" :style="{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '4px' }">
             {{ hint }}
         </div>
 
@@ -77,7 +77,7 @@
                         <el-icon><ArrowUp /></el-icon>
                         上级目录
                     </el-button>
-                    <span style="flex: 1; font-size: 14px; color: #606266">
+                    <span :style="{ flex: 1, fontSize: '14px', color: 'var(--color-text-regular)' }">
                         {{ currentPath || '加载中...' }}
                     </span>
                     <el-button 
@@ -115,7 +115,7 @@
                             @click.stop
                             style="margin-right: 8px"
                         />
-                        <el-icon style="margin-right: 8px; font-size: 18px; color: #67c23a">
+                        <el-icon :style="{ marginRight: '8px', fontSize: '18px', color: 'var(--color-success)' }">
                             <Folder />
                         </el-icon>
                         <span 
@@ -126,12 +126,12 @@
                         </span>
                         <el-icon 
                             v-if="dir.is_accessible !== false" 
-                            style="color: #909399; cursor: pointer"
+                            :style="{ color: 'var(--color-text-secondary)', cursor: 'pointer' }"
                             @click="browseSub(dir.path)"
                         >
                             <ArrowRight />
                         </el-icon>
-                        <el-icon v-else style="color: #f56c6c">
+                        <el-icon v-else :style="{ color: 'var(--color-danger)' }">
                             <Lock />
                         </el-icon>
                     </div>
@@ -155,17 +155,25 @@
                             style="margin-right: 8px"
                         />
                         <el-icon 
-                            style="margin-right: 8px; font-size: 18px"
-                            :style="{ color: file.is_audio ? '#409eff' : '#c0c4cc' }"
+                            :style="{ 
+                                marginRight: '8px', 
+                                fontSize: '18px',
+                                color: file.is_audio ? 'var(--color-primary)' : 'var(--color-text-disabled)' 
+                            }"
                         >
                             <Document />
                         </el-icon>
-                        <span style="flex: 1" :style="{ color: file.is_audio ? '' : '#c0c4cc' }">
+                        <span :style="{ 
+                            flex: 1, 
+                            color: file.is_audio ? 'var(--color-text-primary)' : 'var(--color-text-disabled)' 
+                        }">
                             {{ file.name }}
                         </span>
                         <span 
-                            style="font-size: 12px; color: #909399"
-                            :style="{ color: file.is_audio ? '#909399' : '#c0c4cc' }"
+                            :style="{ 
+                                fontSize: '12px', 
+                                color: file.is_audio ? 'var(--color-text-secondary)' : 'var(--color-text-disabled)' 
+                            }"
                         >
                             {{ formatSize(file.size) }}
                         </span>
@@ -180,7 +188,7 @@
 
             <template #footer>
                 <div style="display: flex; justify-content: space-between; align-items: center">
-                    <span style="font-size: 14px; color: #606266">
+                    <span :style="{ fontSize: '14px', color: 'var(--color-text-regular)' }">
                         <span v-if="tempSelectedDirectories.length > 0 && tempSelectedFiles.length > 0">
                             已选择 {{ tempSelectedDirectories.length }} 个目录和 {{ tempSelectedFiles.length }} 个文件
                         </span>
@@ -190,7 +198,7 @@
                         <span v-else-if="tempSelectedFiles.length > 0">
                             已选择 {{ tempSelectedFiles.length }} 个文件
                         </span>
-                        <span v-else style="color: #c0c4cc">
+                        <span v-else :style="{ color: 'var(--color-text-disabled)' }">
                             请选择目录或文件
                         </span>
                     </span>
@@ -496,13 +504,13 @@ watch(showBrowser, (val) => {
     display: flex;
     align-items: center;
     padding: 12px 16px;
-    border-bottom: 1px solid #ebeef5;
+    border-bottom: 1px solid var(--color-border-light);
     cursor: pointer;
     transition: background-color 0.2s;
 }
 
 .item:hover {
-    background-color: #f5f7fa;
+    background-color: var(--color-bg-secondary);
 }
 
 .item-disabled {
@@ -515,7 +523,7 @@ watch(showBrowser, (val) => {
 }
 
 .item-selected {
-    background-color: #ecf5ff;
+    background-color: var(--color-table-row-active-bg);
 }
 
 .directory-item {

@@ -4,6 +4,13 @@ XiaoAI Media 前端相关的开发文档。
 
 ## 📚 文档列表
 
+### 主题系统
+- **[THEME_SYSTEM.md](THEME_SYSTEM.md)** - 主题系统完整文档 ⭐
+  - 浅色/深色/跟随系统三种模式
+  - 65+ 个颜色变量统一管理
+  - Element Plus 组件自动适配
+  - 开发指南和最佳实践
+
 ### UI/UX 改进
 - **[DEVICE_SELECTOR_UPDATE.md](DEVICE_SELECTOR_UPDATE.md)** - 全局设备选择器更新
   - 全局设备选择器组件
@@ -157,6 +164,43 @@ await api.post('/api/music/play', {
 - [项目结构](../STRUCTURE.md) - 整体项目结构
 - [开发环境](../config/DEV_ENVIRONMENT.md) - 开发环境配置
 
+## 🎨 主题系统
+
+前端实现了完整的主题系统，支持浅色、深色和跟随系统三种模式。
+
+### 主要特性
+- ✅ 三种主题模式（浅色/深色/跟随系统）
+- ✅ 65+ 个颜色变量统一管理
+- ✅ 自动检测并跟随系统主题
+- ✅ Element Plus 组件自动适配
+- ✅ 平滑的主题切换动画
+
+### 使用方法
+
+在组件中使用 CSS 变量：
+
+```vue
+<style scoped>
+.my-component {
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-light);
+}
+</style>
+```
+
+在 JavaScript 中使用：
+
+```vue
+<script setup lang="ts">
+import { useTheme } from '@/composables/useTheme'
+
+const { isDark, themeMode, toggleTheme } = useTheme()
+</script>
+```
+
+详见：[主题系统完整文档](THEME_SYSTEM.md)
+
 ---
 
-**最后更新**：2026-03-28
+**最后更新**：2026-03-29

@@ -104,7 +104,7 @@
                     <el-select v-model="playlistForm.voice_keywords" multiple filterable allow-create
                         default-first-option placeholder="输入关键词后按回车添加，例如：音乐、我的歌单" style="width: 100%">
                     </el-select>
-                    <div style="font-size: 12px; color: #909399; margin-top: 4px">
+                    <div :style="{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '4px' }">
                         语音关键词用于语音命令识别，例如："播放音乐播单"
                     </div>
                 </el-form-item>
@@ -177,7 +177,7 @@
                 <el-form-item label="自定义参数">
                     <el-input v-model="customParamsText" type="textarea" :rows="4"
                         placeholder='JSON 格式，例如：{"type": "music", "platform": "tx", "song_id": "123"}' />
-                    <div style="font-size: 12px; color: #909399; margin-top: 4px">
+                    <div :style="{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '4px' }">
                         当音频 URL 为空时，会将此参数传递给 user_config.py 中的 get_audio_url 函数
                     </div>
                 </el-form-item>
@@ -212,7 +212,7 @@
                         <el-checkbox label=".aac">AAC</el-checkbox>
                         <el-checkbox label=".wma">WMA</el-checkbox>
                     </el-checkbox-group>
-                    <div style="font-size: 12px; color: #909399; margin-top: 4px">
+                    <div :style="{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '4px' }">
                         选择要导入的音频文件格式，PathSelector中只会显示选中格式的文件
                     </div>
                 </el-form-item>
@@ -233,7 +233,7 @@
                     <el-checkbox v-model="importForm.recursive">
                         递归扫描子目录
                     </el-checkbox>
-                    <div style="font-size: 12px; color: #909399; margin-top: 4px">
+                    <div :style="{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '4px' }">
                         开启后会扫描所有子目录中的音频文件
                     </div>
                 </el-form-item>
@@ -255,7 +255,7 @@
                         <div>🎵 播单总数：<strong>{{ importResult.playlist_total_items }}</strong> 首</div>
                         <div v-if="importResult.skipped_files && importResult.skipped_files.length > 0" style="margin-top: 8px">
                             <el-divider style="margin: 8px 0" />
-                            <div style="color: #e6a23c">部分文件被跳过：</div>
+                            <div :style="{ color: 'var(--color-warning)' }">部分文件被跳过：</div>
                             <ul style="margin: 4px 0; padding-left: 20px; font-size: 12px">
                                 <li v-for="file in importResult.skipped_files" :key="file">{{ file }}</li>
                             </ul>

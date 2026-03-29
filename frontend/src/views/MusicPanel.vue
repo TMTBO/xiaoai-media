@@ -48,7 +48,7 @@
 
                     <div v-if="searchResults.length"
                         style="margin: 8px 0; display: flex; align-items: center; gap: 8px">
-                        <span style="font-size: 13px; color: #606266">共 {{ searchResults.length }} 首歌曲</span>
+                        <span :style="{ fontSize: '13px', color: 'var(--color-text-regular)' }">共 {{ searchResults.length }} 首歌曲</span>
                         <el-button size="small" :loading="askPlayLoading" @click="handleAskPlay">
                             <el-icon style="margin-right: 4px">
                                 <Bell />
@@ -672,12 +672,12 @@ watch(activeTab, (name) => {
 }
 
 .charts-list::-webkit-scrollbar-thumb {
-    background: #dcdfe6;
+    background: var(--color-scrollbar-thumb);
     border-radius: 3px;
 }
 
 .charts-list::-webkit-scrollbar-thumb:hover {
-    background: #c0c4cc;
+    background: var(--color-scrollbar-thumb-hover);
 }
 
 .chart-item {
@@ -685,8 +685,8 @@ watch(activeTab, (name) => {
     align-items: center;
     gap: 12px;
     padding: 12px;
-    background: #fff;
-    border: 1px solid #e4e7ed;
+    background: var(--color-chart-item-bg);
+    border: 1px solid var(--color-chart-item-border);
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.2s;
@@ -694,7 +694,7 @@ watch(activeTab, (name) => {
 
 .chart-item:hover {
     border-color: var(--el-color-primary);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--color-shadow-md);
 }
 
 .chart-item--active {
@@ -715,8 +715,8 @@ watch(activeTab, (name) => {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #f5f7fa;
-    color: #c0c4cc;
+    background: var(--color-chart-image-error-bg);
+    color: var(--color-chart-image-error-text);
     border-radius: 4px;
 }
 
@@ -724,7 +724,7 @@ watch(activeTab, (name) => {
     flex: 1;
     font-size: 13px;
     line-height: 1.5;
-    color: #303133;
+    color: var(--color-text-primary);
     overflow: hidden;
     text-overflow: ellipsis;
     display: -webkit-box;
@@ -743,8 +743,8 @@ watch(activeTab, (name) => {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #f5f7fa;
-    color: #c0c4cc;
+    background: var(--color-chart-image-error-bg);
+    color: var(--color-chart-image-error-text);
 }
 
 .player-bar {
@@ -771,7 +771,7 @@ watch(activeTab, (name) => {
 
 .song-singer {
     font-size: 13px;
-    color: #606266;
+    color: var(--color-text-regular);
 }
 
 .player-controls {

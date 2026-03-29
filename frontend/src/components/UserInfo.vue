@@ -44,9 +44,9 @@ const handleCommand = (command: string) => {
   display: flex;
   align-items: center;
   padding: 12px 16px;
-  background: #2e4060;
-  border-top: 1px solid #3a5070;
-  color: #c0cfe0;
+  background: var(--color-sidebar-hover);
+  border-top: 1px solid var(--color-sidebar-border);
+  color: var(--color-sidebar-text);
   gap: 12px;
 }
 
@@ -54,11 +54,11 @@ const handleCommand = (command: string) => {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #3a5070;
+  background: var(--color-sidebar-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffffff;
+  color: var(--color-sidebar-active);
 }
 
 .user-details {
@@ -69,7 +69,7 @@ const handleCommand = (command: string) => {
 .username {
   font-size: 14px;
   font-weight: 500;
-  color: #ffffff;
+  color: var(--color-sidebar-active);
   margin-bottom: 4px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -83,10 +83,10 @@ const handleCommand = (command: string) => {
 .more-icon {
   cursor: pointer;
   font-size: 18px;
-  color: #c0cfe0;
+  color: var(--color-sidebar-text);
 }
 
 .more-icon:hover {
-  color: #ffffff;
+  color: var(--color-sidebar-active);
 }
 </style>

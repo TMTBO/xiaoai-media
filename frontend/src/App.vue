@@ -10,6 +10,7 @@
       <div class="logo">
         <img src="/logo.svg" alt="XiaoAI Media Logo" />
         <span>XiaoAI Media</span>
+        <ThemeToggle />
       </div>
       <el-menu :default-active="$route.path" router>
         <el-menu-item index="/devices">
@@ -104,6 +105,7 @@ import {
 import GlobalDeviceSelector from '@/components/GlobalDeviceSelector.vue'
 import GlobalPlayerBar from '@/components/GlobalPlayerBar.vue'
 import UserInfo from '@/components/UserInfo.vue'
+import ThemeToggle from '@/components/ThemeToggle.vue'
 import { useAuth } from '@/composables/useAuth'
 
 const route = useRoute()
@@ -133,7 +135,7 @@ body,
 }
 
 .aside {
-  background: #1d2d44;
+  background: var(--color-sidebar-bg);
   display: flex;
   flex-direction: column;
 }
@@ -142,8 +144,8 @@ body,
   padding: 20px 16px;
   font-size: 16px;
   font-weight: bold;
-  color: #ffffff;
-  border-bottom: 1px solid #2e4060;
+  color: var(--color-sidebar-active);
+  border-bottom: 1px solid var(--color-sidebar-border);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -156,15 +158,15 @@ body,
 
 .aside .el-menu {
   border-right: none;
-  background: #1d2d44;
-  --el-menu-text-color: #c0cfe0;
-  --el-menu-hover-bg-color: #2e4060;
-  --el-menu-active-color: #ffffff;
+  background: var(--color-sidebar-bg);
+  --el-menu-text-color: var(--color-sidebar-text);
+  --el-menu-hover-bg-color: var(--color-sidebar-hover);
+  --el-menu-active-color: var(--color-sidebar-active);
   flex: 1;
 }
 
 .main {
-  background: #f5f7fa;
+  background: var(--color-bg-secondary);
   padding: 0;
   display: flex;
   flex-direction: column;
@@ -174,5 +176,6 @@ body,
   flex: 1;
   overflow-y: auto;
   padding: 20px;
+  background: var(--color-bg-primary);
 }
 </style>

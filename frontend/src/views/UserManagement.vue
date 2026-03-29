@@ -342,7 +342,7 @@ onMounted(() => {
 
 <style scoped>
 .user-management {
-  padding: 20px;
+  /* padding 由 .main-content 提供 */
 }
 
 .card-header {

@@ -1,0 +1,274 @@
+/**
+ * 主题样式文件
+ * 使用 CSS 变量定义颜色，支持深色模式
+ */
+
+:root {
+  /* 主色调 */
+  --color-primary: #409eff;
+  --color-primary-light: #66b1ff;
+  --color-primary-dark: #3a8ee6;
+  --color-success: #67c23a;
+  --color-warning: #e6a23c;
+  --color-danger: #f56c6c;
+  --color-info: #909399;
+
+  /* 文本颜色 */
+  --color-text-primary: #303133;
+  --color-text-regular: #606266;
+  --color-text-secondary: #909399;
+  --color-text-placeholder: #c0c4cc;
+  --color-text-disabled: #c0c4cc;
+  --color-text-white: #ffffff;
+
+  /* 背景颜色 */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f5f7fa;
+  --color-bg-tertiary: #f0f2f5;
+  --color-bg-elevated: #ffffff;
+  --color-bg-overlay: rgba(0, 0, 0, 0.5);
+
+  /* 边框颜色 */
+  --color-border-base: #dcdfe6;
+  --color-border-light: #e4e7ed;
+  --color-border-dark: #c0c4cc;
+
+  /* 侧边栏颜色 */
+  --color-sidebar-bg: #1d2d44;
+  --color-sidebar-border: #2e4060;
+  --color-sidebar-text: #c0cfe0;
+  --color-sidebar-hover: #2e4060;
+  --color-sidebar-active: #ffffff;
+
+  /* 卡片颜色 */
+  --color-card-bg: #ffffff;
+  --color-card-border: #e4e7ed;
+  --color-card-shadow: rgba(0, 0, 0, 0.04);
+
+  /* 按钮颜色 */
+  --color-button-bg: #f5f7fa;
+  --color-button-hover-bg: #e4e7ed;
+  --color-button-disabled-bg: #f5f7fa;
+  --color-button-disabled-text: #c0c4cc;
+
+  /* 输入框颜色 */
+  --color-input-bg: #ffffff;
+  --color-input-border: #dcdfe6;
+  --color-input-focus-border: #409eff;
+
+  /* 表格颜色 */
+  --color-table-header-bg: #f5f7fa;
+  --color-table-row-hover-bg: #f5f7fa;
+  --color-table-row-active-bg: #ecf5ff;
+
+  /* 滚动条颜色 */
+  --color-scrollbar-thumb: #dcdfe6;
+  --color-scrollbar-thumb-hover: #c0c4cc;
+  --color-scrollbar-track: transparent;
+
+  /* 渐变色 */
+  --color-gradient-start: #667eea;
+  --color-gradient-end: #764ba2;
+
+  /* 图标颜色 */
+  --color-icon-primary: #409eff;
+  --color-icon-secondary: #909399;
+  --color-icon-success: #67c23a;
+  --color-icon-warning: #e6a23c;
+  --color-icon-danger: #f56c6c;
+
+  /* 代码/标签颜色 */
+  --color-code-bg: #f5f7fa;
+  --color-code-text: #e6a23c;
+  --color-tag-bg: #f0f2f5;
+
+  /* 播放器颜色 */
+  --color-player-bg: #ffffff;
+  --color-player-control-bg: #f5f7fa;
+  --color-player-control-hover-bg: #e4e7ed;
+  --color-player-progress-bg: #e4e7ed;
+  --color-player-progress-bar: #409eff;
+
+  /* 图表颜色 */
+  --color-chart-item-bg: #ffffff;
+  --color-chart-item-border: #e4e7ed;
+  --color-chart-item-hover-border: #409eff;
+  --color-chart-image-error-bg: #f5f7fa;
+  --color-chart-image-error-text: #c0c4cc;
+
+  /* 阴影 */
+  --color-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.04);
+  --color-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --color-shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+  /* Element Plus 变量覆盖 - 亮色模式 */
+  --el-bg-color: #ffffff;
+  --el-bg-color-page: #f5f7fa;
+  --el-bg-color-overlay: #ffffff;
+  --el-text-color-primary: #303133;
+  --el-text-color-regular: #606266;
+  --el-text-color-secondary: #909399;
+  --el-text-color-placeholder: #c0c4cc;
+  --el-text-color-disabled: #c0c4cc;
+  --el-border-color: #dcdfe6;
+  --el-border-color-light: #e4e7ed;
+  --el-border-color-lighter: #ebeef5;
+  --el-border-color-extra-light: #f2f6fc;
+  --el-border-color-dark: #d4d7de;
+  --el-border-color-darker: #cdd0d6;
+  --el-fill-color: #f0f2f5;
+  --el-fill-color-light: #f5f7fa;
+  --el-fill-color-lighter: #fafafa;
+  --el-fill-color-extra-light: #fafcff;
+  --el-fill-color-dark: #ebedf0;
+  --el-fill-color-darker: #e6e8eb;
+  --el-fill-color-blank: #ffffff;
+}
+
+/* 深色模式 */
+[data-theme='dark'] {
+  /* 主色调 */
+  --color-primary: #409eff;
+  --color-primary-light: #66b1ff;
+  --color-primary-dark: #3a8ee6;
+  --color-success: #67c23a;
+  --color-warning: #e6a23c;
+  --color-danger: #f56c6c;
+  --color-info: #909399;
+
+  /* 文本颜色 */
+  --color-text-primary: #e5e7eb;
+  --color-text-regular: #d1d5db;
+  --color-text-secondary: #9ca3af;
+  --color-text-placeholder: #6b7280;
+  --color-text-disabled: #4b5563;
+  --color-text-white: #ffffff;
+
+  /* 背景颜色 */
+  --color-bg-primary: #1f2937;
+  --color-bg-secondary: #111827;
+  --color-bg-tertiary: #0f172a;
+  --color-bg-elevated: #374151;
+  --color-bg-overlay: rgba(0, 0, 0, 0.7);
+
+  /* 边框颜色 */
+  --color-border-base: #374151;
+  --color-border-light: #4b5563;
+  --color-border-dark: #1f2937;
+
+  /* 侧边栏颜色 */
+  --color-sidebar-bg: #0f172a;
+  --color-sidebar-border: #1e293b;
+  --color-sidebar-text: #94a3b8;
+  --color-sidebar-hover: #1e293b;
+  --color-sidebar-active: #ffffff;
+
+  /* 卡片颜色 */
+  --color-card-bg: #1f2937;
+  --color-card-border: #374151;
+  --color-card-shadow: rgba(0, 0, 0, 0.3);
+
+  /* 按钮颜色 */
+  --color-button-bg: #374151;
+  --color-button-hover-bg: #4b5563;
+  --color-button-disabled-bg: #1f2937;
+  --color-button-disabled-text: #6b7280;
+
+  /* 输入框颜色 */
+  --color-input-bg: #374151;
+  --color-input-border: #4b5563;
+  --color-input-focus-border: #409eff;
+
+  /* 表格颜色 */
+  --color-table-header-bg: #374151;
+  --color-table-row-hover-bg: #374151;
+  --color-table-row-active-bg: #1e3a5f;
+
+  /* 滚动条颜色 */
+  --color-scrollbar-thumb: #4b5563;
+  --color-scrollbar-thumb-hover: #6b7280;
+  --color-scrollbar-track: transparent;
+
+  /* 渐变色 */
+  --color-gradient-start: #4c1d95;
+  --color-gradient-end: #5b21b6;
+
+  /* 图标颜色 */
+  --color-icon-primary: #60a5fa;
+  --color-icon-secondary: #9ca3af;
+  --color-icon-success: #67c23a;
+  --color-icon-warning: #e6a23c;
+  --color-icon-danger: #f56c6c;
+
+  /* 代码/标签颜色 */
+  --color-code-bg: #374151;
+  --color-code-text: #fbbf24;
+  --color-tag-bg: #374151;
+
+  /* 播放器颜色 */
+  --color-player-bg: #1f2937;
+  --color-player-control-bg: #374151;
+  --color-player-control-hover-bg: #4b5563;
+  --color-player-progress-bg: #4b5563;
+  --color-player-progress-bar: #60a5fa;
+
+  /* 图表颜色 */
+  --color-chart-item-bg: #1f2937;
+  --color-chart-item-border: #374151;
+  --color-chart-item-hover-border: #60a5fa;
+  --color-chart-image-error-bg: #374151;
+  --color-chart-image-error-text: #6b7280;
+
+  /* 阴影 */
+  --color-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --color-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --color-shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.5);
+
+  /* Element Plus 变量覆盖 - 暗色模式 */
+  --el-bg-color: #1f2937;
+  --el-bg-color-page: #111827;
+  --el-bg-color-overlay: #1f2937;
+  --el-text-color-primary: #e5e7eb;
+  --el-text-color-regular: #d1d5db;
+  --el-text-color-secondary: #9ca3af;
+  --el-text-color-placeholder: #6b7280;
+  --el-text-color-disabled: #4b5563;
+  --el-border-color: #374151;
+  --el-border-color-light: #4b5563;
+  --el-border-color-lighter: #4b5563;
+  --el-border-color-extra-light: #374151;
+  --el-border-color-dark: #1f2937;
+  --el-border-color-darker: #111827;
+  --el-fill-color: #374151;
+  --el-fill-color-light: #4b5563;
+  --el-fill-color-lighter: #4b5563;
+  --el-fill-color-extra-light: #374151;
+  --el-fill-color-dark: #1f2937;
+  --el-fill-color-darker: #111827;
+  --el-fill-color-blank: #1f2937;
+}
+
+/* 全局样式应用 */
+body {
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-scrollbar-thumb);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-scrollbar-thumb-hover);
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-scrollbar-track);
+}
