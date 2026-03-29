@@ -4,15 +4,6 @@
       <div style="display: flex; justify-content: space-between; align-items: center">
         <span>对话记录</span>
         <div style="display: flex; gap: 8px">
-          <el-select v-model="deviceId" placeholder="选择设备" clearable style="width: 250px"
-            :loading="devicesLoading" no-data-text="暂无设备，请先在配置页填写账号后点击刷新">
-            <el-option v-for="d in devices" :key="d.deviceID" :label="`${d.name} (${d.deviceID})`" :value="d.deviceID" />
-          </el-select>
-          <el-button :loading="devicesLoading" @click="loadDevices">
-            <el-icon>
-              <Refresh />
-            </el-icon>
-          </el-button>
           <el-button type="primary" :loading="loading" @click="fetchConversations">
             <el-icon>
               <Search />
@@ -91,7 +82,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Refresh, Search, User, ChatDotRound, Loading, VideoPlay } from '@element-plus/icons-vue'
+import { Search, User, ChatDotRound, Loading, VideoPlay } from '@element-plus/icons-vue'
 import { api } from '@/api'
 import { useDevices } from '@/composables/useDevices'
 import { ElMessage } from 'element-plus'
@@ -102,7 +93,7 @@ interface Conversation {
   content: string
 }
 
-const { devices, devicesLoading, loadDevices, deviceId } = useDevices()
+const { deviceId } = useDevices()
 const loading = ref(false)
 const error = ref('')
 const conversations = ref<Conversation[]>([])

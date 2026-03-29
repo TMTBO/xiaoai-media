@@ -28,6 +28,8 @@ help:
 	@echo ""
 	@echo "  Utils"
 	@echo "    make list-devices       List connected Xiaomi AI speaker devices"
+	@echo "    make test-config        Test user configuration loading"
+	@echo "    make verify-config      Verify configuration setup"
 	@echo "    make clean              Remove build artifacts and caches"
 	@echo ""
 
@@ -53,10 +55,7 @@ install-frontend:
 .PHONY: backend frontend dev
 
 backend: $(VENV)
-	PYTHONPATH=backend/src $(UVICORN) xiaoai_media.api.main:app \
-		--reload \
-		--host 127.0.0.1 \
-		--port 8000
+	HOME=. PYTHONPATH=backend/src HOST=127.0.0.1 PORT=8000 RELOAD=true $(PYTHON) backend/run.py
 
 frontend:
 	cd frontend && npm run dev
@@ -64,8 +63,7 @@ frontend:
 dev:
 	@echo "Starting backend and frontend..."
 	@trap 'kill 0' INT; \
-	PYTHONPATH=backend/src $(UVICORN) xiaoai_media.api.main:app \
-		--reload --host 127.0.0.1 --port 8000 & \
+	HOME=. PYTHONPATH=backend/src HOST=127.0.0.1 PORT=8000 RELOAD=true $(PYTHON) backend/run.py & \
 	cd frontend && npm run dev & \
 	wait
 
@@ -81,16 +79,22 @@ docker-run:
 	docker run --rm -p 8000:8000 --env-file .env $(IMAGE_TAG)
 
 # ── Utils ──────────────────────────────────────────────────────────────────────
-.PHONY: list-devices clean
+.PHONY: list-devices test-config verify-config clean
 
 list-devices: $(VENV)
-	PYTHONPATH=backend/src $(PYTHON) -c "\
+	HOME=. PYTHONPATH=backend/src $(PYTHON) -c "\
 import asyncio; \
 from xiaoai_media.client import XiaoAiClient; \
 async def run(): \
     async with XiaoAiClient() as c: \
         for d in await c.list_devices(): print(d); \
 asyncio.run(run())"
+
+test-config: $(VENV)
+	$(PYTHON) test/test_user_config.py
+
+verify-config:
+	@bash scripts/verify_config.sh
 
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true

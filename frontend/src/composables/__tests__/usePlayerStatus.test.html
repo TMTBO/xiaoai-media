@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SSE 播放状态测试</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 24px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      margin-top: 0;
+      color: #333;
+    }
+    .input-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: #555;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    button {
+      padding: 10px 20px;
+      background: #409eff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-right: 10px;
+    }
+    button:hover {
+      background: #66b1ff;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    button.danger {
+      background: #f56c6c;
+    }
+    button.danger:hover {
+      background: #f78989;
+    }
+    .status {
+      margin-top: 20px;
+      padding: 16px;
+      background: #f0f9ff;
+      border-left: 4px solid #409eff;
+      border-radius: 4px;
+    }
+    .status.connected {
+      background: #f0f9ff;
+      border-left-color: #67c23a;
+    }
+    .status.error {
+      background: #fef0f0;
+      border-left-color: #f56c6c;
+    }
+    .status-item {
+      margin: 8px 0;
+      font-size: 14px;
+    }
+    .status-item strong {
+      display: inline-block;
+      width: 120px;
+      color: #666;
+    }
+    .log {
+      margin-top: 20px;
+      padding: 16px;
+      background: #f9f9f9;
+      border-radius: 4px;
+      max-height: 400px;
+      overflow-y: auto;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 12px;
+    }
+    .log-entry {
+      margin: 4px 0;
+      padding: 4px 8px;
+      border-radius: 3px;
+    }
+    .log-entry.info {
+      background: #e3f2fd;
+    }
+    .log-entry.success {
+      background: #e8f5e9;
+    }
+    .log-entry.error {
+      background: #ffebee;
+    }
+    .timestamp {
+      color: #999;
+      margin-right: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎵 SSE 播放状态测试</h1>
+    
+    <div class="input-group">
+      <label for="deviceId">设备 ID:</label>
+      <input 
+        type="text" 
+        id="deviceId" 
+        placeholder="输入设备 ID (留空监听所有设备)"
+        value="e01467de-11ff-4fb0-b76b-51cde0bc3b19"
+      >
+    </div>
+    
+    <div>
+      <button id="connectBtn" onclick="connect()">连接 SSE</button>
+      <button id="disconnectBtn" onclick="disconnect()" class="danger" disabled>断开连接</button>
+      <button onclick="clearLog()">清空日志</button>
+    </div>
+    
+    <div id="statusDisplay" class="status">
+      <div class="status-item"><strong>连接状态:</strong> <span id="connectionStatus">未连接</span></div>
+      <div class="status-item"><strong>播放状态:</strong> <span id="playStatus">-</span></div>
+      <div class="status-item"><strong>音频 ID:</strong> <span id="audioId">-</span></div>
+      <div class="status-item"><strong>播放进度:</strong> <span id="position">-</span></div>
+      <div class="status-item"><strong>总时长:</strong> <span id="duration">-</span></div>
+    </div>
+    
+    <div class="log" id="logContainer"></div>
+  </div>
+
+  <script>
+    let eventSource = null;
+    
+    function log(message, type = 'info') {
+      const logContainer = document.getElementById('logContainer');
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      
+      const timestamp = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+      entry.innerHTML = `<span class="timestamp">[${timestamp}]</span>${message}`;
+      
+      logContainer.appendChild(entry);
+      logContainer.scrollTop = logContainer.scrollHeight;
+    }
+    
+    function updateUI(connected, status = null) {
+      const statusDisplay = document.getElementById('statusDisplay');
+      const connectionStatus = document.getElementById('connectionStatus');
+      const connectBtn = document.getElementById('connectBtn');
+      const disconnectBtn = document.getElementById('disconnectBtn');
+      
+      if (connected) {
+        statusDisplay.className = 'status connected';
+        connectionStatus.textContent = '已连接';
+        connectionStatus.style.color = '#67c23a';
+        connectBtn.disabled = true;
+        disconnectBtn.disabled = false;
+      } else {
+        statusDisplay.className = 'status';
+        connectionStatus.textContent = '未连接';
+        connectionStatus.style.color = '#909399';
+        connectBtn.disabled = false;
+        disconnectBtn.disabled = true;
+      }
+      
+      if (status) {
+        const statusMap = {
+          'stopped': '已停止',
+          'playing': '播放中',
+          'paused': '已暂停'
+        };
+        
+        document.getElementById('playStatus').textContent = statusMap[status.status] || status.status;
+        document.getElementById('audioId').textContent = status.audio_id || '-';
+        document.getElementById('position').textContent = formatTime(status.position);
+        document.getElementById('duration').textContent = formatTime(status.duration);
+      }
+    }
+    
+    function formatTime(ms) {
+      if (!ms) return '-';
+      const seconds = Math.floor(ms / 1000);
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = seconds % 60;
+      return `${minutes}:${remainingSeconds.toString().padStart(2, '0')} (${ms}ms)`;
+    }
+    
+    function connect() {
+      const deviceId = document.getElementById('deviceId').value.trim();
+      const url = deviceId 
+        ? `/api/music/status/stream?device_id=${deviceId}`
+        : '/api/music/status/stream';
+      
+      log(`正在连接 SSE: ${url}`, 'info');
+      
+      try {
+        eventSource = new EventSource(url);
+        
+        eventSource.addEventListener('status', (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            log(`收到状态更新: ${data.status} - ${data.audio_id}`, 'success');
+            updateUI(true, data);
+          } catch (err) {
+            log(`解析状态数据失败: ${err.message}`, 'error');
+          }
+        });
+        
+        eventSource.onopen = () => {
+          log('SSE 连接已建立', 'success');
+          updateUI(true);
+        };
+        
+        eventSource.onerror = (err) => {
+          log('SSE 连接错误', 'error');
+          console.error('SSE error:', err);
+          updateUI(false);
+        };
+        
+      } catch (err) {
+        log(`创建 EventSource 失败: ${err.message}`, 'error');
+      }
+    }
+    
+    function disconnect() {
+      if (eventSource) {
+        eventSource.close();
+        eventSource = null;
+        log('SSE 连接已断开', 'info');
+        updateUI(false);
+      }
+    }
+    
+    function clearLog() {
+      document.getElementById('logContainer').innerHTML = '';
+    }
+    
+    // 页面卸载时断开连接
+    window.addEventListener('beforeunload', () => {
+      disconnect();
+    });
+  </script>
+</body>
+</html>

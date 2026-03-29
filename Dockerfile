@@ -7,13 +7,21 @@ COPY frontend/package.json frontend/package-lock.json* ./
 RUN npm ci
 
 COPY frontend/ ./
-RUN npm run build
+RUN npm run build:prod
 
 # ── Stage 2: Python runtime ───────────────────────────────────────────────────
 FROM python:3.11-slim AS runtime
 
-# Create non-root user
-RUN groupadd -r appuser && useradd -r -g appuser appuser
+# Install gosu for safe user switching
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gosu \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user with HOME=/data
+RUN groupadd -r appuser && useradd -r -g appuser -d /data appuser
+
+# Create data directory and set ownership
+RUN mkdir -p /data && chown -R appuser:appuser /data
 
 WORKDIR /app
 
@@ -26,14 +34,29 @@ RUN pip install --no-cache-dir -e backend/
 # Copy built frontend into static/ so FastAPI can serve it
 COPY --from=frontend-builder /build/frontend/dist ./static/
 
-# Runtime environment defaults (real values come from --env-file or -e flags)
-ENV MI_REGION=cn \
-    MI_USER="" \
-    MI_PASS="" \
-    MI_DID=""
+# Copy run script
+COPY backend/run.py ./
 
+# Ensure appuser can read /app directory (but not write)
+RUN chown -R root:root /app && chmod -R 755 /app
+
+# Copy entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Set HOME to data directory (affects Path.home() used by config.py)
+ENV HOME=/data
+
+# Disable color codes in Docker logs for cleaner output
+ENV LOG_COLORS=false
+
+# Expose port
 EXPOSE 8000
 
-USER appuser
+# Volume for persistent data (playlists, config, etc.)
+VOLUME ["/data"]
 
-CMD ["uvicorn", "xiaoai_media.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Start as root to fix permissions, then switch to appuser
+ENTRYPOINT ["docker-entrypoint.sh"]
+
+CMD ["python", "run.py"]

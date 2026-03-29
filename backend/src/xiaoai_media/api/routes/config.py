@@ -1,91 +1,66 @@
+"""配置API路由
+
+处理配置相关的HTTP请求，业务逻辑已移至services层。
+"""
+
 from __future__ import annotations
 
-import os
-import importlib
-from pathlib import Path
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from fastapi import APIRouter, HTTPException
+
+from xiaoai_media.services import ConfigService
 
 router = APIRouter(prefix="/config", tags=["config"])
 
-_ENV_PATH = Path(__file__).resolve().parents[5] / ".env"
-_ALLOWED_KEYS = {
-    "MI_USER",
-    "MI_PASS",
-    "MI_PASS_TOKEN",
-    "MI_DID",
-    "MI_REGION",
-    "MUSIC_API_BASE_URL",
-    "MUSIC_DEFAULT_PLATFORM",
-}
-
-
-def _read_env_file() -> dict[str, str]:
-    result: dict[str, str] = {}
-    if not _ENV_PATH.exists():
-        return result
-    for line in _ENV_PATH.read_text().splitlines():
-        line = line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        key, _, val = line.partition("=")
-        result[key.strip()] = val.strip()
-    return result
-
-
-def _write_env_file(data: dict[str, str]) -> None:
-    lines = []
-    for key, val in data.items():
-        lines.append(f"{key}={val}")
-    _ENV_PATH.write_text("\n".join(lines) + "\n")
-
-
-@router.get("")
-async def get_config():
-    """Return current configuration (password is masked)."""
-    env = _read_env_file()
-    return {
-        "MI_USER": env.get("MI_USER", ""),
-        "MI_PASS": "***" if env.get("MI_PASS") else "",
-        "MI_PASS_TOKEN": "***" if env.get("MI_PASS_TOKEN") else "",
-        "MI_DID": env.get("MI_DID", ""),
-        "MI_REGION": env.get("MI_REGION", "cn"),
-        "MUSIC_API_BASE_URL": env.get("MUSIC_API_BASE_URL", "http://localhost:5050"),
-        "MUSIC_DEFAULT_PLATFORM": env.get("MUSIC_DEFAULT_PLATFORM", "tx"),
-    }
-
 
 class ConfigUpdate(BaseModel):
+    """配置更新请求模型"""
     MI_USER: str | None = None
     MI_PASS: str | None = None
-    MI_PASS_TOKEN: str | None = None
     MI_DID: str | None = None
     MI_REGION: str | None = None
     MUSIC_API_BASE_URL: str | None = None
     MUSIC_DEFAULT_PLATFORM: str | None = None
+    SERVER_BASE_URL: str | None = None
+    ENABLE_CONVERSATION_POLLING: bool | None = None
+    CONVERSATION_POLL_INTERVAL: float | None = Field(None, ge=0.1, le=60)
+    ENABLE_PLAYBACK_MONITOR: bool | None = None
+    PLAYBACK_MONITOR_INTERVAL: float | None = Field(None, ge=0.5, le=60)
+    ENABLE_WAKE_WORD_FILTER: bool | None = None
+    WAKE_WORDS: list[str] | None = None
+    LOG_LEVEL: str | None = Field(None, pattern="^(DEBUG|INFO|WARNING|ERROR|CRITICAL)$")
+    VERBOSE_PLAYBACK_LOG: bool | None = None
+
+
+@router.get("")
+async def get_config():
+    """获取当前配置（敏感字段会被掩码）"""
+    return ConfigService.get_current_config()
 
 
 @router.put("")
 async def update_config(body: ConfigUpdate):
-    """Update .env configuration and reload."""
-    env = _read_env_file()
+    """更新user_config.py配置并重新加载"""
     updates = body.model_dump(exclude_none=True)
 
-    for key, val in updates.items():
-        if key not in _ALLOWED_KEYS:
-            raise HTTPException(status_code=422, detail=f"Unknown config key: {key}")
-        env[key] = val
+    # 过滤掉值为 "***" 的敏感字段（表示不更改）
+    updates = ConfigService.filter_sensitive_fields(updates)
 
-    _write_env_file(env)
+    if not updates:
+        raise HTTPException(status_code=422, detail="No valid updates provided")
 
-    # Sync updated values into os.environ so load_dotenv(override=True) picks them up
-    for key, val in env.items():
-        os.environ[key] = val
+    # 验证配置项
+    ConfigService.validate_config_keys(updates)
 
-    # Reload config module so next request picks up new values
-    import xiaoai_media.config as cfg_module
+    # 写入配置文件
+    ConfigService.write_user_config(updates)
 
-    importlib.reload(cfg_module)
+    # 重新加载配置模块
+    ConfigService.reload_config_module()
 
-    return {"message": "Configuration updated successfully"}
+    # 注意：如果 uvicorn 启用了 reload 模式，修改 user_config.py 会触发自动重启
+    # 这是正常行为，客户端应该在收到响应后等待服务重启完成
+    return {
+        "message": "Configuration updated successfully",
+        "note": "Service will reload automatically if reload mode is enabled"
+    }

@@ -1,7 +1,8 @@
 from pydantic import BaseModel
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 
 from xiaoai_media.client import XiaoAiClient
+from xiaoai_media.api.dependencies import get_client
 
 router = APIRouter(prefix="/command", tags=["command"])
 
@@ -13,7 +14,7 @@ class CommandRequest(BaseModel):
 
 
 @router.post("")
-async def send_command(req: CommandRequest):
+async def send_command(req: CommandRequest, client: XiaoAiClient = Depends(get_client)):
     """Send a voice command to the speaker.
     
     Args:
@@ -24,8 +25,7 @@ async def send_command(req: CommandRequest):
     if not req.text.strip():
         raise HTTPException(status_code=422, detail="text must not be empty")
     try:
-        async with XiaoAiClient() as client:
-            result = await client.send_command(req.text, req.device_id, req.silent)
+        result = await client.send_command(req.text, req.device_id, req.silent)
         return result
     except Exception as e:
         import logging
@@ -34,15 +34,14 @@ async def send_command(req: CommandRequest):
 
 
 @router.get("/conversation")
-async def get_conversation(device_id: str | None = None):
+async def get_conversation(device_id: str | None = None, client: XiaoAiClient = Depends(get_client)):
     """Get latest conversation records from the speaker.
     
     Returns the most recent 20 conversation history including user questions
     and XiaoAi's responses.
     """
     try:
-        async with XiaoAiClient() as client:
-            result = await client.get_latest_ask(device_id, limit=20)
+        result = await client.get_latest_ask(device_id, limit=20)
         
         # Transform to match frontend expected format
         conversations = [

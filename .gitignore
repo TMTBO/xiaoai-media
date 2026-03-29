@@ -13,8 +13,14 @@ venv/
 *.egg
 
 # Environment & secrets
-.env
 .mi.token
+user_config.py
+music_provider.py
+.xiaoai_media/
+playlists/
+playlists.json
+conversation.db
+*.db
 
 # Node.js
 node_modules/

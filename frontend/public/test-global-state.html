@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>全局状态 SSE 测试</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f7fa;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+    
+    .controls {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .input-group {
+      margin-bottom: 16px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: #555;
+    }
+    
+    input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    
+    button {
+      padding: 10px 20px;
+      background: #409eff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-right: 10px;
+    }
+    
+    button:hover {
+      background: #66b1ff;
+    }
+    
+    button.danger {
+      background: #f56c6c;
+    }
+    
+    .status-card {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .status-card h2 {
+      margin-bottom: 16px;
+      color: #333;
+      font-size: 18px;
+    }
+    
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 12px;
+    }
+    
+    .status-item {
+      padding: 12px;
+      background: #f9fafb;
+      border-radius: 6px;
+      border-left: 3px solid #409eff;
+    }
+    
+    .status-item strong {
+      display: block;
+      color: #666;
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+    
+    .status-item span {
+      color: #333;
+      font-size: 14px;
+      word-break: break-all;
+    }
+    
+    .song-card {
+      background: white;
+      color: #333;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      border-left: 4px solid #409eff;
+    }
+    
+    .song-card h2 {
+      margin-bottom: 16px;
+      font-size: 18px;
+    }
+    
+    .song-info {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    
+    .song-cover {
+      width: 80px;
+      height: 80px;
+      border-radius: 8px;
+      background: #f5f7fa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      color: #909399;
+    }
+    
+    .song-cover img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+    
+    .song-details {
+      flex: 1;
+    }
+    
+    .song-name {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    
+    .song-meta {
+      font-size: 14px;
+      color: #909399;
+    }
+    
+    .progress-bar {
+      margin-top: 16px;
+    }
+    
+    .progress-track {
+      height: 4px;
+      background: #e4e7ed;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: #409eff;
+      transition: width 0.3s;
+    }
+    
+    .progress-time {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+      font-size: 12px;
+      color: #909399;
+    }
+    
+    .connection-status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    
+    .connection-status.connected {
+      background: #67c23a;
+      color: white;
+    }
+    
+    .connection-status.disconnected {
+      background: #909399;
+      color: white;
+    }
+    
+    .log {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 16px;
+      border-radius: 8px;
+      max-height: 400px;
+      overflow-y: auto;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    
+    .log-entry {
+      margin: 4px 0;
+    }
+    
+    .log-entry .timestamp {
+      color: #858585;
+    }
+    
+    .log-entry.info {
+      color: #4fc3f7;
+    }
+    
+    .log-entry.success {
+      color: #81c784;
+    }
+    
+    .log-entry.error {
+      color: #e57373;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎵 全局状态 SSE 测试</h1>
+    
+    <div class="controls">
+      <div class="input-group">
+        <label for="deviceId">设备 ID:</label>
+        <input 
+          type="text" 
+          id="deviceId" 
+          placeholder="输入设备 ID"
+          value="e01467de-11ff-4fb0-b76b-51cde0bc3b19"
+        >
+      </div>
+      
+      <div>
+        <button id="connectBtn" onclick="connect()">连接 SSE</button>
+        <button id="disconnectBtn" onclick="disconnect()" class="danger" disabled>断开连接</button>
+        <button onclick="clearLog()">清空日志</button>
+        <span id="connectionBadge" class="connection-status disconnected">未连接</span>
+      </div>
+    </div>
+    
+    <!-- 当前播放歌曲 -->
+    <div id="songCard" class="song-card" style="display: none;">
+      <h2>🎵 正在播放</h2>
+      <div class="song-info">
+        <div class="song-cover" id="songCover">🎵</div>
+        <div class="song-details">
+          <div class="song-name" id="songName">-</div>
+          <div class="song-meta">
+            <span id="songArtist">-</span> · <span id="songAlbum">-</span>
+          </div>
+        </div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+        </div>
+        <div class="progress-time">
+          <span id="currentTime">0:00</span>
+          <span id="totalTime">0:00</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 设备和播放状态 -->
+    <div class="status-card">
+      <h2>📊 设备和播放状态</h2>
+      <div class="status-grid">
+        <div class="status-item">
+          <strong>设备名称</strong>
+          <span id="deviceName">-</span>
+        </div>
+        <div class="status-item">
+          <strong>设备在线</strong>
+          <span id="deviceOnline">-</span>
+        </div>
+        <div class="status-item">
+          <strong>播放状态</strong>
+          <span id="playStatus">-</span>
+        </div>
+        <div class="status-item">
+          <strong>音频 ID</strong>
+          <span id="audioId">-</span>
+        </div>
+        <div class="status-item">
+          <strong>播放列表</strong>
+          <span id="playlistInfo">-</span>
+        </div>
+        <div class="status-item">
+          <strong>硬件型号</strong>
+          <span id="deviceHardware">-</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 日志 -->
+    <div class="status-card">
+      <h2>📝 事件日志</h2>
+      <div class="log" id="logContainer"></div>
+    </div>
+  </div>
+
+  <script>
+    let eventSource = null;
+    
+    function log(message, type = 'info') {
+      const logContainer = document.getElementById('logContainer');
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      
+      const timestamp = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+      entry.innerHTML = `<span class="timestamp">[${timestamp}]</span> ${message}`;
+      
+      logContainer.appendChild(entry);
+      logContainer.scrollTop = logContainer.scrollHeight;
+    }
+    
+    function formatTime(ms) {
+      if (!ms) return '0:00';
+      const seconds = Math.floor(ms / 1000);
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = seconds % 60;
+      return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }
+    
+    function updateUI(state) {
+      // 更新设备信息
+      document.getElementById('deviceName').textContent = state.device_name || '-';
+      document.getElementById('deviceOnline').textContent = state.device_online ? '✅ 在线' : '❌ 离线';
+      document.getElementById('deviceHardware').textContent = state.device_hardware || '-';
+      
+      // 更新播放状态
+      const statusMap = {
+        'stopped': '⏹️ 已停止',
+        'playing': '▶️ 播放中',
+        'paused': '⏸️ 已暂停'
+      };
+      document.getElementById('playStatus').textContent = statusMap[state.play_status] || state.play_status;
+      document.getElementById('audioId').textContent = state.audio_id || '-';
+      
+      // 更新播放列表信息
+      if (state.playlist) {
+        document.getElementById('playlistInfo').textContent = 
+          `${state.playlist.current + 1} / ${state.playlist.total}`;
+      } else {
+        document.getElementById('playlistInfo').textContent = '-';
+      }
+      
+      // 更新歌曲卡片
+      const songCard = document.getElementById('songCard');
+      if (state.current_song && state.current_song.name) {
+        songCard.style.display = 'block';
+        
+        document.getElementById('songName').textContent = state.current_song.name;
+        document.getElementById('songArtist').textContent = state.current_song.singer || '未知歌手';
+        document.getElementById('songAlbum').textContent = state.current_song.album || '未知专辑';
+        
+        // 更新封面
+        const coverDiv = document.getElementById('songCover');
+        if (state.current_song.cover) {
+          coverDiv.innerHTML = `<img src="${state.current_song.cover}" alt="封面">`;
+        } else {
+          coverDiv.innerHTML = '🎵';
+        }
+        
+        // 更新进度
+        const progress = state.duration ? (state.position / state.duration) * 100 : 0;
+        document.getElementById('progressFill').style.width = `${progress}%`;
+        document.getElementById('currentTime').textContent = formatTime(state.position);
+        document.getElementById('totalTime').textContent = formatTime(state.duration);
+      } else {
+        songCard.style.display = 'none';
+      }
+    }
+    
+    function updateConnectionStatus(connected) {
+      const badge = document.getElementById('connectionBadge');
+      const connectBtn = document.getElementById('connectBtn');
+      const disconnectBtn = document.getElementById('disconnectBtn');
+      
+      if (connected) {
+        badge.textContent = '已连接';
+        badge.className = 'connection-status connected';
+        connectBtn.disabled = true;
+        disconnectBtn.disabled = false;
+      } else {
+        badge.textContent = '未连接';
+        badge.className = 'connection-status disconnected';
+        connectBtn.disabled = false;
+        disconnectBtn.disabled = true;
+      }
+    }
+    
+    function connect() {
+      const deviceId = document.getElementById('deviceId').value.trim();
+      const url = deviceId 
+        ? `/api/state/stream?device_id=${deviceId}`
+        : '/api/state/stream';
+      
+      log(`正在连接全局状态 SSE: ${url}`, 'info');
+      
+      try {
+        eventSource = new EventSource(url);
+        
+        eventSource.addEventListener('state', (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            log(`收到状态更新: ${data.play_status} - ${data.current_song?.name || '无歌曲'}`, 'success');
+            updateUI(data);
+          } catch (err) {
+            log(`解析状态数据失败: ${err.message}`, 'error');
+          }
+        });
+        
+        eventSource.addEventListener('heartbeat', (event) => {
+          const data = JSON.parse(event.data);
+          log(`心跳: ${new Date(data.timestamp * 1000).toLocaleTimeString()}`, 'info');
+        });
+        
+        eventSource.onopen = () => {
+          log('SSE 连接已建立', 'success');
+          updateConnectionStatus(true);
+        };
+        
+        eventSource.onerror = (err) => {
+          log('SSE 连接错误', 'error');
+          console.error('SSE error:', err);
+          updateConnectionStatus(false);
+        };
+        
+      } catch (err) {
+        log(`创建 EventSource 失败: ${err.message}`, 'error');
+      }
+    }
+    
+    function disconnect() {
+      if (eventSource) {
+        eventSource.close();
+        eventSource = null;
+        log('SSE 连接已断开', 'info');
+        updateConnectionStatus(false);
+      }
+    }
+    
+    function clearLog() {
+      document.getElementById('logContainer').innerHTML = '';
+    }
+    
+    window.addEventListener('beforeunload', () => {
+      disconnect();
+    });
+  </script>
+</body>
+</html>

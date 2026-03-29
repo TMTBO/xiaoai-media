@@ -9,13 +9,14 @@ on:
       - 'v*.*.*'
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  GHCR_REGISTRY: ghcr.io
+  GHCR_IMAGE: ${{ github.repository }}
+  DOCKERHUB_IMAGE: thrillerone/xiaoai-media  # 修改为你的用户名
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build-and-push:
-    name: Build and push Docker image (amd64)
+    name: Build and push to GHCR and Docker Hub
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -24,38 +25,162 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version from branch or tag
+        id: version
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            # Tag: v1.2.3 -> 1.2.3
+            VERSION="${{ github.ref_name }}"
+            VERSION="${VERSION#v}"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "is_tag=true" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == refs/heads/feature/* ]]; then
+            # Feature branch: feature/v1.2.3 -> 1.2.3
+            BRANCH="${{ github.ref_name }}"
+            VERSION="${BRANCH#feature/v}"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "is_tag=false" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == refs/heads/master ]]; then
+            # Master branch: use 0.0.0-dev
+            VERSION="0.0.0"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "is_tag=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate beta tag for feature branch
+        id: beta_tag
+        if: startsWith(github.ref, 'refs/heads/feature/')
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          
+          # Get the count of commits on this branch to use as beta number
+          COMMIT_COUNT=$(git rev-list --count HEAD ^origin/master 2>/dev/null || echo "1")
+          
+          BETA_TAG="${VERSION}-beta${COMMIT_COUNT}"
+          echo "tag=$BETA_TAG" >> $GITHUB_OUTPUT
+          echo "full_version=$BETA_TAG" >> $GITHUB_OUTPUT
+
+      - name: Generate master tag
+        id: master_tag
+        if: github.ref == 'refs/heads/master'
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          MASTER_TAG="${VERSION}-dev-${SHORT_SHA}"
+          echo "tag=$MASTER_TAG" >> $GITHUB_OUTPUT
+          echo "full_version=$MASTER_TAG" >> $GITHUB_OUTPUT
+
+      - name: Set final version
+        id: final_version
+        run: |
+          if [[ "${{ steps.version.outputs.is_tag }}" == "true" ]]; then
+            echo "version=${{ steps.version.outputs.version }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == refs/heads/feature/* ]]; then
+            echo "version=${{ steps.beta_tag.outputs.full_version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${{ steps.master_tag.outputs.full_version }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update version in files
+        run: |
+          VERSION="${{ steps.final_version.outputs.version }}"
+          
+          # Update frontend/package.json
+          sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" frontend/package.json
+          
+          # Update backend/pyproject.toml
+          sed -i "s/^version = \"[^\"]*\"/version = \"$VERSION\"/" backend/pyproject.toml
+          
+          # Update backend/src/xiaoai_media/api/main.py
+          sed -i "s/version=\"[^\"]*\"/version=\"$VERSION\"/" backend/src/xiaoai_media/api/main.py
+          
+          echo "Updated version to $VERSION in all files"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ${{ env.GHCR_REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract Docker metadata
-        id: meta
+      - name: Check Docker Hub credentials
+        id: dockerhub_check
+        run: |
+          if [[ -n "${{ secrets.DOCKERHUB_USERNAME }}" ]]; then
+            echo "enabled=true" >> $GITHUB_OUTPUT
+          else
+            echo "enabled=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Log in to Docker Hub
+        if: steps.dockerhub_check.outputs.enabled == 'true'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract Docker metadata for GHCR
+        id: meta_ghcr
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_IMAGE }}
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/') }}
-            type=ref,event=branch,suffix=-beta
+            type=raw,value=beta,enable=${{ startsWith(github.ref, 'refs/heads/feature/') }}
+            type=raw,value=${{ steps.beta_tag.outputs.tag }},enable=${{ startsWith(github.ref, 'refs/heads/feature/') }}
+            type=raw,value=preview,enable=${{ github.ref == 'refs/heads/master' }}
+            type=raw,value=${{ steps.master_tag.outputs.tag }},enable=${{ github.ref == 'refs/heads/master' }}
+
+      - name: Extract Docker metadata for Docker Hub
+        id: meta_dockerhub
+        if: steps.dockerhub_check.outputs.enabled == 'true'
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKERHUB_IMAGE }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/') }}
+            type=raw,value=beta,enable=${{ startsWith(github.ref, 'refs/heads/feature/') }}
+            type=raw,value=${{ steps.beta_tag.outputs.tag }},enable=${{ startsWith(github.ref, 'refs/heads/feature/') }}
+            type=raw,value=preview,enable=${{ github.ref == 'refs/heads/master' }}
+            type=raw,value=${{ steps.master_tag.outputs.tag }},enable=${{ github.ref == 'refs/heads/master' }}
 
       - name: Build and push Docker image
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: |
+            ${{ steps.meta_ghcr.outputs.tags }}
+            ${{ steps.meta_dockerhub.outputs.tags }}
+          labels: ${{ steps.meta_ghcr.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          outputs: type=image
+
+      - name: Export Docker image for release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: false
+          tags: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_IMAGE }}:${{ steps.final_version.outputs.version }}
+          cache-from: type=gha
           outputs: type=docker,dest=/tmp/image.tar
 
       - name: Upload Docker image as artifact

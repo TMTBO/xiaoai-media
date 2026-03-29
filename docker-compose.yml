@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  xiaoai-media:
+    # 使用预构建镜像（推荐）
+    image: thrillerone/xiaoai-media:latest
+    # image: ghcr.io/tmtbo/xiaoai-media:latest
+    
+    # 如果需要本地构建，注释上面一行，取消注释下面一行
+    # build: .
+    
+    container_name: xiaoai-media
+    ports:
+      - "8000:8000"
+    volumes:
+      # 数据目录挂载（配置文件、播单数据等）
+      - ./data:/data
+      # 音乐目录挂载（可选，用于批量导入本地音频文件）
+      # 取消注释下面一行，将本地音乐目录挂载到容器中
+      # - /path/to/your/music:/data/music
+      # Audiobooks 目录挂载示例
+      - /mnt/NAS/audiobooks:/data/audiobooks
+    
+    # 环境变量配置
+    environment:
+      # Docker 环境建议禁用颜色输出
+      - LOG_COLORS=false
+    
+    restart: unless-stopped
+    
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # 资源限制（可选）
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '1.0'
+    #       memory: 512M
+    #     reservations:
+    #       cpus: '0.25'
+    #       memory: 128M
+
+# 网络配置（可选）
+# networks:
+#   default:
+#     driver: bridge
+
+# 卷配置（可选，用于持久化数据）
+# volumes:
+#   xiaoai-data:
+#     driver: local

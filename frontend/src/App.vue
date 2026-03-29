@@ -1,7 +1,10 @@
 <template>
   <el-container class="app-layout">
     <el-aside width="200px" class="aside">
-      <div class="logo">🎵 XiaoAI Media</div>
+      <div class="logo">
+        <img src="/logo.svg" alt="XiaoAI Media Logo" />
+        <span>XiaoAI Media</span>
+      </div>
       <el-menu :default-active="$route.path" router>
         <el-menu-item index="/devices">
           <el-icon>
@@ -39,6 +42,18 @@
           </el-icon>
           <span>音乐搜索</span>
         </el-menu-item>
+        <el-menu-item index="/playlists">
+          <el-icon>
+            <List />
+          </el-icon>
+          <span>播单管理</span>
+        </el-menu-item>
+        <el-menu-item index="/scheduler">
+          <el-icon>
+            <Clock />
+          </el-icon>
+          <span>定时任务</span>
+        </el-menu-item>
         <el-menu-item index="/settings">
           <el-icon>
             <Setting />
@@ -49,10 +64,30 @@
     </el-aside>
 
     <el-main class="main">
-      <router-view />
+      <GlobalDeviceSelector />
+      <GlobalPlayerBar />
+      <div class="main-content">
+        <router-view />
+      </div>
     </el-main>
   </el-container>
 </template>
+
+<script setup lang="ts">
+import { 
+  Monitor, 
+  ChatDotRound, 
+  Headset, 
+  Mic, 
+  ChatLineRound, 
+  VideoPlay, 
+  List, 
+  Clock, 
+  Setting 
+} from '@element-plus/icons-vue'
+import GlobalDeviceSelector from '@/components/GlobalDeviceSelector.vue'
+import GlobalPlayerBar from '@/components/GlobalPlayerBar.vue'
+</script>
 
 <style>
 html,
@@ -79,6 +114,14 @@ body,
   font-weight: bold;
   color: #ffffff;
   border-bottom: 1px solid #2e4060;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.aside .logo img {
+  width: 32px;
+  height: 32px;
 }
 
 .aside .el-menu {
@@ -91,5 +134,14 @@ body,
 
 .main {
   background: #f5f7fa;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
 }
 </style>

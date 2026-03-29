@@ -198,7 +198,7 @@ async def play_song_reliably(client, device_id, url):
 |------|------|----------|
 | 0 | 成功 | 正常 |
 | -1 | 通用错误 | 检查设备连接 |
-| 401 | 认证失败 | 检查 MI_USER 和 MI_PASS_TOKEN |
+| 401 | 认证失败 | 检查 MI_USER 和 MI_PASS，删除 .mi.token 重新登录 |
 | 404 | 设备不存在 | 检查 device_id |
 
 ## 进一步帮助

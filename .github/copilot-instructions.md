@@ -15,7 +15,8 @@ Full-stack application for managing Xiaomi AI speakers.
 
 ### Configuration (`config.py`)
 - All env-var fields must be **optional** at startup (`_optional()`). Never raise at import time for missing credentials — the user may configure them from the frontend Settings page.
-- Sensitive fields (`MI_PASS`, `MI_PASS_TOKEN`) should have no default; empty string is fine.
+- Sensitive fields (`MI_PASS`) should have no default; empty string is fine.
+- Token is automatically managed by miservice's token_store mechanism.
 
 ### Config API (`routes/config.py`)
 - Sensitive fields are **masked** in GET responses: return `"***"` when the value is set, `""` when empty.
@@ -47,8 +48,7 @@ Full-stack application for managing Xiaomi AI speakers.
 
 ### Sensitive Fields in Settings
 - Password fields: always clear on load (never echo back to the form).
-- Token fields (e.g. `MI_PASS_TOKEN`): show the masked sentinel `"***"` from the API so the user knows the field is already set.  
-  When saving, skip the field if the value is empty **or** still equals `"***"` (treat as "no change").
+- Token is automatically managed by miservice and stored in `.mi.token` file.
 
 ### Path Aliases
 - Always use the `@/` alias for imports within `src/`. Never use relative `../` paths across more than one level.

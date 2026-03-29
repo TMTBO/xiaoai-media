@@ -6,6 +6,8 @@ import CommandPanel from '@/views/CommandPanel.vue'
 import ConversationHistory from '@/views/ConversationHistory.vue'
 import Settings from '@/views/Settings.vue'
 import MusicPanel from '@/views/MusicPanel.vue'
+import PlaylistManager from '@/views/PlaylistManager.vue'
+import SchedulerManager from '@/views/SchedulerManager.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -17,6 +19,8 @@ const router = createRouter({
     { path: '/command', component: CommandPanel },
     { path: '/conversation', component: ConversationHistory },
     { path: '/music', component: MusicPanel },
+    { path: '/playlists', component: PlaylistManager },
+    { path: '/scheduler', component: SchedulerManager },
     { path: '/settings', component: Settings },
   ],
 })
