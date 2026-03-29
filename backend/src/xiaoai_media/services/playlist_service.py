@@ -391,6 +391,9 @@ class PlaylistService:
                 except Exception as e:
                     _log.warning("立即推送播放状态失败: %s", e)
 
+        # 延迟5秒检测 monitor 是否正在运行
+        asyncio.create_task(PlaylistService._delayed_monitor_check(req.device_id))
+        
         return {
             "message": "Playing",
             "playlist": playlist.name,
@@ -437,6 +440,10 @@ class PlaylistService:
         state_service.set(f"current_playlist_{device_id or 'default'}", None)
 
         _log.info("Stopped playlist: %s", playlist.name)
+        
+        # 延迟5秒检测 monitor 是否正在运行
+        asyncio.create_task(PlaylistService._delayed_monitor_check(device_id))
+        
         return {
             "message": "Stopped",
             "playlist": playlist.name,
@@ -480,10 +487,15 @@ class PlaylistService:
             # 列表循环：下一首，到末尾后回到开头
             next_index = (playlist.current_index + 1) % len(playlist.items)
 
-        return await PlaylistService.play_playlist(
+        result = await PlaylistService.play_playlist(
             playlist_id,
             PlayPlaylistRequest(device_id=device_id, start_index=next_index, announce=False),
         )
+        
+        # 延迟5秒检测 monitor 是否正在运行
+        asyncio.create_task(PlaylistService._delayed_monitor_check(device_id))
+        
+        return result
 
     @staticmethod
     async def play_by_voice_command(voice_text: str, device_id: str | None = None) -> dict:
@@ -518,6 +530,37 @@ class PlaylistService:
             matched_playlist_id,
             PlayPlaylistRequest(device_id=device_id, start_index=0, announce=True),
         )
+
+    @staticmethod
+    async def _delayed_monitor_check(device_id: str | None = None):
+        """延迟5秒检测 monitor 是否正在运行，如果没有运行则调用 check_and_resume
+        
+        Args:
+            device_id: 设备ID
+        """
+        try:
+            # 延迟5秒
+            await asyncio.sleep(5)
+            
+            # 检查是否启用了播放监控器
+            from xiaoai_media import config as app_config
+            if not app_config.ENABLE_PLAYBACK_MONITOR:
+                _log.debug("播放监控器未启用，跳过检测")
+                return
+            
+            # 获取 monitor 实例
+            from xiaoai_media.playback_monitor import get_monitor
+            monitor = get_monitor()
+            
+            # 如果 monitor 没有运行，调用 check_and_resume
+            if not monitor.running:
+                _log.info("检测到播放监控器未运行，调用 check_and_resume 进行检测")
+                await monitor.check_and_resume()
+            else:
+                _log.debug("播放监控器正在运行，无需额外检测")
+                
+        except Exception as e:
+            _log.error("延迟检测 monitor 状态失败: %s", e, exc_info=True)
 
     @staticmethod
     def is_docker_environment() -> bool:
