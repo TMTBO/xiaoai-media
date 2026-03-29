@@ -1,5 +1,6 @@
 """FastAPI dependencies for dependency injection."""
 
+from fastapi import HTTPException, Header
 from xiaoai_media.client import XiaoAiClient
 
 # Global XiaoAiClient instance (shared across all requests)
@@ -33,4 +34,22 @@ def get_client_sync() -> XiaoAiClient:
     if _global_client is None:
         raise RuntimeError("XiaoAiClient not initialized")
     return _global_client
+
+
+def get_current_user(authorization: str = Header(None)) -> dict:
+    """从请求头获取当前用户（用于登录态校验）"""
+    from xiaoai_media.services.user_service import get_user_service
+    
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未授权")
+    
+    token = authorization.replace("Bearer ", "")
+    user_service = get_user_service()
+    payload = user_service.verify_token(token)
+    
+    if not payload:
+        raise HTTPException(status_code=401, detail="令牌无效或已过期")
+    
+    return payload
+
 

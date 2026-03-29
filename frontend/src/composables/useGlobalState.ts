@@ -47,7 +47,7 @@ const globalState = ref<GlobalState | null>(null)
 const connected = ref(false)
 const error = ref<Error | null>(null)
 
-let eventSource: EventSource | null = null
+let abortController: AbortController | null = null
 let reconnectTimer: number | null = null
 let reconnectAttempts = 0
 const maxReconnectAttempts = 5
@@ -81,6 +81,13 @@ export function useGlobalState(deviceId: Ref<string | null> | string | null) {
     })
 
     function connect() {
+        // 检查是否已登录，未登录则不连接
+        const token = localStorage.getItem('token')
+        if (!token) {
+            disconnect()
+            return
+        }
+
         // 如果没有设备 ID，不连接
         if (!deviceIdRef.value) {
             disconnect()
@@ -88,43 +95,86 @@ export function useGlobalState(deviceId: Ref<string | null> | string | null) {
         }
 
         // 如果已经连接到相同设备，不重复连接
-        if (eventSource && globalState.value?.device_id === deviceIdRef.value) {
+        if (abortController && globalState.value?.device_id === deviceIdRef.value) {
             return
         }
 
         // 断开旧连接
         disconnect()
 
-        try {
-            const url = `/api/state/stream?device_id=${deviceIdRef.value}`
-            eventSource = new EventSource(url)
+        // 创建新的 AbortController
+        abortController = new AbortController()
 
-            eventSource.addEventListener('state', (event: MessageEvent) => {
-                try {
-                    const data = JSON.parse(event.data)
-                    globalState.value = data
-                    error.value = null
-                    reconnectAttempts = 0
-                } catch (err) {
-                    console.error('Failed to parse SSE state data:', err)
-                    error.value = err as Error
+        const url = `/api/state/stream?device_id=${deviceIdRef.value}`
+
+        // 使用 fetch + ReadableStream 替代 EventSource，以支持自定义 headers
+        fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'text/event-stream',
+            },
+            signal: abortController.signal,
+        })
+            .then(async (response) => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`)
                 }
-            })
 
-            eventSource.addEventListener('heartbeat', () => {
-                // 心跳事件，保持连接
-            })
-
-            eventSource.onopen = () => {
                 connected.value = true
                 error.value = null
                 console.log('Global state SSE connected:', deviceIdRef.value)
-            }
 
-            eventSource.onerror = (err) => {
+                const reader = response.body?.getReader()
+                const decoder = new TextDecoder()
+
+                if (!reader) {
+                    throw new Error('Response body is null')
+                }
+
+                let buffer = ''
+
+                while (true) {
+                    const { done, value } = await reader.read()
+
+                    if (done) {
+                        console.log('SSE stream ended')
+                        break
+                    }
+
+                    buffer += decoder.decode(value, { stream: true })
+
+                    // 处理 SSE 消息
+                    const lines = buffer.split('\n')
+                    buffer = lines.pop() || '' // 保留最后一个不完整的行
+
+                    let eventType = 'message'
+                    let eventData = ''
+
+                    for (const line of lines) {
+                        if (line.startsWith('event:')) {
+                            eventType = line.slice(6).trim()
+                        } else if (line.startsWith('data:')) {
+                            eventData = line.slice(5).trim()
+                        } else if (line === '') {
+                            // 空行表示消息结束
+                            if (eventData) {
+                                handleSSEMessage(eventType, eventData)
+                                eventType = 'message'
+                                eventData = ''
+                            }
+                        }
+                    }
+                }
+            })
+            .catch((err) => {
+                if (err.name === 'AbortError') {
+                    console.log('SSE connection aborted')
+                    return
+                }
+
                 console.error('Global state SSE error:', err)
                 connected.value = false
-                error.value = new Error('SSE connection failed')
+                error.value = err as Error
 
                 // 自动重连
                 if (reconnectAttempts < maxReconnectAttempts) {
@@ -137,10 +187,22 @@ export function useGlobalState(deviceId: Ref<string | null> | string | null) {
                 } else {
                     console.error('Max reconnect attempts reached')
                 }
+            })
+    }
+
+    function handleSSEMessage(eventType: string, data: string) {
+        if (eventType === 'state') {
+            try {
+                const parsedData = JSON.parse(data)
+                globalState.value = parsedData
+                error.value = null
+                reconnectAttempts = 0
+            } catch (err) {
+                console.error('Failed to parse SSE state data:', err)
+                error.value = err as Error
             }
-        } catch (err) {
-            console.error('Failed to create EventSource:', err)
-            error.value = err as Error
+        } else if (eventType === 'heartbeat') {
+            // 心跳事件，保持连接
         }
     }
 
@@ -150,9 +212,9 @@ export function useGlobalState(deviceId: Ref<string | null> | string | null) {
             reconnectTimer = null
         }
 
-        if (eventSource) {
-            eventSource.close()
-            eventSource = null
+        if (abortController) {
+            abortController.abort()
+            abortController = null
             connected.value = false
             console.log('Global state SSE disconnected')
         }

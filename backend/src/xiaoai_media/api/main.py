@@ -28,6 +28,7 @@ from xiaoai_media.api.routes import (
     proxy,
     scheduler,
     state,
+    auth,
 )
 from xiaoai_media.conversation import ConversationPoller
 from xiaoai_media.command_handler import CommandHandler
@@ -141,16 +142,23 @@ app.add_middleware(
 )
 
 # API routes
-app.include_router(devices.router, prefix="/api")
-app.include_router(tts.router, prefix="/api")
-app.include_router(volume.router, prefix="/api")
-app.include_router(command.router, prefix="/api")
-app.include_router(config.router, prefix="/api")
-app.include_router(music.router, prefix="/api")
-app.include_router(playlist.router, prefix="/api")
-app.include_router(proxy.router, prefix="/api")
-app.include_router(scheduler.router, prefix="/api")
-app.include_router(state.router, prefix="/api")
+# 登录路由不需要认证
+app.include_router(auth.router, prefix="/api")
+
+# 其他所有路由都需要登录态校验
+from xiaoai_media.api.dependencies import get_current_user
+from fastapi import Depends
+
+app.include_router(devices.router, prefix="/api", dependencies=[Depends(get_current_user)])
+app.include_router(tts.router, prefix="/api", dependencies=[Depends(get_current_user)])
+app.include_router(volume.router, prefix="/api", dependencies=[Depends(get_current_user)])
+app.include_router(command.router, prefix="/api", dependencies=[Depends(get_current_user)])
+app.include_router(config.router, prefix="/api", dependencies=[Depends(get_current_user)])
+app.include_router(music.router, prefix="/api", dependencies=[Depends(get_current_user)])
+app.include_router(playlist.router, prefix="/api", dependencies=[Depends(get_current_user)])
+app.include_router(proxy.router, prefix="/api", dependencies=[Depends(get_current_user)])
+app.include_router(scheduler.router, prefix="/api", dependencies=[Depends(get_current_user)])
+app.include_router(state.router, prefix="/api", dependencies=[Depends(get_current_user)])
 
 # Serve frontend static files in production (built by Docker)
 _static_dir = Path(__file__).resolve().parents[4] / "static"

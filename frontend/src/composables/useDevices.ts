@@ -14,6 +14,12 @@ const _error = ref('')
 let _initPromise: Promise<void> | null = null
 
 function _init() {
+    // 检查是否已登录，未登录则不初始化
+    const token = localStorage.getItem('token')
+    if (!token) {
+        return
+    }
+
     if (_initPromise) return
     _loading.value = true
     _error.value = ''

@@ -16,6 +16,7 @@ dependencies = [
     "httpx",
     "requests",
     "apscheduler>=3.10.0",
+    "pyjwt>=2.8.0",
 ]
 
 [project.optional-dependencies]

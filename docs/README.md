@@ -59,6 +59,7 @@
 ### 部署相关 (deployment/)
 - **DOCKER_GUIDE.md** - Docker 部署完整指南
 - **DOCKER_QUICK_START.md** - Docker 快速开始
+- **DOCKER_HUB_README.md** - Docker Hub 说明文档
 - **DOCKER_HUB_CI.md** - Docker Hub CI/CD
 - **DOCKER_VOLUMES_GUIDE.md** - Docker 数据卷指南
 

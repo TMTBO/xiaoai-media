@@ -35,6 +35,7 @@
 |------|------|------|
 | Docker 指南 | Docker 完整指南 | [deployment/DOCKER_GUIDE.md](deployment/DOCKER_GUIDE.md) |
 | Docker 快速开始 | Docker 快速部署 | [deployment/DOCKER_QUICK_START.md](deployment/DOCKER_QUICK_START.md) |
+| Docker Hub 说明 | Docker Hub 文档 | [deployment/DOCKER_HUB_README.md](deployment/DOCKER_HUB_README.md) |
 | Docker Hub CI | CI/CD 配置 | [deployment/DOCKER_HUB_CI.md](deployment/DOCKER_HUB_CI.md) |
 | Docker 数据卷 | 数据卷使用指南 | [deployment/DOCKER_VOLUMES_GUIDE.md](deployment/DOCKER_VOLUMES_GUIDE.md) |
 
@@ -107,6 +108,8 @@
 | 前端开发总览 | 前端开发文档 | [frontend/README.md](frontend/README.md) |
 | 设备选择器更新 | 全局设备选择器 | [frontend/DEVICE_SELECTOR_UPDATE.md](frontend/DEVICE_SELECTOR_UPDATE.md) |
 | 布局规范 | 页面布局一致性 | [frontend/LAYOUT_FIX.md](frontend/LAYOUT_FIX.md) |
+| UI布局对比 | 登录页面布局说明 | [frontend/UI_LAYOUT_COMPARISON.md](frontend/UI_LAYOUT_COMPARISON.md) |
+| 用户登录UI | 用户登录界面 | [frontend/USER_LOGIN_ENABLED_UI.md](frontend/USER_LOGIN_ENABLED_UI.md) |
 
 ### 架构重构
 | 文档 | 说明 | 路径 |

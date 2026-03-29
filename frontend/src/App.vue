@@ -1,5 +1,11 @@
 <template>
-  <el-container class="app-layout">
+  <!-- 登录页面：全屏显示 -->
+  <div v-if="isLoginPage" class="login-layout">
+    <router-view />
+  </div>
+
+  <!-- 主应用：带侧边栏布局 -->
+  <el-container v-else class="app-layout">
     <el-aside width="200px" class="aside">
       <div class="logo">
         <img src="/logo.svg" alt="XiaoAI Media Logo" />
@@ -60,7 +66,14 @@
           </el-icon>
           <span>配置管理</span>
         </el-menu-item>
+        <el-menu-item v-if="isAdmin" index="/users">
+          <el-icon>
+            <UserFilled />
+          </el-icon>
+          <span>用户管理</span>
+        </el-menu-item>
       </el-menu>
+      <UserInfo />
     </el-aside>
 
     <el-main class="main">
@@ -74,6 +87,8 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { 
   Monitor, 
   ChatDotRound, 
@@ -83,10 +98,18 @@ import {
   VideoPlay, 
   List, 
   Clock, 
-  Setting 
+  Setting,
+  UserFilled
 } from '@element-plus/icons-vue'
 import GlobalDeviceSelector from '@/components/GlobalDeviceSelector.vue'
 import GlobalPlayerBar from '@/components/GlobalPlayerBar.vue'
+import UserInfo from '@/components/UserInfo.vue'
+import { useAuth } from '@/composables/useAuth'
+
+const route = useRoute()
+const { isAdmin } = useAuth()
+
+const isLoginPage = computed(() => route.path === '/login')
 </script>
 
 <style>
@@ -100,12 +123,19 @@ body,
 </style>
 
 <style scoped>
+.login-layout {
+  width: 100%;
+  height: 100vh;
+}
+
 .app-layout {
   height: 100vh;
 }
 
 .aside {
   background: #1d2d44;
+  display: flex;
+  flex-direction: column;
 }
 
 .aside .logo {
@@ -130,6 +160,7 @@ body,
   --el-menu-text-color: #c0cfe0;
   --el-menu-hover-bg-color: #2e4060;
   --el-menu-active-color: #ffffff;
+  flex: 1;
 }
 
 .main {

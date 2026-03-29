@@ -2,6 +2,69 @@ import axios from 'axios'
 
 const http = axios.create({ baseURL: '/api' })
 
+// 标记是否正在跳转登录页
+let isRedirecting = false
+
+// 请求拦截器 - 添加token
+http.interceptors.request.use(
+  (config) => {
+    // 如果正在跳转登录页，取消所有新请求
+    if (isRedirecting) {
+      return Promise.reject(new axios.Cancel('正在跳转登录页，取消请求'))
+    }
+
+    // 如果在登录页面且不是登录请求，取消请求
+    if (window.location.pathname === '/login' && !config.url?.includes('/auth/login')) {
+      return Promise.reject(new axios.Cancel('登录页面不允许发起非登录请求'))
+    }
+
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => {
+    return Promise.reject(error)
+  }
+)
+
+// 响应拦截器 - 处理401错误
+http.interceptors.response.use(
+  (response) => {
+    // 成功响应时重置跳转标志
+    isRedirecting = false
+    return response
+  },
+  (error) => {
+    // 如果是取消的请求，直接返回
+    if (axios.isCancel(error)) {
+      return Promise.reject(error)
+    }
+
+    if (error.response?.status === 401) {
+      // 避免重复跳转
+      if (!isRedirecting && window.location.pathname !== '/login') {
+        isRedirecting = true
+
+        // 清除token和用户信息
+        localStorage.removeItem('token')
+        localStorage.removeItem('username')
+        localStorage.removeItem('role')
+
+        // 跳转到登录页
+        window.location.href = '/login'
+
+        // 延迟重置标志，确保跳转完成
+        setTimeout(() => {
+          isRedirecting = false
+        }, 1000)
+      }
+    }
+    return Promise.reject(error)
+  }
+)
+
 export interface Device {
   deviceID: string   // MiNA UUID — used for ubus commands (TTS, volume, etc.)
   did?: string       // MiIO numeric device ID — used for miot_action

@@ -28,6 +28,11 @@
 - 🎧 **对话监听** - 自动拦截和处理音箱播放指令
 - 📱 **设备管理** - 管理多个小爱音箱设备
 
+### 安全功能
+- 🔐 **用户认证** - 基于JWT的用户登录系统
+- 👥 **用户管理** - 管理员可以创建和管理用户账户
+- 🛡️ **权限控制** - 基于角色的访问控制（管理员/普通用户）
+
 ### 管理界面
 - 🖥️ **Web 界面** - 现代化的 Vue 3 管理界面
 - 📊 **实时状态** - 实时显示设备状态和播放信息
@@ -59,6 +64,7 @@ docker-compose up -d
 
 # 5. 访问管理界面
 # 浏览器打开 http://localhost:8000
+# 默认账号: admin / admin123
 ```
 
 也可以直接使用预构建镜像：
@@ -98,6 +104,7 @@ make dev
 # 5. 访问管理界面
 # 后端：http://localhost:8000
 # 前端：http://localhost:5173
+# 默认账号: admin / admin123
 ```
 
 详见：[快速开始指南](QUICK_START.md)
@@ -189,9 +196,11 @@ $HOME/
 - [用户使用指南](docs/USER_GUIDE.md) - 完整使用指南
 - [Docker 部署](docs/deployment/DOCKER_GUIDE.md) - Docker 完整指南
 - [配置指南](docs/config/README.md) - 配置文件详解
+- [用户认证](docs/USER_AUTH_QUICKSTART.md) - 登录和用户管理快速开始
 
 ### 📖 功能文档
 - [功能特性详解](docs/FEATURES.md) - 所有功能的详细说明
+- [用户认证系统](docs/USER_AUTH.md) - 用户登录和权限管理
 - [播放列表管理](docs/playlist/README.md) - 创建和管理播放列表
 - [批量导入功能](docs/playlist/README_BATCH_IMPORT.md) - 从目录批量导入音频文件
 - [定时任务](docs/scheduler/README.md) - 定时播放和提醒功能
