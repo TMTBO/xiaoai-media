@@ -87,7 +87,6 @@ ENABLE_WAKE_WORD_FILTER = True
 
 # 日志配置
 LOG_LEVEL = "INFO"
-VERBOSE_PLAYBACK_LOG = False
 ```
 
 ---

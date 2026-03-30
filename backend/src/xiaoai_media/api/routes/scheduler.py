@@ -1,6 +1,7 @@
 """定时任务管理 API 路由"""
 
 import logging
+from xiaoai_media.logger import get_logger
 import uuid
 from datetime import datetime, timedelta
 from typing import Optional
@@ -14,7 +15,7 @@ from xiaoai_media.services.scheduler_service import (
     TaskType,
 )
 
-_log = logging.getLogger(__name__)
+_log = get_logger()
 
 router = APIRouter(tags=["scheduler"])
 

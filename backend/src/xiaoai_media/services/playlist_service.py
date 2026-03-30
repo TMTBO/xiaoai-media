@@ -7,6 +7,7 @@ from __future__ import annotations
 import asyncio
 import importlib.util
 import logging
+from xiaoai_media.logger import get_logger
 import random
 import time
 from datetime import datetime
@@ -28,7 +29,7 @@ from xiaoai_media.services.playlist_models import (
 )
 from xiaoai_media.services.playlist_storage import PlaylistStorage
 
-_log = logging.getLogger(__name__)
+_log = get_logger()
 
 
 class PlaylistService:

@@ -150,7 +150,6 @@ ENABLE_WAKE_WORD_FILTER = True
 
 # 日志配置
 LOG_LEVEL = "INFO"
-VERBOSE_PLAYBACK_LOG = False
 
 # 自定义音频 URL 获取（可选）
 def get_audio_url(audio_id: str, custom_params: dict = None) -> str:

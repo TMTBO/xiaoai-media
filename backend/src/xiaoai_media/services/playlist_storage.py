@@ -6,12 +6,13 @@ from __future__ import annotations
 
 import json
 import logging
+from xiaoai_media.logger import get_logger
 from pathlib import Path
 
 from xiaoai_media import config
 from xiaoai_media.services.playlist_models import Playlist, PlaylistIndex, PlaylistItem
 
-_log = logging.getLogger(__name__)
+_log = get_logger()
 
 
 class PlaylistStorage:

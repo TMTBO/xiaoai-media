@@ -166,7 +166,6 @@ def preprocess_command(query: str) -> str:
 
 ```python
 LOG_LEVEL = "INFO"              # 日志级别: DEBUG, INFO, WARNING, ERROR, CRITICAL
-VERBOSE_PLAYBACK_LOG = False    # 是否显示详细的播放日志
 ```
 
 ## 配置优先级

@@ -97,10 +97,6 @@
           <el-option value="CRITICAL" label="CRITICAL - 严重" />
         </el-select>
       </el-form-item>
-      <el-form-item label="详细播放日志">
-        <el-switch v-model="form.VERBOSE_PLAYBACK_LOG" />
-        <div class="el-form-item__explain">显示详细的播放过程日志</div>
-      </el-form-item>
       <el-divider content-position="left" style="margin: 20px 0 16px">代理访问控制</el-divider>
       <el-form-item label="局域网跳过认证">
         <el-switch v-model="form.PROXY_SKIP_AUTH_FOR_LAN" />
@@ -155,7 +151,6 @@ const form = ref<Config>({
   ENABLE_WAKE_WORD_FILTER: true,
   WAKE_WORDS: [],
   LOG_LEVEL: 'INFO',
-  VERBOSE_PLAYBACK_LOG: false,
   PROXY_SKIP_AUTH_FOR_LAN: true,
   PROXY_LAN_NETWORKS: ['192.168.0.0/16', '10.0.0.0/8', '172.16.0.0/12', '127.0.0.0/8'],
 })

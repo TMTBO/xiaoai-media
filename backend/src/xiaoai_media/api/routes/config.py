@@ -29,7 +29,6 @@ class ConfigUpdate(BaseModel):
     ENABLE_WAKE_WORD_FILTER: bool | None = None
     WAKE_WORDS: list[str] | None = None
     LOG_LEVEL: str | None = Field(None, pattern="^(DEBUG|INFO|WARNING|ERROR|CRITICAL)$")
-    VERBOSE_PLAYBACK_LOG: bool | None = None
     PROXY_SKIP_AUTH_FOR_LAN: bool | None = None
     PROXY_LAN_NETWORKS: list[str] | None = None
 
@@ -60,9 +59,7 @@ async def update_config(body: ConfigUpdate):
     # 重新加载配置模块
     ConfigService.reload_config_module()
 
-    # 注意：如果 uvicorn 启用了 reload 模式，修改 user_config.py 会触发自动重启
-    # 这是正常行为，客户端应该在收到响应后等待服务重启完成
     return {
-        "message": "Configuration updated successfully",
-        "note": "Service will reload automatically if reload mode is enabled"
+        "message": "Configuration updated and reloaded successfully",
+        "note": "All services have been updated with new configuration"
     }

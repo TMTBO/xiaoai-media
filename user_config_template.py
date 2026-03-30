@@ -181,8 +181,7 @@ def preprocess_command(query: str) -> str:
 # 可选值: DEBUG, INFO, WARNING, ERROR, CRITICAL
 LOG_LEVEL = "INFO"
 
-# 是否显示详细的播放日志
-VERBOSE_PLAYBACK_LOG = False
+
 
 
 # ============================================

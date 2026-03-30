@@ -29,7 +29,6 @@ ALLOWED_KEYS = {
     "ENABLE_WAKE_WORD_FILTER",
     "WAKE_WORDS",
     "LOG_LEVEL",
-    "VERBOSE_PLAYBACK_LOG",
     "PROXY_SKIP_AUTH_FOR_LAN",
     "PROXY_LAN_NETWORKS",
 }
@@ -218,7 +217,6 @@ class ConfigService:
             "ENABLE_WAKE_WORD_FILTER": config.ENABLE_WAKE_WORD_FILTER,
             "WAKE_WORDS": config.WAKE_WORDS,
             "LOG_LEVEL": getattr(config, "LOG_LEVEL", "INFO"),
-            "VERBOSE_PLAYBACK_LOG": getattr(config, "VERBOSE_PLAYBACK_LOG", False),
             "PROXY_SKIP_AUTH_FOR_LAN": getattr(config, "PROXY_SKIP_AUTH_FOR_LAN", True),
             "PROXY_LAN_NETWORKS": getattr(config, "PROXY_LAN_NETWORKS", [
                 "192.168.0.0/16",
@@ -261,5 +259,5 @@ class ConfigService:
     @staticmethod
     def reload_config_module() -> None:
         """重新加载配置模块，使更改生效"""
-        import xiaoai_media.config as cfg_module
-        importlib.reload(cfg_module)
+        from xiaoai_media.config import reload_config
+        reload_config()

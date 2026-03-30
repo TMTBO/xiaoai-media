@@ -1,13 +1,14 @@
 """Command handler for processing voice commands from speakers."""
 
 import logging
+from xiaoai_media.logger import get_logger
 import re
 
 from xiaoai_media import config
 from xiaoai_media.api.dependencies import get_client_sync
 from xiaoai_media.services.voice_command_service import VoiceCommandService
 
-_log = logging.getLogger(__name__)
+_log = get_logger()
 
 
 class CommandHandler:

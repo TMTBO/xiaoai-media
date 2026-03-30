@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from xiaoai_media.logger import get_logger
 from typing import Any
 
 from fastapi import APIRouter, Query, Request
@@ -17,7 +18,7 @@ from xiaoai_media.api.dependencies import get_client_sync
 from xiaoai_media.services.state_service import get_state_service
 from xiaoai_media.services.playlist_service import PlaylistService
 
-_log = logging.getLogger(__name__)
+_log = get_logger()
 
 router = APIRouter(prefix="/state", tags=["state"])
 

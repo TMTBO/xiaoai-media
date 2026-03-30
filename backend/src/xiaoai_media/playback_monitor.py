@@ -8,13 +8,14 @@
 import asyncio
 import json
 import logging
+from xiaoai_media.logger import get_logger
 from typing import Dict, Optional, Set, Callable, Awaitable
 
 from xiaoai_media.api.dependencies import get_client_sync
 from xiaoai_media.services.state_service import get_state_service
 from xiaoai_media.services.playlist_service import PlaylistService
 
-_log = logging.getLogger(__name__)
+_log = get_logger()
 
 # 状态变化回调类型
 StatusChangeCallback = Callable[[str, dict], Awaitable[None]]

@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import logging
+from xiaoai_media.logger import get_logger
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
@@ -23,7 +24,7 @@ from xiaoai_media.services import (
     UpdatePlaylistRequest,
 )
 
-_log = logging.getLogger(__name__)
+_log = get_logger()
 
 router = APIRouter(prefix="/playlists", tags=["playlists"])
 

@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from xiaoai_media.logger import get_logger
 
 from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
@@ -21,7 +22,7 @@ from xiaoai_media.services import (
     SongItem,
 )
 
-_log = logging.getLogger(__name__)
+_log = get_logger()
 
 router = APIRouter(prefix="/music", tags=["music"])
 

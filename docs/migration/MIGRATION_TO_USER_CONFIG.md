@@ -136,9 +136,6 @@ def preprocess_command(query: str) -> str:
 ```python
 # 日志级别
 LOG_LEVEL = "INFO"
-
-# 详细播放日志
-VERBOSE_PLAYBACK_LOG = False
 ```
 
 ## 常见问题

@@ -6,6 +6,7 @@ music playback when play commands are detected.
 
 import asyncio
 import logging
+from xiaoai_media.logger import get_logger
 import re
 import time
 from typing import Callable
@@ -13,7 +14,7 @@ from typing import Callable
 from xiaoai_media.api.dependencies import get_client_sync
 from xiaoai_media.services.state_service import get_state_service
 
-_log = logging.getLogger(__name__)
+_log = get_logger()
 
 
 class ConversationPoller:

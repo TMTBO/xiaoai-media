@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import logging
+from xiaoai_media.logger import get_logger
 from typing import Any
 
 from fastapi import HTTPException
@@ -14,7 +15,7 @@ from pydantic import BaseModel
 from xiaoai_media.player import get_player
 from .music_service import MusicService
 
-_log = logging.getLogger(__name__)
+_log = get_logger()
 
 
 class SongQuality(BaseModel):

@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import logging
+from xiaoai_media.logger import get_logger
 import re
 from datetime import datetime
 from typing import Any
@@ -24,7 +25,7 @@ from .playlist_models import (
     PlayPlaylistRequest,
 )
 
-_log = logging.getLogger(__name__)
+_log = get_logger()
 
 
 def _parse_duration(duration_value: Any) -> int:

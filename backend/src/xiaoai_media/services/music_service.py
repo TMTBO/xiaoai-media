@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import logging
+from xiaoai_media.logger import get_logger
 import re
 from difflib import get_close_matches
 
@@ -30,7 +31,7 @@ except ImportError:
     from music_provider import get_ranks as provider_get_ranks
     from music_provider import get_rank_songs as provider_get_rank_songs
 
-_log = logging.getLogger(__name__)
+_log = get_logger()
 
 # 支持的音乐平台
 PLATFORMS = {"tx", "kw", "kg", "wy", "mg"}

@@ -4,6 +4,7 @@
 """
 
 import logging
+from xiaoai_media.logger import get_logger
 from typing import Any
 
 from xiaoai_media.client import XiaoAiClient
@@ -12,7 +13,7 @@ from xiaoai_media.services.playlist_service import PlaylistService
 from xiaoai_media.api.dependencies import get_client
 from xiaoai_media.command_handler import CommandHandler
 
-_log = logging.getLogger(__name__)
+_log = get_logger()
 
 
 class SchedulerExecutor:

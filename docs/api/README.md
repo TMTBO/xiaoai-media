@@ -14,6 +14,13 @@ XiaoAI Media 后端 API 的完整文档。
   - 实现细节
   - 最佳实践
 
+- **[SSE_GUIDE.md](SSE_GUIDE.md)** - SSE 实时状态推送指南
+  - 快速开始
+  - 前端使用示例
+  - 故障排除
+
+- **[TROUBLESHOOTING_SSE.md](TROUBLESHOOTING_SSE.md)** - SSE 故障排除详细指南
+
 ## 🎯 API 端点概览
 
 ### 设备管理 `/api/devices`

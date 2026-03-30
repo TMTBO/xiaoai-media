@@ -86,12 +86,74 @@ async def lifespan(app: FastAPI):
     await scheduler_service.start()
     logger.info("定时任务调度器已启动")
     
+    # Register config change callback
+    def on_config_changed():
+        """配置变更回调：重启相关服务"""
+        logger.info("检测到配置变更，正在重启相关服务...")
+        
+        # 创建异步任务来处理配置变更
+        asyncio.create_task(_handle_config_change())
+    
+    async def _handle_config_change():
+        """异步处理配置变更"""
+        try:
+            # 重新加载配置后的值
+            from xiaoai_media import config as cfg
+            
+            # 1. 重启对话监听器
+            if cfg.ENABLE_CONVERSATION_POLLING:
+                if not conversation_poller.running:
+                    conversation_poller.poll_interval = cfg.CONVERSATION_POLL_INTERVAL
+                    await conversation_poller.start()
+                    logger.info("对话监听已启用")
+                else:
+                    # 更新轮询间隔
+                    conversation_poller.poll_interval = cfg.CONVERSATION_POLL_INTERVAL
+                    logger.info("对话监听轮询间隔已更新: %s秒", cfg.CONVERSATION_POLL_INTERVAL)
+            else:
+                if conversation_poller.running:
+                    await conversation_poller.stop()
+                    logger.info("对话监听已禁用")
+            
+            # 2. 重启播放监控器
+            monitor = get_monitor()
+            if cfg.ENABLE_PLAYBACK_MONITOR:
+                # 更新监控间隔
+                monitor.poll_interval = cfg.PLAYBACK_MONITOR_INTERVAL
+                logger.info("播放监控间隔已更新: %s秒", cfg.PLAYBACK_MONITOR_INTERVAL)
+                
+                # 如果监控器正在运行，重启以应用新配置
+                if monitor.running:
+                    await monitor.stop()
+                    await monitor.check_and_resume()
+                    logger.info("播放监控器已重启")
+            else:
+                if monitor.running:
+                    await monitor.stop()
+                    logger.info("播放监控已禁用")
+            
+            # 3. 更新日志级别
+            if hasattr(cfg, 'LOG_LEVEL'):
+                from xiaoai_media.logger import set_log_level
+                set_log_level(cfg.LOG_LEVEL)
+                logger.info("日志级别已更新: %s", cfg.LOG_LEVEL)
+            
+            logger.info("配置变更处理完成")
+        except Exception as e:
+            logger.error("处理配置变更时出错: %s", e, exc_info=True)
+    
+    app_config.register_config_change_callback(on_config_changed)
+    logger.info("已注册配置变更回调")
+    
     logger.info("应用启动完成")
     
     yield  # Application runs here
     
     # Shutdown
     logger.info("开始关闭应用...")
+    
+    # Unregister config change callback
+    app_config.unregister_config_change_callback(on_config_changed)
     
     try:
         await asyncio.wait_for(conversation_poller.stop(), timeout=1.0)

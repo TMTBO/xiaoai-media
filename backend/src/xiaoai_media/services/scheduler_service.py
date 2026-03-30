@@ -9,6 +9,7 @@
 
 import json
 import logging
+from xiaoai_media.logger import get_logger
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Callable, Optional
@@ -21,7 +22,7 @@ from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.date import DateTrigger
 from apscheduler.job import Job
 
-_log = logging.getLogger(__name__)
+_log = get_logger()
 
 
 class TaskType(str, Enum):

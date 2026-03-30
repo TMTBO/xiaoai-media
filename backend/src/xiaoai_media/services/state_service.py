@@ -6,10 +6,11 @@ application state data like timestamps, counters, and other runtime data.
 
 import json
 import logging
+from xiaoai_media.logger import get_logger
 from pathlib import Path
 from typing import Any
 
-_log = logging.getLogger(__name__)
+_log = get_logger()
 
 
 class StateService:

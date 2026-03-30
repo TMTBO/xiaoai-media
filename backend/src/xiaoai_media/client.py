@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from xiaoai_media.logger import get_logger
 import time
 from typing import Any
 
@@ -12,7 +13,7 @@ from miservice import MiAccount, MiIOService, MiNAService
 
 from xiaoai_media import config
 
-_log = logging.getLogger(__name__)
+_log = get_logger()
 
 # TTS command mapping: hardware short code → "siid-aiid" for miot_action
 # Reference: https://github.com/hanxi/xiaomusic/blob/main/xiaomusic/const.py

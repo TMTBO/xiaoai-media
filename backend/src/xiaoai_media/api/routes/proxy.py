@@ -4,13 +4,14 @@
 """
 
 import logging
+from xiaoai_media.logger import get_logger
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse, FileResponse
 import httpx
 
-_log = logging.getLogger(__name__)
+_log = get_logger()
 router = APIRouter(prefix="/proxy", tags=["proxy"])
 
 

@@ -1,12 +1,27 @@
-# 对话监听功能使用说明
+# 对话监听功能指南
 
-## 问题描述
+自动监听音箱对话，拦截播放指令，通过本服务获取音乐 URL 并播放。
 
-**原问题：** 在后台发送或音箱设备上输入的播放指令，没有通过本服务调用 `play_music` 获取音乐 URL。
+---
 
-**原因：** 当用户直接对音箱说话时（例如："小爱同学，播放周杰伦的晴天"），这个指令是由小爱音箱自己处理的，不会经过你的服务。
+## 📚 目录
 
-## 解决方案
+- [功能概述](#功能概述)
+- [快速开始](#快速开始)
+- [配置说明](#配置说明)
+- [支持的指令](#支持的指令)
+- [技术实现](#技术实现)
+- [故障排查](#故障排查)
+
+---
+
+## 功能概述
+
+### 问题描述
+
+当用户直接对音箱说话时（例如："小爱同学，播放周杰伦的晴天"），这个指令是由小爱音箱自己处理的，不会经过你的服务。
+
+### 解决方案
 
 参考 [xiaomusic](https://github.com/hanxi/xiaomusic) 项目的实现，通过**持续监听对话记录**来拦截播放指令。
 
@@ -18,31 +33,33 @@
 4. **获取 URL** - 通过 `play_music` 接口获取音乐 URL
 5. **播放音乐** - 在音箱上播放获取到的 URL
 
-## 使用方法
+---
+
+## 快速开始
 
 ### 1. 配置
 
-在 `.env` 文件中添加（默认已启用）：
+在 `user_config.py` 文件中添加（默认已启用）：
 
-```bash
+```python
 # 启用对话监听
-ENABLE_CONVERSATION_POLLING=true
+ENABLE_CONVERSATION_POLLING = True
 
 # 轮询间隔（秒）
-CONVERSATION_POLL_INTERVAL=2.0
+CONVERSATION_POLL_INTERVAL = 2.0
 
 # 音乐服务地址（必须配置）
-MUSIC_API_BASE_URL=http://localhost:5050
+MUSIC_API_BASE_URL = "http://localhost:5050"
 
 # 默认音乐平台
-MUSIC_DEFAULT_PLATFORM=tx
+MUSIC_DEFAULT_PLATFORM = "tx"
 ```
 
 ### 2. 启动服务
 
 ```bash
 cd backend
-python3 -m uvicorn xiaoai_media.api.main:app --reload
+python run.py
 ```
 
 启动后会看到日志：
@@ -74,6 +91,48 @@ INFO xiaoai_media.command_handler — 正在播放 (设备 xxx): 第 1/20 首 - 
 INFO xiaoai_media.command_handler — 播放成功: 周杰伦 - 晴天
 ```
 
+---
+
+## 配置说明
+
+### 基础配置
+
+```python
+# user_config.py
+
+# 启用对话监听
+ENABLE_CONVERSATION_POLLING = True
+
+# 轮询间隔（秒）
+CONVERSATION_POLL_INTERVAL = 2.0
+
+# 音乐服务地址
+MUSIC_API_BASE_URL = "http://localhost:5050"
+
+# 默认音乐平台
+MUSIC_DEFAULT_PLATFORM = "tx"
+```
+
+### 高级配置
+
+#### 调整轮询间隔
+
+如果觉得响应太慢，可以缩短轮询间隔：
+
+```python
+CONVERSATION_POLL_INTERVAL = 1.0  # 1秒轮询一次（更快但更耗资源）
+```
+
+#### 禁用对话监听
+
+如果只想通过 Web 界面控制，可以禁用：
+
+```python
+ENABLE_CONVERSATION_POLLING = False
+```
+
+---
+
 ## 支持的指令
 
 ### ✅ 会被拦截的指令
@@ -95,9 +154,11 @@ INFO xiaoai_media.command_handler — 播放成功: 周杰伦 - 晴天
 - "播放下一首" (包含"下一首")
 - "播放上一首" (包含"上一首")
 
+---
+
 ## 技术实现
 
-### 新增文件
+### 核心文件
 
 1. **`backend/src/xiaoai_media/conversation.py`**
    - `ConversationPoller` 类 - 对话轮询器
@@ -110,22 +171,15 @@ INFO xiaoai_media.command_handler — 播放成功: 周杰伦 - 晴天
    - 搜索音乐并获取 URL
    - 调用播放接口
 
-### 修改的文件
-
-1. **`backend/src/xiaoai_media/client.py`**
+3. **`backend/src/xiaoai_media/client.py`**
    - 添加 `get_latest_ask()` 方法
    - 从音箱获取对话记录
 
-2. **`backend/src/xiaoai_media/api/main.py`**
+4. **`backend/src/xiaoai_media/api/main.py`**
    - 集成对话轮询器
    - 在应用启动时自动启动轮询
 
-3. **`backend/src/xiaoai_media/config.py`**
-   - 添加配置选项
-   - `ENABLE_CONVERSATION_POLLING`
-   - `CONVERSATION_POLL_INTERVAL`
-
-## 工作流程
+### 工作流程
 
 ```
 1. 用户对音箱说话
@@ -144,7 +198,7 @@ INFO xiaoai_media.command_handler — 播放成功: 周杰伦 - 晴天
    e. 在音箱上播放
 ```
 
-## 与 xiaomusic 的对比
+### 与 xiaomusic 的对比
 
 | 功能 | xiaomusic | 本项目 |
 |------|-----------|--------|
@@ -154,6 +208,47 @@ INFO xiaoai_media.command_handler — 播放成功: 周杰伦 - 晴天
 | 音质选择 | ✅ | ✅ |
 | 多设备支持 | ✅ | ✅ |
 
+---
+
+## 故障排查
+
+### Q: 没有检测到对话？
+
+A: 检查以下几点：
+1. 配置是否启用 (`ENABLE_CONVERSATION_POLLING = True`)
+2. 小米账号是否正确配置
+3. 查看启动日志是否有错误
+4. 确认音箱在线并可以正常使用
+
+### Q: 检测到对话但没有播放？
+
+A: 检查以下几点：
+1. 音乐服务是否运行 (`MUSIC_API_BASE_URL` 可访问)
+2. 搜索是否有结果（查看日志）
+3. 查看错误日志了解具体原因
+4. 确认音箱可以正常播放音乐
+
+### Q: 播放了错误的歌曲？
+
+A: 建议：
+- 说话时包含歌手名，如"播放周杰伦的晴天"
+- 检查搜索结果是否正确（查看日志）
+- 调整音乐平台设置
+
+### Q: 响应延迟太大？
+
+A: 可能原因：
+- 轮询间隔设置太长
+- 网络延迟
+- 音乐服务响应慢
+
+解决方法：
+- 缩短轮询间隔（如 1.0 秒）
+- 检查网络连接
+- 优化音乐服务性能
+
+---
+
 ## 注意事项
 
 1. **音乐服务必须运行** - 确保 `MUSIC_API_BASE_URL` 指向的服务可用
@@ -161,38 +256,14 @@ INFO xiaoai_media.command_handler — 播放成功: 周杰伦 - 晴天
 3. **首次启动** - 只会处理启动后的新对话，不会处理历史对话
 4. **网络延迟** - 从检测到播放可能有 2-5 秒延迟（取决于轮询间隔和网络速度）
 
-## 高级配置
-
-### 调整轮询间隔
-
-如果觉得响应太慢，可以缩短轮询间隔：
-
-```bash
-CONVERSATION_POLL_INTERVAL=1.0  # 1秒轮询一次（更快但更耗资源）
-```
-
-### 禁用对话监听
-
-如果只想通过 Web 界面控制，可以禁用：
-
-```bash
-ENABLE_CONVERSATION_POLLING=false
-```
-
-## 测试脚本
-
-运行独立测试脚本：
-
-```bash
-python3 test/test_conversation_monitoring.py
-```
-
-这个脚本会：
-- 启动对话监听
-- 显示检测到的所有对话
-- 自动处理播放指令
+---
 
 ## 相关文档
 
-- [技术详细文档](conversation_monitoring.md)
-- [API 文档](http://localhost:8000/docs) - 启动服务后访问
+- [对话监听快速开始](QUICK_START.md) - 英文快速开始指南
+- [对话监听 README](README.md) - 功能总览
+- [API 文档](../api/README.md) - API 参考
+
+---
+
+**最后更新**: 2026-03-30
