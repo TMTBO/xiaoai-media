@@ -171,6 +171,20 @@ PLAYBACK_MONITOR_INTERVAL: float = _get_config("PLAYBACK_MONITOR_INTERVAL", 3.0)
 WAKE_WORDS: list[str] = _get_config("WAKE_WORDS", [])
 ENABLE_WAKE_WORD_FILTER: bool = _get_config("ENABLE_WAKE_WORD_FILTER", True)
 
+# ============================================
+# 代理访问控制配置
+# ============================================
+
+# 局域网访问是否跳过身份校验
+PROXY_SKIP_AUTH_FOR_LAN: bool = _get_config("PROXY_SKIP_AUTH_FOR_LAN", True)
+
+# 局域网 IP 段配置（CIDR 格式）
+PROXY_LAN_NETWORKS: list[str] = _get_config("PROXY_LAN_NETWORKS", [
+    "192.168.0.0/16",
+    "10.0.0.0/8",
+    "172.16.0.0/12",
+    "127.0.0.0/8",
+])
 
 
 # ============================================

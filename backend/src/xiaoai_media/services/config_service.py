@@ -30,6 +30,8 @@ ALLOWED_KEYS = {
     "WAKE_WORDS",
     "LOG_LEVEL",
     "VERBOSE_PLAYBACK_LOG",
+    "PROXY_SKIP_AUTH_FOR_LAN",
+    "PROXY_LAN_NETWORKS",
 }
 
 
@@ -217,6 +219,13 @@ class ConfigService:
             "WAKE_WORDS": config.WAKE_WORDS,
             "LOG_LEVEL": getattr(config, "LOG_LEVEL", "INFO"),
             "VERBOSE_PLAYBACK_LOG": getattr(config, "VERBOSE_PLAYBACK_LOG", False),
+            "PROXY_SKIP_AUTH_FOR_LAN": getattr(config, "PROXY_SKIP_AUTH_FOR_LAN", True),
+            "PROXY_LAN_NETWORKS": getattr(config, "PROXY_LAN_NETWORKS", [
+                "192.168.0.0/16",
+                "10.0.0.0/8",
+                "172.16.0.0/12",
+                "127.0.0.0/8",
+            ]),
         }
 
     @staticmethod

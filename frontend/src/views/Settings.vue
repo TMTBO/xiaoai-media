@@ -101,6 +101,23 @@
         <el-switch v-model="form.VERBOSE_PLAYBACK_LOG" />
         <div class="el-form-item__explain">显示详细的播放过程日志</div>
       </el-form-item>
+      <el-divider content-position="left" style="margin: 20px 0 16px">代理访问控制</el-divider>
+      <el-form-item label="局域网跳过认证">
+        <el-switch v-model="form.PROXY_SKIP_AUTH_FOR_LAN" />
+        <div class="el-form-item__explain">允许局域网内的设备（如小爱音箱）无需认证访问代理接口</div>
+      </el-form-item>
+      <el-form-item label="局域网 IP 段">
+        <div style="width: 100%">
+          <el-tag v-for="(network, index) in form.PROXY_LAN_NETWORKS" :key="index" closable @close="removeLanNetwork(index)"
+            style="margin-right: 8px; margin-bottom: 8px">
+            {{ network }}
+          </el-tag>
+          <el-input v-if="showLanNetworkInput" ref="lanNetworkInputRef" v-model="newLanNetwork" size="small"
+            style="width: 180px" placeholder="192.168.0.0/16" @blur="addLanNetwork" @keyup.enter="addLanNetwork" />
+          <el-button v-else size="small" @click="showLanNetworkInput = true">+ 添加 IP 段</el-button>
+          <div class="el-form-item__explain">CIDR 格式的局域网 IP 段，如 192.168.0.0/16</div>
+        </div>
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" native-type="submit" :loading="saving">保存配置</el-button>
         <el-button @click="load">重新加载</el-button>
@@ -139,17 +156,31 @@ const form = ref<Config>({
   WAKE_WORDS: [],
   LOG_LEVEL: 'INFO',
   VERBOSE_PLAYBACK_LOG: false,
+  PROXY_SKIP_AUTH_FOR_LAN: true,
+  PROXY_LAN_NETWORKS: ['192.168.0.0/16', '10.0.0.0/8', '172.16.0.0/12', '127.0.0.0/8'],
 })
 
 const showWakeWordInput = ref(false)
 const newWakeWord = ref('')
 const wakeWordInputRef = ref()
 
+const showLanNetworkInput = ref(false)
+const newLanNetwork = ref('')
+const lanNetworkInputRef = ref()
+
 // 当显示输入框时自动聚焦
 watch(showWakeWordInput, (show) => {
   if (show) {
     nextTick(() => {
       wakeWordInputRef.value?.focus()
+    })
+  }
+})
+
+watch(showLanNetworkInput, (show) => {
+  if (show) {
+    nextTick(() => {
+      lanNetworkInputRef.value?.focus()
     })
   }
 })
@@ -170,6 +201,24 @@ async function addWakeWord() {
 
 function removeWakeWord(index: number) {
   form.value.WAKE_WORDS.splice(index, 1)
+}
+
+async function addLanNetwork() {
+  const network = newLanNetwork.value.trim()
+  if (network && !form.value.PROXY_LAN_NETWORKS.includes(network)) {
+    form.value.PROXY_LAN_NETWORKS.push(network)
+    newLanNetwork.value = ''
+    showLanNetworkInput.value = false
+    // 自动保存配置
+    await save()
+  } else {
+    newLanNetwork.value = ''
+    showLanNetworkInput.value = false
+  }
+}
+
+function removeLanNetwork(index: number) {
+  form.value.PROXY_LAN_NETWORKS.splice(index, 1)
 }
 
 async function load() {

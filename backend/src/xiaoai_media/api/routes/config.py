@@ -30,6 +30,8 @@ class ConfigUpdate(BaseModel):
     WAKE_WORDS: list[str] | None = None
     LOG_LEVEL: str | None = Field(None, pattern="^(DEBUG|INFO|WARNING|ERROR|CRITICAL)$")
     VERBOSE_PLAYBACK_LOG: bool | None = None
+    PROXY_SKIP_AUTH_FOR_LAN: bool | None = None
+    PROXY_LAN_NETWORKS: list[str] | None = None
 
 
 @router.get("")

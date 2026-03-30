@@ -93,6 +93,8 @@ export interface Config {
   WAKE_WORDS: string[]
   LOG_LEVEL: string
   VERBOSE_PLAYBACK_LOG: boolean
+  PROXY_SKIP_AUTH_FOR_LAN: boolean
+  PROXY_LAN_NETWORKS: string[]
 }
 
 export interface SongQuality {

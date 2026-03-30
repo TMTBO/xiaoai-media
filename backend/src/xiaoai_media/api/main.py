@@ -146,7 +146,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api")
 
 # 其他所有路由都需要登录态校验
-from xiaoai_media.api.dependencies import get_current_user
+from xiaoai_media.api.dependencies import get_current_user, get_current_user_or_skip_for_lan
 from fastapi import Depends
 
 app.include_router(devices.router, prefix="/api", dependencies=[Depends(get_current_user)])
@@ -156,7 +156,8 @@ app.include_router(command.router, prefix="/api", dependencies=[Depends(get_curr
 app.include_router(config.router, prefix="/api", dependencies=[Depends(get_current_user)])
 app.include_router(music.router, prefix="/api", dependencies=[Depends(get_current_user)])
 app.include_router(playlist.router, prefix="/api", dependencies=[Depends(get_current_user)])
-app.include_router(proxy.router, prefix="/api", dependencies=[Depends(get_current_user)])
+# proxy 路由支持局域网跳过认证
+app.include_router(proxy.router, prefix="/api", dependencies=[Depends(get_current_user_or_skip_for_lan)])
 app.include_router(scheduler.router, prefix="/api", dependencies=[Depends(get_current_user)])
 app.include_router(state.router, prefix="/api", dependencies=[Depends(get_current_user)])
 
