@@ -52,38 +52,53 @@
       </el-form-item>
       <el-divider content-position="left" style="margin: 20px 0 16px">对话监听</el-divider>
       <el-form-item label="启用监听">
-        <el-switch v-model="form.ENABLE_CONVERSATION_POLLING" />
-        <div class="el-form-item__explain">持续监听音箱对话，自动拦截播放指令</div>
+        <div style="width: 100%">
+          <el-switch v-model="form.ENABLE_CONVERSATION_POLLING" />
+          <div class="el-form-item__explain">持续监听音箱对话，自动拦截播放指令</div>
+        </div>
       </el-form-item>
       <el-form-item label="轮询间隔">
-        <el-input-number v-model="form.CONVERSATION_POLL_INTERVAL" :min="0.1" :max="60" :step="0.1" :precision="1" />
-        <span style="margin-left: 8px">秒</span>
-        <div class="el-form-item__explain">对话监听的轮询间隔时间</div>
+        <div style="width: 100%">
+          <div>
+            <el-input-number v-model="form.CONVERSATION_POLL_INTERVAL" :min="0.1" :max="60" :step="0.1" :precision="1" />
+            <span style="margin-left: 8px">秒</span>
+          </div>
+          <div class="el-form-item__explain">对话监听的轮询间隔时间</div>
+        </div>
       </el-form-item>
       <el-divider content-position="left" style="margin: 20px 0 16px">播放监控</el-divider>
       <el-form-item label="启用监控">
-        <el-switch v-model="form.ENABLE_PLAYBACK_MONITOR" />
-        <div class="el-form-item__explain">监控播放状态，自动播放下一曲</div>
+        <div style="width: 100%">
+          <el-switch v-model="form.ENABLE_PLAYBACK_MONITOR" />
+          <div class="el-form-item__explain">监控播放状态，自动播放下一曲</div>
+        </div>
       </el-form-item>
       <el-form-item label="轮询间隔">
-        <el-input-number v-model="form.PLAYBACK_MONITOR_INTERVAL" :min="0.5" :max="60" :step="0.1" :precision="1" />
-        <span style="margin-left: 8px">秒</span>
-        <div class="el-form-item__explain">播放监控的轮询间隔时间（建议 2-5 秒）</div>
+        <div style="width: 100%">
+          <div>
+            <el-input-number v-model="form.PLAYBACK_MONITOR_INTERVAL" :min="0.5" :max="60" :step="0.1" :precision="1" />
+            <span style="margin-left: 8px">秒</span>
+          </div>
+          <div class="el-form-item__explain">播放监控的轮询间隔时间（建议 2-5 秒）</div>
+        </div>
       </el-form-item>
       <el-divider content-position="left" style="margin: 20px 0 16px">唤醒词配置</el-divider>
       <el-form-item label="唤醒词过滤">
-        <el-switch v-model="form.ENABLE_WAKE_WORD_FILTER" />
-        <div class="el-form-item__explain">只处理包含唤醒词的指令</div>
+        <div style="width: 100%">
+          <el-switch v-model="form.ENABLE_WAKE_WORD_FILTER" />
+          <div class="el-form-item__explain">只处理包含唤醒词的指令</div>
+        </div>
       </el-form-item>
       <el-form-item label="唤醒词列表">
         <div style="width: 100%">
-          <el-tag v-for="(word, index) in form.WAKE_WORDS" :key="index" closable @close="removeWakeWord(index)"
-            style="margin-right: 8px; margin-bottom: 8px">
-            {{ word }}
-          </el-tag>
-          <el-input v-if="showWakeWordInput" ref="wakeWordInputRef" v-model="newWakeWord" size="small"
-            style="width: 120px" @blur="addWakeWord" @keyup.enter="addWakeWord" />
-          <el-button v-else size="small" @click="showWakeWordInput = true">+ 添加唤醒词</el-button>
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+            <el-tag v-for="(word, index) in form.WAKE_WORDS" :key="index" closable @close="removeWakeWord(index)">
+              {{ word }}
+            </el-tag>
+            <el-input v-if="showWakeWordInput" ref="wakeWordInputRef" v-model="newWakeWord" size="small"
+              style="width: 120px" @blur="addWakeWord" @keyup.enter="addWakeWord" />
+            <el-button v-else size="small" @click="showWakeWordInput = true">+ 添加唤醒词</el-button>
+          </div>
           <div class="el-form-item__explain">只有包含这些唤醒词的指令才会被处理</div>
         </div>
       </el-form-item>
@@ -99,18 +114,21 @@
       </el-form-item>
       <el-divider content-position="left" style="margin: 20px 0 16px">代理访问控制</el-divider>
       <el-form-item label="局域网跳过认证">
-        <el-switch v-model="form.PROXY_SKIP_AUTH_FOR_LAN" />
-        <div class="el-form-item__explain">允许局域网内的设备（如小爱音箱）无需认证访问代理接口</div>
+        <div style="width: 100%">
+          <el-switch v-model="form.PROXY_SKIP_AUTH_FOR_LAN" />
+          <div class="el-form-item__explain">允许局域网内的设备（如小爱音箱）无需认证访问代理接口</div>
+        </div>
       </el-form-item>
       <el-form-item label="局域网 IP 段">
         <div style="width: 100%">
-          <el-tag v-for="(network, index) in form.PROXY_LAN_NETWORKS" :key="index" closable @close="removeLanNetwork(index)"
-            style="margin-right: 8px; margin-bottom: 8px">
-            {{ network }}
-          </el-tag>
-          <el-input v-if="showLanNetworkInput" ref="lanNetworkInputRef" v-model="newLanNetwork" size="small"
-            style="width: 180px" placeholder="192.168.0.0/16" @blur="addLanNetwork" @keyup.enter="addLanNetwork" />
-          <el-button v-else size="small" @click="showLanNetworkInput = true">+ 添加 IP 段</el-button>
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+            <el-tag v-for="(network, index) in form.PROXY_LAN_NETWORKS" :key="index" closable @close="removeLanNetwork(index)">
+              {{ network }}
+            </el-tag>
+            <el-input v-if="showLanNetworkInput" ref="lanNetworkInputRef" v-model="newLanNetwork" size="small"
+              style="width: 180px" placeholder="192.168.0.0/16" @blur="addLanNetwork" @keyup.enter="addLanNetwork" />
+            <el-button v-else size="small" @click="showLanNetworkInput = true">+ 添加 IP 段</el-button>
+          </div>
           <div class="el-form-item__explain">CIDR 格式的局域网 IP 段，如 192.168.0.0/16</div>
         </div>
       </el-form-item>
