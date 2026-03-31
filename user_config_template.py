@@ -76,7 +76,12 @@ CONVERSATION_POLL_INTERVAL = 2.0
 # 设置为 True 时，会监控设备播放状态，在一曲播放完成后自动播放下一曲
 ENABLE_PLAYBACK_MONITOR = True
 
-# 播放监控轮询间隔（秒）
+# 播放监控模式
+# "monitor" - 轮询模式（默认）：定期检查播放状态，兼容性好但较耗性能
+# "controller" - 定时器模式：根据音频时长设置定时器，高效但依赖准确的时长信息
+PLAYBACK_MODE = "monitor"
+
+# 播放监控轮询间隔（秒，仅在轮询模式下使用）
 # 建议设置为 2-5 秒，过短会增加设备负担，过长会导致切歌延迟
 PLAYBACK_MONITOR_INTERVAL = 3.0
 
@@ -180,6 +185,24 @@ def preprocess_command(query: str) -> str:
 # 日志级别
 # 可选值: DEBUG, INFO, WARNING, ERROR, CRITICAL
 LOG_LEVEL = "INFO"
+
+
+# ============================================
+# 代理访问控制配置
+# ============================================
+
+# 局域网访问是否跳过身份校验
+# 设置为 True 时，来自局域网的代理请求无需登录即可访问
+PROXY_SKIP_AUTH_FOR_LAN = True
+
+# 局域网 IP 段配置（CIDR 格式）
+# 定义哪些 IP 段被视为局域网
+PROXY_LAN_NETWORKS = [
+    "192.168.0.0/16",
+    "10.0.0.0/8",
+    "172.16.0.0/12",
+    "127.0.0.0/8",
+]
 
 
 

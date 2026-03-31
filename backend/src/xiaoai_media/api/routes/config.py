@@ -26,6 +26,7 @@ class ConfigUpdate(BaseModel):
     CONVERSATION_POLL_INTERVAL: float | None = Field(None, ge=0.1, le=60)
     ENABLE_PLAYBACK_MONITOR: bool | None = None
     PLAYBACK_MONITOR_INTERVAL: float | None = Field(None, ge=0.5, le=60)
+    PLAYBACK_MODE: str | None = Field(None, pattern="^(monitor|controller)$")
     ENABLE_WAKE_WORD_FILTER: bool | None = None
     WAKE_WORDS: list[str] | None = None
     LOG_LEVEL: str | None = Field(None, pattern="^(DEBUG|INFO|WARNING|ERROR|CRITICAL)$")

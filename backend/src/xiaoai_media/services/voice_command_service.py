@@ -565,20 +565,32 @@ class VoiceCommandService:
             执行结果
         """
         from xiaoai_media.services.state_service import get_state_service
+        from xiaoai_media.playback_controller import get_controller
+        
+        _log.info("处理停止播放命令，设备: %s", device_id)
         
         # 从状态服务获取当前播放的播单ID
         state_service = get_state_service()
         current_playlist_id = state_service.get(f"current_playlist_{device_id or 'default'}")
         
+        _log.info("当前播单ID: %s", current_playlist_id)
+        
         if not current_playlist_id:
             # 如果没有播单，直接停止播放器
+            _log.info("没有播单，直接停止播放器")
             client = get_client_sync()
             await client.player_stop(device_id)
+            
+            # 通知播放控制器
+            controller = get_controller()
+            await controller.on_play_stopped(device_id)
+            
             return {"action": "stop", "message": "已停止播放"}
         
         from xiaoai_media.services.playlist_service import PlaylistService
         
         try:
+            _log.info("通过 PlaylistService 停止播单: %s", current_playlist_id)
             result = await PlaylistService.stop_playlist(current_playlist_id, device_id)
             return {
                 "action": "stop_playlist",

@@ -585,6 +585,25 @@ function handleCreatePlaylist(source: 'search' | 'chart') {
     showCreatePlaylistDialog.value = true
 }
 
+// 将时长转换为秒数（整数）
+function parseDuration(interval: number | string): number {
+    if (typeof interval === 'number') {
+        return Math.floor(interval)
+    }
+    
+    // 解析 "mm:ss" 或 "hh:mm:ss" 格式
+    const parts = String(interval).split(':').map(p => parseInt(p, 10))
+    if (parts.length === 2) {
+        // mm:ss
+        return parts[0] * 60 + parts[1]
+    } else if (parts.length === 3) {
+        // hh:mm:ss
+        return parts[0] * 3600 + parts[1] * 60 + parts[2]
+    }
+    
+    return 0
+}
+
 async function confirmCreatePlaylist() {
     if (!createPlaylistForm.value.name.trim()) {
         ElMessage.error('请输入播单名称')
@@ -620,8 +639,8 @@ async function confirmCreatePlaylist() {
                 song_id: song.id,
                 qualities: song.qualities,
             },
-            interval: song.interval,
-            pic_url: song.meta.picUrl,
+            duration: parseDuration(song.interval),
+            cover_url: song.meta.picUrl,
         }))
 
         // 添加歌曲到播单

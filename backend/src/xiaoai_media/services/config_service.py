@@ -26,6 +26,7 @@ ALLOWED_KEYS = {
     "CONVERSATION_POLL_INTERVAL",
     "ENABLE_PLAYBACK_MONITOR",
     "PLAYBACK_MONITOR_INTERVAL",
+    "PLAYBACK_MODE",
     "ENABLE_WAKE_WORD_FILTER",
     "WAKE_WORDS",
     "LOG_LEVEL",
@@ -174,7 +175,7 @@ class ConfigService:
                 val_str = f'"{val}"'
 
             # 替换配置项（保持原有的注释和格式）- 用于单行配置
-            pattern = rf"^({key}\s*=\s*)(.+)$"
+            pattern = rf"^(\s*{key}\s*=\s*)(.+)$"
 
             new_content = []
             found = False
@@ -192,6 +193,9 @@ class ConfigService:
 
             if found:
                 content = "\n".join(new_content)
+            else:
+                # 如果配置项不存在，添加到文件末尾
+                content += f"\n{key} = {val_str}\n"
 
         config_path.write_text(content, encoding="utf-8")
 
@@ -214,6 +218,7 @@ class ConfigService:
             "CONVERSATION_POLL_INTERVAL": config.CONVERSATION_POLL_INTERVAL,
             "ENABLE_PLAYBACK_MONITOR": config.ENABLE_PLAYBACK_MONITOR,
             "PLAYBACK_MONITOR_INTERVAL": config.PLAYBACK_MONITOR_INTERVAL,
+            "PLAYBACK_MODE": getattr(config, "PLAYBACK_MODE", "monitor"),
             "ENABLE_WAKE_WORD_FILTER": config.ENABLE_WAKE_WORD_FILTER,
             "WAKE_WORDS": config.WAKE_WORDS,
             "LOG_LEVEL": getattr(config, "LOG_LEVEL", "INFO"),

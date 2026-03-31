@@ -32,7 +32,6 @@ from xiaoai_media.api.routes import (
 )
 from xiaoai_media.conversation import ConversationPoller
 from xiaoai_media.command_handler import CommandHandler
-from xiaoai_media.playback_monitor import get_monitor
 from xiaoai_media.client import XiaoAiClient
 from xiaoai_media.api.dependencies import set_global_client
 from xiaoai_media import config as app_config
@@ -48,9 +47,13 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("应用启动中...")
     
-    # Reset monitor instance to ensure clean state after reload
-    from xiaoai_media.playback_monitor import reset_monitor
-    reset_monitor()
+    # Reset monitor/controller instance to ensure clean state after reload
+    if app_config.PLAYBACK_MODE == "controller":
+        from xiaoai_media.playback_controller import reset_controller
+        reset_controller()
+    else:
+        from xiaoai_media.playback_monitor import reset_monitor
+        reset_monitor()
     
     # Initialize global XiaoAiClient
     client = XiaoAiClient()
@@ -64,11 +67,18 @@ async def lifespan(app: FastAPI):
     else:
         logger.info("对话监听已禁用")
     
-    # Check and resume playback monitoring if needed
+    # Check and resume playback monitoring/control if needed
     if app_config.ENABLE_PLAYBACK_MONITOR:
-        logger.info("播放监控已启用，检查是否需要恢复监听...")
-        monitor = get_monitor()
-        await monitor.check_and_resume()
+        if app_config.PLAYBACK_MODE == "controller":
+            logger.info("播放控制已启用（定时器模式），检查是否需要恢复监听...")
+            from xiaoai_media.playback_controller import get_controller
+            controller = get_controller()
+            await controller.check_and_resume()
+        else:
+            logger.info("播放监控已启用（轮询模式），检查是否需要恢复监听...")
+            from xiaoai_media.playback_monitor import get_monitor
+            monitor = get_monitor()
+            await monitor.check_and_resume()
     else:
         logger.info("播放监控已禁用")
     
@@ -115,22 +125,51 @@ async def lifespan(app: FastAPI):
                     await conversation_poller.stop()
                     logger.info("对话监听已禁用")
             
-            # 2. 重启播放监控器
-            monitor = get_monitor()
+            # 2. 重启播放监控器/控制器
             if cfg.ENABLE_PLAYBACK_MONITOR:
-                # 更新监控间隔
-                monitor.poll_interval = cfg.PLAYBACK_MONITOR_INTERVAL
-                logger.info("播放监控间隔已更新: %s秒", cfg.PLAYBACK_MONITOR_INTERVAL)
-                
-                # 如果监控器正在运行，重启以应用新配置
-                if monitor.running:
-                    await monitor.stop()
-                    await monitor.check_and_resume()
-                    logger.info("播放监控器已重启")
+                if cfg.PLAYBACK_MODE == "controller":
+                    # 定时器模式
+                    from xiaoai_media.playback_controller import get_controller
+                    controller = get_controller()
+                    
+                    # 如果控制器正在运行，重启以应用新配置
+                    if controller.running:
+                        await controller.stop()
+                        await controller.check_and_resume()
+                        logger.info("播放控制器已重启（定时器模式）")
+                else:
+                    # 轮询模式
+                    from xiaoai_media.playback_monitor import get_monitor
+                    monitor = get_monitor()
+                    
+                    # 更新监控间隔
+                    monitor.poll_interval = cfg.PLAYBACK_MONITOR_INTERVAL
+                    logger.info("播放监控间隔已更新: %s秒", cfg.PLAYBACK_MONITOR_INTERVAL)
+                    
+                    # 如果监控器正在运行，重启以应用新配置
+                    if monitor.running:
+                        await monitor.stop()
+                        await monitor.check_and_resume()
+                        logger.info("播放监控器已重启（轮询模式）")
             else:
-                if monitor.running:
-                    await monitor.stop()
-                    logger.info("播放监控已禁用")
+                # 停止所有监控/控制
+                try:
+                    from xiaoai_media.playback_monitor import get_monitor
+                    monitor = get_monitor()
+                    if monitor.running:
+                        await monitor.stop()
+                        logger.info("播放监控已禁用")
+                except Exception:
+                    pass
+                
+                try:
+                    from xiaoai_media.playback_controller import get_controller
+                    controller = get_controller()
+                    if controller.running:
+                        await controller.stop()
+                        logger.info("播放控制已禁用")
+                except Exception:
+                    pass
             
             # 3. 更新日志级别
             if hasattr(cfg, 'LOG_LEVEL'):
@@ -162,11 +201,19 @@ async def lifespan(app: FastAPI):
         logger.warning("停止对话监听失败: %s", e)
     
     try:
-        monitor = get_monitor()
-        await asyncio.wait_for(monitor.stop(), timeout=1.0)
-        logger.info("播放监控器已停止")
+        # 停止播放监控器/控制器
+        if app_config.PLAYBACK_MODE == "controller":
+            from xiaoai_media.playback_controller import get_controller
+            controller = get_controller()
+            await asyncio.wait_for(controller.stop(), timeout=1.0)
+            logger.info("播放控制器已停止")
+        else:
+            from xiaoai_media.playback_monitor import get_monitor
+            monitor = get_monitor()
+            await asyncio.wait_for(monitor.stop(), timeout=1.0)
+            logger.info("播放监控器已停止")
     except (asyncio.TimeoutError, Exception) as e:
-        logger.warning("停止播放监控器失败: %s", e)
+        logger.warning("停止播放监控/控制失败: %s", e)
     
     try:
         scheduler_service = get_scheduler_service()
@@ -191,9 +238,6 @@ conversation_poller = ConversationPoller(
 )
 command_handler = CommandHandler()
 conversation_poller.set_command_callback(command_handler.handle_command)
-
-# Get global playback monitor instance (singleton)
-playback_monitor = get_monitor()
 
 app.add_middleware(
     CORSMiddleware,

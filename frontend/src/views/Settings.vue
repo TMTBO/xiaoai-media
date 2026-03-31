@@ -73,7 +73,19 @@
           <div class="el-form-item__explain">监控播放状态，自动播放下一曲</div>
         </div>
       </el-form-item>
-      <el-form-item label="轮询间隔">
+      <el-form-item label="监控模式">
+        <div style="width: 100%">
+          <el-radio-group v-model="form.PLAYBACK_MODE">
+            <el-radio value="monitor">轮询模式</el-radio>
+            <el-radio value="controller">定时器模式</el-radio>
+          </el-radio-group>
+          <div class="el-form-item__explain">
+            轮询模式：定期检查播放状态（兼容性好，但较耗性能）<br />
+            定时器模式：根据音频时长设置定时器（高效，但依赖准确的时长信息）
+          </div>
+        </div>
+      </el-form-item>
+      <el-form-item label="轮询间隔" v-if="form.PLAYBACK_MODE === 'monitor'">
         <div style="width: 100%">
           <div>
             <el-input-number v-model="form.PLAYBACK_MONITOR_INTERVAL" :min="0.5" :max="60" :step="0.1" :precision="1" />
@@ -166,6 +178,7 @@ const form = ref<Config>({
   CONVERSATION_POLL_INTERVAL: 2.0,
   ENABLE_PLAYBACK_MONITOR: true,
   PLAYBACK_MONITOR_INTERVAL: 3.0,
+  PLAYBACK_MODE: 'monitor',
   ENABLE_WAKE_WORD_FILTER: true,
   WAKE_WORDS: [],
   LOG_LEVEL: 'INFO',

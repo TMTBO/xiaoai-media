@@ -16,6 +16,7 @@ from fastapi import HTTPException
 from xiaoai_media.api.dependencies import get_client_sync
 from xiaoai_media.services.playlist_models import PlaylistItem
 from xiaoai_media.services.playlist_service import PlaylistService
+from xiaoai_media.playback_controller import get_controller
 
 _log = get_logger()
 
@@ -224,6 +225,11 @@ class PlaylistPlayer:
         """
         client = get_client_sync()
         result = await client.player_pause(device_id)
+        
+        # 通知播放控制器
+        controller = get_controller()
+        await controller.on_play_paused(device_id)
+        
         return result
 
     async def resume(self, device_id: str) -> dict:
@@ -237,6 +243,11 @@ class PlaylistPlayer:
         """
         client = get_client_sync()
         result = await client.player_play(device_id)
+        
+        # 通知播放控制器
+        controller = get_controller()
+        await controller.on_play_resumed(device_id)
+        
         return result
 
     async def stop(self, device_id: str) -> dict:
@@ -250,6 +261,11 @@ class PlaylistPlayer:
         """
         client = get_client_sync()
         result = await client.player_stop(device_id)
+        
+        # 通知播放控制器
+        controller = get_controller()
+        await controller.on_play_stopped(device_id)
+        
         return result
 
     async def get_status(self, device_id: str) -> dict:

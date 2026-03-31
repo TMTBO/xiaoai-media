@@ -151,7 +151,7 @@ def reload_config() -> None:
     global MUSIC_API_BASE_URL, MUSIC_DEFAULT_PLATFORM
     global SERVER_BASE_URL
     global ENABLE_CONVERSATION_POLLING, CONVERSATION_POLL_INTERVAL
-    global ENABLE_PLAYBACK_MONITOR, PLAYBACK_MONITOR_INTERVAL
+    global ENABLE_PLAYBACK_MONITOR, PLAYBACK_MONITOR_INTERVAL, PLAYBACK_MODE
     global WAKE_WORDS, ENABLE_WAKE_WORD_FILTER
     global LOG_LEVEL
     global PROXY_SKIP_AUTH_FOR_LAN, PROXY_LAN_NETWORKS
@@ -177,6 +177,7 @@ def reload_config() -> None:
     
     ENABLE_PLAYBACK_MONITOR = _get_config("ENABLE_PLAYBACK_MONITOR", True)
     PLAYBACK_MONITOR_INTERVAL = _get_config("PLAYBACK_MONITOR_INTERVAL", 3.0)
+    PLAYBACK_MODE = _get_config("PLAYBACK_MODE", "monitor")
     
     WAKE_WORDS = _get_config("WAKE_WORDS", [])
     ENABLE_WAKE_WORD_FILTER = _get_config("ENABLE_WAKE_WORD_FILTER", True)
@@ -256,6 +257,9 @@ CONVERSATION_POLL_INTERVAL: float = _get_config("CONVERSATION_POLL_INTERVAL", 2.
 
 ENABLE_PLAYBACK_MONITOR: bool = _get_config("ENABLE_PLAYBACK_MONITOR", True)
 PLAYBACK_MONITOR_INTERVAL: float = _get_config("PLAYBACK_MONITOR_INTERVAL", 3.0)
+
+# 播放监控模式：monitor（轮询模式）或 controller（定时器模式）
+PLAYBACK_MODE: str = _get_config("PLAYBACK_MODE", "monitor")
 
 # ============================================
 # 唤醒词配置
