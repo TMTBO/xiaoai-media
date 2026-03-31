@@ -12,7 +12,7 @@ import random
 import time
 from datetime import datetime
 from pathlib import Path
-from urllib.parse import quote
+from urllib.parse import quote, unquote
 
 from xiaoai_media import config
 from xiaoai_media.api.dependencies import get_client_sync
@@ -47,6 +47,54 @@ class PlaylistService:
         r'^(\d+)[_\-\s]',        # 01-、01_、01 开头
         r'^(\d+)$',              # 纯数字目录名
     ]
+
+    @staticmethod
+    def _get_audio_duration_from_file(file_url: str) -> int:
+        """从音频文件中读取时长（秒）
+        
+        Args:
+            file_url: 文件URL，支持 file:// 协议或普通文件路径
+            
+        Returns:
+            音频时长（秒），如果读取失败返回 0
+        """
+        try:
+            # 处理 file:// 协议
+            if file_url.startswith("file://"):
+                file_path = unquote(file_url[7:])  # 移除 file:// 前缀并解码
+            else:
+                file_path = file_url
+            
+            path = Path(file_path)
+            
+            # 检查文件是否存在
+            if not path.exists() or not path.is_file():
+                _log.warning("文件不存在或不是文件: %s", file_path)
+                return 0
+            
+            # 使用 mutagen 读取音频文件元数据
+            from mutagen import File as MutagenFile
+            
+            audio = MutagenFile(str(path))
+            if audio is None:
+                _log.warning("无法识别音频文件格式: %s", file_path)
+                return 0
+            
+            # 获取时长（秒）
+            if hasattr(audio.info, 'length'):
+                duration = int(audio.info.length)
+                _log.info("从文件读取到音频时长: %s -> %d 秒", path.name, duration)
+                return duration
+            else:
+                _log.warning("音频文件没有时长信息: %s", file_path)
+                return 0
+                
+        except ImportError:
+            _log.error("mutagen 库未安装，无法读取音频文件时长。请运行: pip install mutagen")
+            return 0
+        except Exception as e:
+            _log.warning("读取音频文件时长失败 %s: %s", file_url, e)
+            return 0
 
     @staticmethod
     def _is_chapter_directory(dir_name: str) -> bool:
@@ -342,6 +390,18 @@ class PlaylistService:
         if app_config.ENABLE_PLAYBACK_MONITOR:
             # 构建初始播放状态（基于播放项信息）
             duration = item.duration * 1000 or 0
+            
+            # 如果 duration 为 0，尝试从文件中读取
+            if duration == 0 and item.url:
+                file_duration = PlaylistService._get_audio_duration_from_file(item.url)
+                if file_duration > 0:
+                    duration = file_duration * 1000  # 转换为毫秒
+                    # 更新 item 的 duration 字段并保存到播单
+                    item.duration = file_duration
+                    playlist.updated_at = datetime.now().isoformat()
+                    PlaylistStorage.save_playlist(playlist)
+                    _log.info("已更新播单项的时长信息: %s -> %d 秒", item.title, file_duration)
+            
             initial_status = {
                 "status": "playing",
                 "audio_id": item.url or "",

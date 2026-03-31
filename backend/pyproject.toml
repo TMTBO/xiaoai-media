@@ -17,6 +17,7 @@ dependencies = [
     "requests",
     "apscheduler>=3.10.0",
     "pyjwt>=2.8.0",
+    "mutagen",
 ]
 
 [project.optional-dependencies]
