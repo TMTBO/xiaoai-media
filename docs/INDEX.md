@@ -22,6 +22,9 @@
 |------|------|------|
 | 配置指南 | 配置总览 | [config/README.md](config/README.md) |
 | 用户配置详解 | 配置文件详细说明 | [config/USER_CONFIG_GUIDE.md](config/USER_CONFIG_GUIDE.md) |
+| 用户认证 | 用户登录和权限管理 | [config/USER_AUTH.md](config/USER_AUTH.md) ⭐ |
+| 用户认证快速开始 | 快速上手用户认证 | [config/USER_AUTH_QUICKSTART.md](config/USER_AUTH_QUICKSTART.md) |
+| 用户启用/禁用 | 用户启用禁用功能 | [config/USER_LOGIN_ENABLED_FEATURE.md](config/USER_LOGIN_ENABLED_FEATURE.md) |
 | 开发环境 | 本地开发配置 | [config/DEV_ENVIRONMENT.md](config/DEV_ENVIRONMENT.md) |
 | 数据存储 | 数据目录说明 | [config/DATA_STORAGE.md](config/DATA_STORAGE.md) |
 | 配置 FAQ | 常见问题 | [config/CONFIG_FAQ.md](config/CONFIG_FAQ.md) |
@@ -78,6 +81,9 @@
 | 文档 | 说明 | 路径 |
 |------|------|------|
 | 播放功能总览 | 功能介绍 | [playback/README.md](playback/README.md) |
+| 播放控制器 | 定时器模式播放控制 | [playback/PLAYBACK_CONTROLLER.md](playback/PLAYBACK_CONTROLLER.md) ⭐ |
+| 播放控制器更新日志 | 播放控制器变更记录 | [playback/PLAYBACK_CONTROLLER_CHANGELOG.md](playback/PLAYBACK_CONTROLLER_CHANGELOG.md) |
+| 播放模式快速开始 | 快速上手播放控制 | [playback/PLAYBACK_MODE_QUICK_START.md](playback/PLAYBACK_MODE_QUICK_START.md) |
 | 快速指南 | 快速上手 | [playback/QUICK_PLAYBACK_GUIDE.md](playback/QUICK_PLAYBACK_GUIDE.md) |
 | 故障排查 | 问题解决 | [playback/PLAYBACK_TROUBLESHOOTING.md](playback/PLAYBACK_TROUBLESHOOTING.md) |
 | 代理 URL 指南 | URL 代理使用 | [playback/代理URL使用指南.md](playback/代理URL使用指南.md) |
@@ -170,4 +176,4 @@
 
 ---
 
-**最后更新**：2026-03-29
+**最后更新**：2026-04-01

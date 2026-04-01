@@ -30,6 +30,7 @@
 ### ⚙️ 配置和部署
 - [配置指南](config/README.md) - 配置文件详解
 - [用户配置](config/USER_CONFIG_GUIDE.md) - 用户配置详细说明
+- [用户认证](config/USER_AUTH.md) - 用户登录和权限管理
 - [数据存储](config/DATA_STORAGE.md) - 数据目录说明
 - [开发环境](config/DEV_ENVIRONMENT.md) - 本地开发配置
 
@@ -51,6 +52,9 @@
 ### 配置相关 (config/)
 - **README.md** - 配置总览
 - **USER_CONFIG_GUIDE.md** - 用户配置详细指南
+- **USER_AUTH.md** - 用户认证功能说明
+- **USER_AUTH_QUICKSTART.md** - 用户认证快速开始
+- **USER_LOGIN_ENABLED_FEATURE.md** - 用户启用/禁用功能
 - **DEV_ENVIRONMENT.md** - 开发环境配置
 - **DATA_STORAGE.md** - 数据存储说明
 - **CONFIG_FAQ.md** - 配置常见问题
@@ -71,7 +75,7 @@
 - **conversation/** - 对话监听功能文档
   - 自动拦截、指令识别、智能响应
 - **playback/** - 音乐播放功能文档
-  - 音乐搜索、播放控制、故障排查
+  - 播放控制器、音乐搜索、播放控制、故障排查
 - **tts/** - TTS 语音功能文档
   - 文字转语音、语音播报
 
@@ -172,4 +176,4 @@ docs/
 
 ---
 
-**最后更新**：2026-03-30
+**最后更新**：2026-04-01

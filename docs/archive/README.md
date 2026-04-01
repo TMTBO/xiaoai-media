@@ -11,15 +11,21 @@ Bug 修复记录和调试文档
 对话功能的修复和验证记录
 
 ### playback/
-播放功能的修复和验证记录
+播放功能的修复、验证和重构记录
+- `PLAYBACK_MONITOR_REMOVAL_SUMMARY.md` - Playback Monitor 移除总结
+- `PLAYBACK_REFACTOR_COMPLETE.md` - Playback 重构完成报告
+- `VERIFICATION_REPORT.md` - 代码验证报告
 
 ### playlist/
 播单功能的实现记录和故障排除
 - `implementation/` - 实现总结
 - `troubleshooting/` - 故障排除记录
 
-### refactor/
-重构过程的详细记录
+### meta/
+项目元文档和实现总结
+- 用户认证功能实现记录
+- 文档组织和清理记录
+- 项目里程碑总结
 
 ## 📝 说明
 
@@ -39,4 +45,4 @@ Bug 修复记录和调试文档
 
 ---
 
-**归档日期**: 2026-03-30
+**最后更新**: 2026-04-01

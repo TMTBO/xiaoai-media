@@ -82,7 +82,6 @@ set_log_level(cfg.LOG_LEVEL)
 - client.py
 - command_handler.py
 - conversation.py
-- playback_monitor.py
 - player.py
 - scheduler_executor.py
 - config.py

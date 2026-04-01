@@ -385,70 +385,49 @@ class PlaylistService:
         result = await client.play_url(play_url, req.device_id, _type=1)
         _log.info("Play URL result: %s", result)
 
-        # 启动播放监控/控制器（如果已启用）
-        from xiaoai_media import config as app_config
-        if app_config.ENABLE_PLAYBACK_MONITOR:
-            # 构建初始播放状态（基于播放项信息）
-            duration = item.duration * 1000 or 0
-            
-            # 如果 duration 为 0，尝试从文件中读取
-            if duration == 0 and item.url:
-                file_duration = PlaylistService._get_audio_duration_from_file(item.url)
-                if file_duration > 0:
-                    duration = file_duration * 1000  # 转换为毫秒
-                    # 更新 item 的 duration 字段并保存到播单
-                    item.duration = file_duration
-                    playlist.updated_at = datetime.now().isoformat()
-                    PlaylistStorage.save_playlist(playlist)
-                    _log.info("已更新播单项的时长信息: %s -> %d 秒", item.title, file_duration)
-            
-            initial_status = {
-                "status": "playing",
-                "audio_id": item.url or "",
-                "position": 0,
-                "duration": duration,
-                "media_type": 0,
-            }
-            
-            # 根据配置选择使用 monitor 还是 controller
-            if app_config.PLAYBACK_MODE == "controller":
-                # 使用定时器模式
-                from xiaoai_media.playback_controller import get_controller
-                controller = get_controller()
-                
-                if not controller.running:
-                    await controller.start()
-                    _log.info("播放控制器已自动启动（定时器模式）")
-                
-                # 设置定时器（play_url 成功后直接设置）
-                if duration > 0:
-                    await controller.on_play_started(req.device_id or "default", duration, 0)
-                    _log.info("已设置播放定时器: duration=%d", duration)
-                
-                # 立即推送状态变化
-                try:
-                    await controller._notify_status_change(req.device_id or "default", initial_status)
-                    _log.info("已立即推送播放状态: %s", initial_status)
-                except Exception as e:
-                    _log.warning("立即推送播放状态失败: %s", e)
-            else:
-                # 使用轮询模式（默认）
-                from xiaoai_media.playback_monitor import get_monitor
-                monitor = get_monitor()
-                
-                # 启动监控器并传入初始状态
-                if not monitor.running:
-                    await monitor.start(device_id=req.device_id, initial_status=initial_status)
-                    _log.info("播放监控器已自动启动（轮询模式）")
-                
-                # 立即推送状态变化
-                try:
-                    await monitor._notify_status_change(req.device_id or "default", initial_status)
-                    _log.info("已立即推送播放状态: %s", initial_status)
-                except Exception as e:
-                    _log.warning("立即推送播放状态失败: %s", e)
+        # 启动播放控制器
+        from xiaoai_media.playback_controller import get_controller
+        controller = get_controller()
+        
+        # 构建初始播放状态（基于播放项信息）
+        duration = item.duration * 1000 or 0
+        
+        # 如果 duration 为 0，尝试从文件中读取
+        if duration == 0 and item.url:
+            file_duration = PlaylistService._get_audio_duration_from_file(item.url)
+            if file_duration > 0:
+                duration = file_duration * 1000  # 转换为毫秒
+                # 更新 item 的 duration 字段并保存到播单
+                item.duration = file_duration
+                playlist.updated_at = datetime.now().isoformat()
+                PlaylistStorage.save_playlist(playlist)
+                _log.info("已更新播单项的时长信息: %s -> %d 秒", item.title, file_duration)
+        
+        initial_status = {
+            "status": "playing",
+            "audio_id": item.url or "",
+            "position": 0,
+            "duration": duration,
+            "media_type": 0,
+        }
+        
+        if not controller.running:
+            await controller.start()
+            _log.info("播放控制器已自动启动（定时器模式）")
+        
+        # 设置定时器（play_url 成功后直接设置）
+        if duration > 0:
+            await controller.on_play_started(req.device_id or "default", duration, 0)
+            _log.info("已设置播放定时器: duration=%d", duration)
+        
+        # 立即推送状态变化
+        try:
+            await controller._notify_status_change(req.device_id or "default", initial_status)
+            _log.info("已立即推送播放状态: %s", initial_status)
+        except Exception as e:
+            _log.warning("立即推送播放状态失败: %s", e)
 
-        # 延迟5秒检测 monitor 是否正在运行
+        # 延迟5秒检测 controller 是否正在运行
         asyncio.create_task(PlaylistService._delayed_monitor_check(req.device_id))
         
         return {
@@ -494,14 +473,11 @@ class PlaylistService:
         # 注意：不清除 current_playlist_ 状态，以便用户可以继续播放
         # 只有在真正需要结束播放会话时才清除状态（如播放完所有歌曲）
 
-        # 通知 controller/monitor 停止播放
-        from xiaoai_media import config as app_config
-        if app_config.ENABLE_PLAYBACK_MONITOR:
-            if app_config.PLAYBACK_MODE == "controller":
-                from xiaoai_media.playback_controller import get_controller
-                controller = get_controller()
-                await controller.on_play_paused(device_id or "default")
-                _log.info("已通知播放控制器停止播放")
+        # 通知 controller 停止播放
+        from xiaoai_media.playback_controller import get_controller
+        controller = get_controller()
+        await controller.on_play_paused(device_id or "default")
+        _log.info("已通知播放控制器停止播放")
 
         _log.info("Stopped playlist: %s", playlist.name)
         
@@ -606,37 +582,19 @@ class PlaylistService:
             # 延迟5秒
             await asyncio.sleep(5)
             
-            # 检查是否启用了播放监控器
-            from xiaoai_media import config as app_config
-            if not app_config.ENABLE_PLAYBACK_MONITOR:
-                _log.debug("播放监控器未启用，跳过检测")
-                return
+            # 检查是否启用了播放控制器
+            from xiaoai_media.playback_controller import get_controller
+            controller = get_controller()
             
-            # 根据配置选择使用 monitor 还是 controller
-            if app_config.PLAYBACK_MODE == "controller":
-                from xiaoai_media.playback_controller import get_controller
-                controller = get_controller()
-                
-                # 如果 controller 没有运行，调用 check_and_resume
-                if not controller.running:
-                    _log.info("检测到播放控制器未运行，调用 check_and_resume 进行检测")
-                    await controller.check_and_resume()
-                else:
-                    _log.debug("播放控制器正在运行，无需额外检测")
+            # 如果 controller 没有运行，调用 check_and_resume
+            if not controller.running:
+                _log.info("检测到播放控制器未运行，调用 check_and_resume 进行检测")
+                await controller.check_and_resume()
             else:
-                # 获取 monitor 实例
-                from xiaoai_media.playback_monitor import get_monitor
-                monitor = get_monitor()
-                
-                # 如果 monitor 没有运行，调用 check_and_resume
-                if not monitor.running:
-                    _log.info("检测到播放监控器未运行，调用 check_and_resume 进行检测")
-                    await monitor.check_and_resume()
-                else:
-                    _log.debug("播放监控器正在运行，无需额外检测")
+                _log.debug("播放控制器正在运行，无需额外检测")
                 
         except Exception as e:
-            _log.error("延迟检测 monitor/controller 状态失败: %s", e, exc_info=True)
+            _log.error("延迟检测 controller 状态失败: %s", e, exc_info=True)
 
     @staticmethod
     def is_docker_environment() -> bool:

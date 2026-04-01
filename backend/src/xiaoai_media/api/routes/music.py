@@ -241,8 +241,6 @@ async def stream_player_status(
         event: status
         data: {"device_id": "xxx", "status": "playing", "audio_id": "xxx", ...}
     """
-    from xiaoai_media.playback_monitor import get_monitor
-    
     async def event_generator():
         """SSE 事件生成器"""
         queue: asyncio.Queue = asyncio.Queue()

@@ -83,33 +83,19 @@ async def stream_global_state(
             except Exception as e:
                 _log.error("构建完整状态失败: %s", e, exc_info=True)
         
-        # 根据配置选择使用 monitor 还是 controller
-        if app_config.PLAYBACK_MODE == "controller":
-            from xiaoai_media.playback_controller import get_controller
-            controller = get_controller()
-            controller.add_status_callback(status_callback)
-            _log.info("SSE 全局状态客户端已连接（定时器模式）: device_id=%s", device_id)
-            
-            # 检查并启动 playback controller（如果设备正在播放）
-            try:
-                if not controller.running:
-                    _log.info("playback_controller 未运行，检查是否需要启动...")
-                    await controller.check_and_resume()
-            except Exception as e:
-                _log.warning("检查 playback_controller 状态失败: %s", e)
-        else:
-            from xiaoai_media.playback_monitor import get_monitor
-            monitor = get_monitor()
-            monitor.add_status_callback(status_callback)
-            _log.info("SSE 全局状态客户端已连接（轮询模式）: device_id=%s", device_id)
-            
-            # 检查并启动 playback monitor（如果设备正在播放）
-            try:
-                if not monitor.running:
-                    _log.info("playback_monitor 未运行，检查是否需要启动...")
-                    await monitor.check_and_resume()
-            except Exception as e:
-                _log.warning("检查 playback_monitor 状态失败: %s", e)
+        # 根据配置选择使用 controller
+        from xiaoai_media.playback_controller import get_controller
+        controller = get_controller()
+        controller.add_status_callback(status_callback)
+        _log.info("SSE 全局状态客户端已连接（定时器模式）: device_id=%s", device_id)
+        
+        # 检查并启动 playback controller（如果设备正在播放）
+        try:
+            if not controller.running:
+                _log.info("playback_controller 未运行，检查是否需要启动...")
+                await controller.check_and_resume()
+        except Exception as e:
+            _log.warning("检查 playback_controller 状态失败: %s", e)
         
         try:
             # 首次连接时，立即发送当前状态
@@ -144,14 +130,9 @@ async def stream_global_state(
             _log.error("SSE 事件生成器异常: %s", e, exc_info=True)
         finally:
             # 清理：移除回调
-            if app_config.PLAYBACK_MODE == "controller":
-                from xiaoai_media.playback_controller import get_controller
-                controller = get_controller()
-                controller.remove_status_callback(status_callback)
-            else:
-                from xiaoai_media.playback_monitor import get_monitor
-                monitor = get_monitor()
-                monitor.remove_status_callback(status_callback)
+            from xiaoai_media.playback_controller import get_controller
+            controller = get_controller()
+            controller.remove_status_callback(status_callback)
             _log.info("SSE 全局状态客户端已清理: device_id=%s", device_id)
     
     return StreamingResponse(
@@ -234,7 +215,7 @@ async def _build_full_state(
     Args:
         device_id: 设备 ID
         device: 设备信息（可选，如果不提供会重新获取）
-        basic_status: 基础状态（可选，来自 playback_monitor 或 _get_initial_state）
+        basic_status: 基础状态（可选，来自 playback_controller 或 _get_initial_state）
         play_song_detail: 播放歌曲详情（可选，如果不提供且需要会重新获取）
         
     Returns:

@@ -23,7 +23,7 @@
 3. **通知监听者**: 调用所有注册的回调函数
 4. **重启相关服务**:
    - 对话监听器 (ConversationPoller)
-   - 播放监控器 (PlaybackMonitor)
+   - 播放控制器 (PlaybackController)
    - 日志级别
 
 ### 3. Uvicorn Reload 排除
@@ -52,7 +52,7 @@ reload_excludes = [
 - 音乐服务配置: `MUSIC_API_BASE_URL`, `MUSIC_DEFAULT_PLATFORM`
 - 服务器配置: `SERVER_BASE_URL`
 - 对话监听配置: `ENABLE_CONVERSATION_POLLING`, `CONVERSATION_POLL_INTERVAL`
-- 播放监控配置: `ENABLE_PLAYBACK_MONITOR`, `PLAYBACK_MONITOR_INTERVAL`
+- 播放模式配置: `PLAYBACK_MODE`
 - 唤醒词配置: `ENABLE_WAKE_WORD_FILTER`, `WAKE_WORDS`
 - 日志配置: `LOG_LEVEL`
 - 代理访问控制: `PROXY_SKIP_AUTH_FOR_LAN`, `PROXY_LAN_NETWORKS`
@@ -67,7 +67,7 @@ curl -X PUT http://localhost:8000/api/config \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{
     "CONVERSATION_POLL_INTERVAL": 3.0,
-    "ENABLE_PLAYBACK_MONITOR": true,
+    "PLAYBACK_MODE": "controller",
     "LOG_LEVEL": "DEBUG"
   }'
 ```
@@ -132,8 +132,9 @@ async def _handle_config_change():
         conversation_poller.poll_interval = cfg.CONVERSATION_POLL_INTERVAL
         # ...
     
-    # 2. 重启播放监控器
-    monitor.poll_interval = cfg.PLAYBACK_MONITOR_INTERVAL
+    # 2. 重启播放控制器
+    from xiaoai_media.playback_controller import get_controller
+    controller = get_controller()
     # ...
     
     # 3. 更新日志级别（更新所有已存在的 logger）
@@ -148,6 +149,7 @@ async def _handle_config_change():
 
 # 注册回调
 app_config.register_config_change_callback(on_config_changed)
+```
 ```
 
 ## 注意事项

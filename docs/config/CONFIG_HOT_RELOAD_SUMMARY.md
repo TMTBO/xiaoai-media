@@ -79,7 +79,7 @@ API 接收请求
 - 音乐服务配置: `MUSIC_API_BASE_URL`, `MUSIC_DEFAULT_PLATFORM`
 - 服务器配置: `SERVER_BASE_URL`
 - 对话监听配置: `ENABLE_CONVERSATION_POLLING`, `CONVERSATION_POLL_INTERVAL`
-- 播放监控配置: `ENABLE_PLAYBACK_MONITOR`, `PLAYBACK_MONITOR_INTERVAL`
+- 播放模式配置: `PLAYBACK_MODE`
 - 唤醒词配置: `ENABLE_WAKE_WORD_FILTER`, `WAKE_WORDS`
 - 日志配置: `LOG_LEVEL`
 - 代理访问控制: `PROXY_SKIP_AUTH_FOR_LAN`, `PROXY_LAN_NETWORKS`
@@ -121,7 +121,7 @@ curl -X PUT http://localhost:8000/api/config \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{
     "CONVERSATION_POLL_INTERVAL": 3.0,
-    "ENABLE_PLAYBACK_MONITOR": true,
+    "PLAYBACK_MODE": "controller",
     "LOG_LEVEL": "DEBUG"
   }'
 ```

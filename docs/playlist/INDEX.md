@@ -27,7 +27,7 @@
 
 #### 播放控制
 - [播放控制](./PLAYBACK_CONTROL.md) - 播放控制功能说明
-- [播放监控配置](./PLAYBACK_MONITOR_CONFIG.md) - 播放监控配置指南
+- [播放控制器](../PLAYBACK_CONTROLLER.md) - 播放控制器（定时器模式）
 - [自动播放下一首](./AUTO_PLAY_NEXT.md) - 自动播放功能说明
 - [自动播放实现](./AUTO_PLAY_IMPLEMENTATION.md) - 自动播放实现细节
 

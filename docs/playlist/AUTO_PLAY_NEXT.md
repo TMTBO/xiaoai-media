@@ -1,70 +1,91 @@
-# 自动播放下一曲功能
+# 自动播放下一首
 
-## 功能说明
+## 概述
 
-播放监控器会自动检测设备的播放状态，当检测到一曲播放完成时，会根据播单的播放模式自动播放下一曲。
+自动播放下一首功能使用定时器模式，根据音频时长自动设置定时器，在歌曲结束前触发下一曲。
 
-## 播放模式
+## 配置
 
-播单支持三种播放模式：
-
-- `loop`（列表循环）：播放完当前曲目后自动播放下一首，播放到最后一首后回到第一首
-- `single`（单曲循环）：重复播放当前曲目
-- `random`（随机播放）：随机选择播单中的曲目播放
-
-## 配置选项
-
-在 `user_config.py` 中可以配置以下选项：
-
-```python
-# 是否启用播放监控（默认：True）
-ENABLE_PLAYBACK_MONITOR = True
-
-# 播放监控轮询间隔（秒，默认：3.0）
-PLAYBACK_MONITOR_INTERVAL = 3.0
-```
+播放控制器默认启用，无需额外配置。
 
 ## 工作原理
 
-1. 播放监控器每隔 `PLAYBACK_MONITOR_INTERVAL` 秒检查一次所有设备的播放状态
-2. 对于正在播放播单的设备，监控器会记录其播放状态
-3. 当检测到设备从 "playing" 状态变为 "stopped" 或 "paused" 状态时，触发自动播放下一曲
-4. 根据播单的 `play_mode` 设置，选择下一首要播放的曲目：
-   - `loop`：播放下一首（循环）
-   - `single`：重复播放当前曲目
-   - `random`：随机选择一首
+1. 播放控制器在播放开始时获取音频时长
+2. 根据时长设置定时器，在歌曲结束前触发
+3. 定时器触发时，自动调用 `PlaylistService.play_next_in_playlist()` 播放下一曲
+4. 根据播放模式（列表循环、单曲循环、随机播放）选择下一首歌曲
 
-## 技术实现
+## 播放模式
 
-### 核心模块
+### 列表循环（Loop）
 
-- `playback_monitor.py`：播放监控器，负责轮询设备状态并触发自动播放
-- `playlist_service.py`：播单服务，提供 `play_next_in_playlist` 方法
-- `state_service.py`：状态服务，记录每个设备当前播放的播单 ID
+- 按顺序播放播单中的所有歌曲
+- 播放到最后一首后，从第一首重新开始
 
-### 状态管理
+### 单曲循环（Single）
 
-播放监控器使用状态服务来：
-- 记录每个设备当前播放的播单 ID（`current_playlist_{device_id}`）
-- 跟踪每个设备的上次播放状态，用于检测状态变化
+- 重复播放当前歌曲
+- 不会自动切换到下一首
 
-### 播放状态检测
+### 随机播放（Random）
 
-监控器通过 `XiaoAiClient.player_get_status()` 获取设备播放状态，包括：
-- `status`：播放状态（"playing"、"paused"、"stopped"）
-- `media_type`：媒体类型
-- `media_id`：媒体 ID
+- 随机选择播单中的歌曲播放
+- 避免连续播放同一首歌曲
+
+## 使用示例
+
+### 1. 创建播放列表
+
+```bash
+curl -X POST http://localhost:8000/api/playlists \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "我的播单",
+    "description": "测试播单"
+  }'
+```
+
+### 2. 添加音频文件
+
+```bash
+curl -X POST http://localhost:8000/api/playlists/{playlist_id}/items \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "歌曲1",
+    "url": "http://example.com/song1.mp3",
+    "duration": 180
+  }'
+```
+
+### 3. 开始播放
+
+```bash
+curl -X POST http://localhost:8000/api/playlists/{playlist_id}/play \
+  -H "Content-Type: application/json" \
+  -d '{
+    "device_id": "your_device_id",
+    "start_index": 0
+  }'
+```
+
+### 4. 设置播放模式
+
+```bash
+curl -X PUT http://localhost:8000/api/playlists/{playlist_id}/play-mode \
+  -H "Content-Type: application/json" \
+  -d '{
+    "play_mode": "loop"
+  }'
+```
 
 ## 注意事项
 
-1. 播放监控器在应用启动时自动启动，在应用关闭时自动停止
-2. 只有通过播单播放的音乐才会触发自动播放下一曲
-3. 如果用户主动暂停播放，监控器会检测到状态变化，但由于是从 playing 变为 paused，会触发播放下一曲（这可能需要进一步优化）
-4. 播放监控的轮询间隔不宜设置过短，以免对设备造成过多请求
+1. **时长信息准确性**：定时器模式依赖音频文件的时长信息，如果时长不准确，可能导致切换时机不对
+2. **缓冲时间**：默认缓冲时间为 1 秒，可以根据实际情况调整
+3. **异常处理**：定时器模式无法检测手动停止等异常情况，建议配合前端状态监控使用
 
-## 未来优化方向
+## 相关文档
 
-1. 区分用户主动暂停和播放完成的场景
-2. 支持更多播放模式（如顺序播放不循环）
-3. 添加播放历史记录
-4. 支持跨设备播放列表同步
+- [播放控制器文档](../PLAYBACK_CONTROLLER.md)
+- [播放控制器更新日志](../PLAYBACK_CONTROLLER_CHANGELOG.md)
+- [自动播放实现](./AUTO_PLAY_IMPLEMENTATION.md)

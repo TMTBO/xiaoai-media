@@ -161,7 +161,6 @@ async def _handle_config_change():
 - ✅ `client.py`
 - ✅ `command_handler.py`
 - ✅ `conversation.py`
-- ✅ `playback_monitor.py`
 - ✅ `player.py`
 - ✅ `scheduler_executor.py`
 - ✅ `config.py`

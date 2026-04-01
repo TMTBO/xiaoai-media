@@ -4,7 +4,7 @@
 验证：
 1. 播单信息从 PlaylistService 获取
 2. 音频信息从播单的 current_index 读取
-3. playback_monitor 的状态更新实时推送到前端
+3. playback_controller 的状态更新实时推送到前端
 """
 
 import asyncio
@@ -24,7 +24,7 @@ async def test_build_full_state():
     print("测试 _build_full_state 函数")
     print("=" * 60)
     
-    # 模拟 playback_monitor 推送的基础状态
+    # 模拟 playback_controller 推送的基础状态
     basic_status = {
         "status": "playing",
         "audio_id": "1774607406199261",

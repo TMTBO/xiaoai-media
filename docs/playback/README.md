@@ -4,16 +4,22 @@
 
 ## 📚 文档列表
 
+### 核心功能
+
+- **[PLAYBACK_CONTROLLER.md](./PLAYBACK_CONTROLLER.md)** ⭐ - 播放控制器（定时器模式）
+- **[PLAYBACK_CONTROLLER_CHANGELOG.md](./PLAYBACK_CONTROLLER_CHANGELOG.md)** - 播放控制器更新日志
+- **[PLAYBACK_MODE_QUICK_START.md](./PLAYBACK_MODE_QUICK_START.md)** - 播放模式快速入门
+
 ### 快速开始
 
-- **[播放错误快速修复.md](./播放错误快速修复.md)** - 快速修复播放错误的指南
 - **[QUICK_PLAYBACK_GUIDE.md](./QUICK_PLAYBACK_GUIDE.md)** - 播放功能快速指南
+- **[播放错误快速修复.md](./播放错误快速修复.md)** - 快速修复播放错误的指南
 
 ### 问题修复
 
+- **[PLAYBACK_TROUBLESHOOTING.md](./PLAYBACK_TROUBLESHOOTING.md)** - 播放故障排查指南
 - **[播放错误修复说明.md](./播放错误修复说明.md)** - 播放错误的详细分析和修复方案
 - **[PLAYBACK_FIX.md](./PLAYBACK_FIX.md)** - 播放修复技术文档（英文）
-- **[PLAYBACK_TROUBLESHOOTING.md](./PLAYBACK_TROUBLESHOOTING.md)** - 播放故障排查指南
 
 ### 代理URL功能
 
@@ -114,6 +120,8 @@ await client.play_url(proxy_url, device_id, _type=1)
 
 ## 🔗 快速链接
 
+- [播放控制器](./PLAYBACK_CONTROLLER.md) - 定时器模式播放控制
+- [播放模式快速入门](./PLAYBACK_MODE_QUICK_START.md) - 快速上手
 - [播放错误快速修复](./播放错误快速修复.md) - 最快的修复方法
 - [代理URL使用指南](./代理URL使用指南.md) - 如何使用代理
 - [故障排查指南](./PLAYBACK_TROUBLESHOOTING.md) - 解决播放问题

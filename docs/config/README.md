@@ -153,10 +153,14 @@ $HOME/
 
 ## 相关文档
 
+- [用户配置指南](USER_CONFIG_GUIDE.md) - 配置文件详细说明
+- [用户认证](USER_AUTH.md) - 用户登录和权限管理
+- [用户认证快速开始](USER_AUTH_QUICKSTART.md) - 快速上手用户认证
+- [用户启用/禁用](USER_LOGIN_ENABLED_FEATURE.md) - 用户启用禁用功能
 - [开发环境配置](DEV_ENVIRONMENT.md) - 本地开发环境设置
 - [数据存储说明](DATA_STORAGE.md) - 数据目录详解
-- [用户配置指南](USER_CONFIG_GUIDE.md) - 配置文件详细说明
 - [配置 FAQ](CONFIG_FAQ.md) - 常见问题解答
+- [Token 获取指南](GET_PASSTOKEN_GUIDE.md) - 获取小米 Token
 
 ---
 
