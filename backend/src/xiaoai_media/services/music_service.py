@@ -7,29 +7,33 @@
 from __future__ import annotations
 
 import logging
-from xiaoai_media.logger import get_logger
 import re
+import sys
 from difflib import get_close_matches
+from pathlib import Path
 
 from fastapi import HTTPException
 
 from xiaoai_media import config
+from xiaoai_media.logger import get_logger
 
 # 导入 music_provider 中的实现
 try:
-    from music_provider import search_music as provider_search_music
-    from music_provider import get_ranks as provider_get_ranks
-    from music_provider import get_rank_songs as provider_get_rank_songs
+    from music_provider import (
+        get_rank_songs as provider_get_rank_songs,
+        get_ranks as provider_get_ranks,
+        search_music as provider_search_music,
+    )
 except ImportError:
     # 如果 music_provider 不在路径中，尝试从根目录导入
-    import sys
-    from pathlib import Path
     root_dir = Path(__file__).parent.parent.parent.parent.parent
     if str(root_dir) not in sys.path:
         sys.path.insert(0, str(root_dir))
-    from music_provider import search_music as provider_search_music
-    from music_provider import get_ranks as provider_get_ranks
-    from music_provider import get_rank_songs as provider_get_rank_songs
+    from music_provider import (
+        get_rank_songs as provider_get_rank_songs,
+        get_ranks as provider_get_ranks,
+        search_music as provider_search_music,
+    )
 
 _log = get_logger()
 

@@ -8,15 +8,15 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from xiaoai_media.logger import get_logger
 from typing import Any
 
 from fastapi import HTTPException
 
-from xiaoai_media.api.dependencies import get_client_sync
+from xiaoai_media.client import get_client_sync
+from xiaoai_media.logger import get_logger
+from xiaoai_media.playback_controller import get_controller
 from xiaoai_media.services.playlist_models import PlaylistItem
 from xiaoai_media.services.playlist_service import PlaylistService
-from xiaoai_media.playback_controller import get_controller
 
 _log = get_logger()
 

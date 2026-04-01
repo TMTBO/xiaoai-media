@@ -15,6 +15,27 @@ from xiaoai_media import config
 
 _log = get_logger()
 
+# Global XiaoAiClient instance (shared across all requests)
+_global_client: XiaoAiClient | None = None
+
+
+def set_global_client(client: XiaoAiClient) -> None:
+    """Set the global XiaoAiClient instance (called at startup)."""
+    global _global_client
+    _global_client = client
+
+
+def get_client_sync() -> XiaoAiClient:
+    """Get the global XiaoAiClient instance synchronously.
+    
+    This is used by service classes that need access to the client
+    outside of FastAPI route handlers.
+    """
+    global _global_client
+    if _global_client is None:
+        raise RuntimeError("XiaoAiClient not initialized")
+    return _global_client
+
 # TTS command mapping: hardware short code → "siid-aiid" for miot_action
 # Reference: https://github.com/hanxi/xiaomusic/blob/main/xiaomusic/const.py
 # These are for TTS播报 (TTS broadcast), which only takes text parameter
@@ -420,31 +441,14 @@ class XiaoAiClient:
 
         _log.info("MiService: get volume from device %s", did)
 
-        # Use player_get_status instead of miot_get_prop
-        # miot_get_prop(did, (2, 1)) returns None on some devices
-        result = await self._na_service.player_get_status(did)
-        _log.debug("MiService: player_get_status raw result: %s", result)
-
-        # Parse volume from nested JSON string in result['data']['info']
-        volume = None
-        try:
-            if result and isinstance(result, dict):
-                data = result.get("data", {})
-                info_str = data.get("info", "")
-                if info_str:
-                    info_data = json.loads(info_str)
-                    volume = info_data.get("volume")
-                    _log.info("MiService: get volume result: %s", volume)
-                else:
-                    _log.warning("MiService: player_get_status returned no info field")
-            else:
-                _log.warning(
-                    "MiService: player_get_status returned invalid data: %s", result
-                )
-        except (json.JSONDecodeError, AttributeError) as e:
-            _log.error(
-                "MiService: failed to parse volume from player_get_status: %s", e
-            )
+        # 使用 player_get_status 获取音量（已在内部解析）
+        status = await self.player_get_status(did)
+        volume = status.get("volume")
+        
+        if volume is None:
+            _log.warning("MiService: player_get_status 未返回音量信息")
+        else:
+            _log.info("MiService: get volume result: %s", volume)
 
         return {"device": f"{device_name}({did})", "volume": volume}
 
@@ -845,9 +849,27 @@ class XiaoAiClient:
         return {"device": f"{device_name}({did})", "result": result}
 
     async def player_get_status(self, device_id: str | None = None) -> dict:
-        """Get current player status.
+        """Get current player status with parsed and flattened data.
 
         Uses the player_get_play_status API from miservice_fork.
+        
+        Returns:
+            dict: 展平后的播放状态，包含以下字段：
+                - device: 设备名称和ID
+                - device_id: 设备ID
+                - raw_status: 原始状态数据（用于调试）
+                - info: 解析后的 info 对象
+                - status_code: 状态码 (0=stopped, 1=playing, 2=paused)
+                - status: 状态文本 (stopped/playing/paused/unknown)
+                - media_type: 媒体类型
+                - volume: 音量
+                - play_song_detail: 播放歌曲详情对象
+                - audio_id: 音频ID
+                - name: 歌曲名称
+                - singer: 歌手
+                - album_name: 专辑名称
+                - duration: 总时长（秒）
+                - position: 当前播放位置（秒）
         """
         assert self._na_service is not None
         did = await self._resolve_device_id(device_id)
@@ -855,10 +877,48 @@ class XiaoAiClient:
         device_name = next(
             (d.get("name", "") for d in devices if d["deviceID"] == did), ""
         )
-        # _log.info("MiService: get player status on device %s", did)
-        result = await self._na_service.player_get_status(did)
-        # _log.info("MiService: player status result: %s", result)
-        return {"device": f"{device_name}({did})", "status": result}
+        
+        # 获取原始状态
+        raw_result = await self._na_service.player_get_status(did)
+        # _log.info("MiService: player status result: %s", raw_result)
+        
+        # 解析嵌套的 JSON 数据
+        info = {}
+        play_song_detail = {}
+        
+        try:
+            if raw_result and isinstance(raw_result, dict):
+                data = raw_result.get("data", {})
+                info_str = data.get("info", "{}")
+                
+                if info_str:
+                    info = json.loads(info_str)
+                    play_song_detail = info.get("play_song_detail", {})
+        except (json.JSONDecodeError, TypeError, AttributeError) as e:
+            _log.warning("解析播放状态 info 失败: %s", e)
+        
+        # 提取并展平常用字段
+        status_code = info.get("status", 0)
+        status_text = {0: "stopped", 1: "playing", 2: "paused"}.get(status_code, "unknown")
+        
+        return {
+            "device": f"{device_name}({did})",
+            "device_id": did,
+            "raw_status": raw_result,  # 保留原始数据用于调试
+            "info": info,  # 解析后的完整 info 对象
+            "status_code": status_code,
+            "status": status_text,
+            "media_type": info.get("media_type", 0),
+            "volume": info.get("volume"),
+            "play_song_detail": play_song_detail,  # 完整的歌曲详情对象
+            # 展平的歌曲信息字段
+            "audio_id": play_song_detail.get("audio_id", ""),
+            "name": play_song_detail.get("name", ""),
+            "singer": play_song_detail.get("singer", ""),
+            "album_name": play_song_detail.get("album_name", ""),
+            "duration": play_song_detail.get("duration", 0),
+            "position": play_song_detail.get("position", 0),
+        }
 
     async def player_set_loop(
         self, device_id: str | None = None, loop_type: int = 1

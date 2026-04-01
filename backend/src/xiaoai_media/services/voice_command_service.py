@@ -6,7 +6,6 @@
 from __future__ import annotations
 
 import logging
-from xiaoai_media.logger import get_logger
 import re
 from datetime import datetime
 from typing import Any
@@ -14,16 +13,21 @@ from typing import Any
 from fastapi import HTTPException
 
 from xiaoai_media import config
-from xiaoai_media.api.dependencies import get_client_sync
+from xiaoai_media.client import get_client_sync
+from xiaoai_media.logger import get_logger
+from xiaoai_media.playback_controller import get_controller
+from xiaoai_media.services.state_service import get_state_service
 from .music_service import MusicService
-from .playlist_service import PlaylistService
-from .playlist_storage import PlaylistStorage
 from .playlist_models import (
-    PlaylistItem,
-    CreatePlaylistRequest,
     AddItemRequest,
+    ContinuePlayRequest,
+    CreatePlaylistRequest,
+    PlaylistItem,
+    PlayModeRequest,
     PlayPlaylistRequest,
 )
+from .playlist_service import PlaylistService
+from .playlist_storage import PlaylistStorage
 
 _log = get_logger()
 
@@ -59,6 +63,33 @@ def _parse_duration(duration_value: Any) -> int:
 
 class VoiceCommandService:
     """语音命令服务类"""
+
+    @staticmethod
+    def _get_current_playlist_id(device_id: str | None) -> str | None:
+        """获取当前播放的播单ID
+        
+        Args:
+            device_id: 设备ID
+            
+        Returns:
+            播单ID或None
+        """
+        state_service = get_state_service()
+        return state_service.get(f"current_playlist_{device_id or 'default'}")
+    
+    @staticmethod
+    async def _announce_tts(message: str, device_id: str | None):
+        """播报TTS消息
+        
+        Args:
+            message: 消息内容
+            device_id: 设备ID
+        """
+        try:
+            client = get_client_sync()
+            await client.text_to_speech(message, device_id)
+        except Exception as e:
+            _log.warning("TTS播报失败: %s", e)
 
     @staticmethod
     async def execute_command(text: str, device_id: str | None = None) -> dict:
@@ -483,17 +514,10 @@ class VoiceCommandService:
         Returns:
             执行结果
         """
-        from xiaoai_media.services.state_service import get_state_service
-        
-        # 从状态服务获取当前播放的播单ID
-        state_service = get_state_service()
-        current_playlist_id = state_service.get(f"current_playlist_{device_id or 'default'}")
+        current_playlist_id = VoiceCommandService._get_current_playlist_id(device_id)
         
         if not current_playlist_id:
             raise HTTPException(status_code=404, detail="当前没有播放中的播单")
-        
-        from xiaoai_media.services.playlist_service import PlaylistService
-        from xiaoai_media.services.playlist_models import PlayModeRequest
         
         try:
             playlist = PlaylistService.set_play_mode(
@@ -505,8 +529,7 @@ class VoiceCommandService:
             mode_name = mode_names.get(mode, mode)
             
             # 播报模式变更
-            client = get_client_sync()
-            await client.text_to_speech(f"已切换到{mode_name}模式", device_id)
+            await VoiceCommandService._announce_tts(f"已切换到{mode_name}模式", device_id)
             
             return {
                 "action": "set_play_mode",
@@ -528,17 +551,10 @@ class VoiceCommandService:
         Returns:
             执行结果
         """
-        from xiaoai_media.services.state_service import get_state_service
-        
-        # 从状态服务获取当前播放的播单ID
-        state_service = get_state_service()
-        current_playlist_id = state_service.get(f"current_playlist_{device_id or 'default'}")
+        current_playlist_id = VoiceCommandService._get_current_playlist_id(device_id)
         
         if not current_playlist_id:
             raise HTTPException(status_code=404, detail="当前没有播放中的播单")
-        
-        from xiaoai_media.services.playlist_service import PlaylistService
-        from xiaoai_media.services.playlist_models import ContinuePlayRequest
         
         try:
             result = await PlaylistService.continue_playlist(
@@ -564,14 +580,9 @@ class VoiceCommandService:
         Returns:
             执行结果
         """
-        from xiaoai_media.services.state_service import get_state_service
-        from xiaoai_media.playback_controller import get_controller
-        
         _log.info("处理停止播放命令，设备: %s", device_id)
         
-        # 从状态服务获取当前播放的播单ID
-        state_service = get_state_service()
-        current_playlist_id = state_service.get(f"current_playlist_{device_id or 'default'}")
+        current_playlist_id = VoiceCommandService._get_current_playlist_id(device_id)
         
         _log.info("当前播单ID: %s", current_playlist_id)
         
@@ -586,8 +597,6 @@ class VoiceCommandService:
             await controller.on_play_stopped(device_id)
             
             return {"action": "stop", "message": "已停止播放"}
-        
-        from xiaoai_media.services.playlist_service import PlaylistService
         
         try:
             _log.info("通过 PlaylistService 停止播单: %s", current_playlist_id)
@@ -611,16 +620,10 @@ class VoiceCommandService:
         Returns:
             执行结果
         """
-        from xiaoai_media.services.state_service import get_state_service
-        
-        # 从状态服务获取当前播放的播单ID
-        state_service = get_state_service()
-        current_playlist_id = state_service.get(f"current_playlist_{device_id or 'default'}")
+        current_playlist_id = VoiceCommandService._get_current_playlist_id(device_id)
         
         if not current_playlist_id:
             raise HTTPException(status_code=404, detail="当前没有播放中的播单")
-        
-        from xiaoai_media.services.playlist_service import PlaylistService
         
         try:
             result = await PlaylistService.play_next_in_playlist(current_playlist_id, device_id)

@@ -12,6 +12,7 @@ from pathlib import Path
 from fastapi import HTTPException
 
 from xiaoai_media import config
+from xiaoai_media.config import reload_config
 
 # 允许通过API修改的配置项
 ALLOWED_KEYS = {
@@ -258,5 +259,4 @@ class ConfigService:
     @staticmethod
     def reload_config_module() -> None:
         """重新加载配置模块，使更改生效"""
-        from xiaoai_media.config import reload_config
         reload_config()

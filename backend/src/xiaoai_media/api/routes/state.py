@@ -8,15 +8,17 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from xiaoai_media.logger import get_logger
 from typing import Any
 
 from fastapi import APIRouter, Query, Request
 from fastapi.responses import StreamingResponse
 
-from xiaoai_media.api.dependencies import get_client_sync
-from xiaoai_media.services.state_service import get_state_service
+from xiaoai_media import config as app_config
+from xiaoai_media.client import get_client_sync
+from xiaoai_media.logger import get_logger
+from xiaoai_media.playback_controller import get_controller
 from xiaoai_media.services.playlist_service import PlaylistService
+from xiaoai_media.services.state_service import get_state_service
 
 _log = get_logger()
 
@@ -84,7 +86,6 @@ async def stream_global_state(
                 _log.error("构建完整状态失败: %s", e, exc_info=True)
         
         # 根据配置选择使用 controller
-        from xiaoai_media.playback_controller import get_controller
         controller = get_controller()
         controller.add_status_callback(status_callback)
         _log.info("SSE 全局状态客户端已连接（定时器模式）: device_id=%s", device_id)
@@ -130,8 +131,6 @@ async def stream_global_state(
             _log.error("SSE 事件生成器异常: %s", e, exc_info=True)
         finally:
             # 清理：移除回调
-            from xiaoai_media.playback_controller import get_controller
-            controller = get_controller()
             controller.remove_status_callback(status_callback)
             _log.info("SSE 全局状态客户端已清理: device_id=%s", device_id)
     
@@ -171,34 +170,20 @@ async def _get_initial_state(device_id: str | None) -> dict[str, Any]:
         
         dev_id = device.get("deviceID")
         
-        # 获取播放状态
-        status_result = await client.player_get_status(dev_id)
-        status_data = status_result.get("status", {})
-        data = status_data.get("data", {})
-        info_str = data.get("info", "{}")
-        
-        try:
-            info = json.loads(info_str)
-        except (json.JSONDecodeError, TypeError):
-            info = {}
-        
-        # 提取播放状态
-        status_code = info.get("status", 0)
-        play_status = {0: "stopped", 1: "playing", 2: "paused"}.get(status_code, "unknown")
-        
-        play_song_detail = info.get("play_song_detail", {})
+        # 获取播放状态（已在 client 中解析展平）
+        status = await client.player_get_status(dev_id)
         
         # 构建基础状态
         basic_status = {
-            "status": play_status,
-            "audio_id": play_song_detail.get("audio_id", ""),
-            "position": play_song_detail.get("position", 0),
-            "duration": play_song_detail.get("duration", 0),
-            "media_type": info.get("media_type", 0),
+            "status": status.get("status", "unknown"),
+            "audio_id": status.get("audio_id", ""),
+            "position": status.get("position", 0),
+            "duration": status.get("duration", 0),
+            "media_type": status.get("media_type", 0),
         }
         
         # 复用 _build_full_state 构建完整状态
-        return await _build_full_state(dev_id, device, basic_status, play_song_detail)
+        return await _build_full_state(dev_id, device, basic_status, status.get("play_song_detail", {}))
     except Exception as e:
         _log.error("获取初始状态失败: %s", e, exc_info=True)
         return {"error": str(e)}
@@ -286,19 +271,8 @@ async def _build_full_state(
             # 如果没有提供 play_song_detail，重新获取
             if play_song_detail is None:
                 try:
-                    status_result = await client.player_get_status(device_id)
-                    status_data = status_result.get("status", {})
-                    data = status_data.get("data", {})
-                    info_str = data.get("info", "{}")
-                    
-                    _log.debug("获取设备状态用于歌曲信息: info_str=%s", info_str[:200])
-                    
-                    try:
-                        info = json.loads(info_str)
-                    except (json.JSONDecodeError, TypeError):
-                        info = {}
-                    
-                    play_song_detail = info.get("play_song_detail", {})
+                    status = await client.player_get_status(device_id)
+                    play_song_detail = status.get("play_song_detail", {})
                     _log.debug("play_song_detail 内容: %s", play_song_detail)
                 except Exception as e:
                     _log.warning("获取设备播放状态失败: %s", e, exc_info=True)

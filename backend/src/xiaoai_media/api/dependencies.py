@@ -1,17 +1,12 @@
 """FastAPI dependencies for dependency injection."""
 
 import ipaddress
-from fastapi import HTTPException, Header, Request
-from xiaoai_media.client import XiaoAiClient
 
-# Global XiaoAiClient instance (shared across all requests)
-_global_client: XiaoAiClient | None = None
+from fastapi import Header, HTTPException, Request
 
-
-def set_global_client(client: XiaoAiClient) -> None:
-    """Set the global XiaoAiClient instance (called at startup)."""
-    global _global_client
-    _global_client = client
+from xiaoai_media import config
+from xiaoai_media.client import XiaoAiClient, get_client_sync, set_global_client
+from xiaoai_media.services.user_service import get_user_service
 
 
 async def get_client() -> XiaoAiClient:
@@ -19,28 +14,11 @@ async def get_client() -> XiaoAiClient:
     
     This is used as a FastAPI dependency for route handlers.
     """
-    global _global_client
-    if _global_client is None:
-        raise RuntimeError("XiaoAiClient not initialized")
-    return _global_client
-
-
-def get_client_sync() -> XiaoAiClient:
-    """Get the global XiaoAiClient instance synchronously.
-    
-    This is used by service classes that need access to the client
-    outside of FastAPI route handlers.
-    """
-    global _global_client
-    if _global_client is None:
-        raise RuntimeError("XiaoAiClient not initialized")
-    return _global_client
+    return get_client_sync()
 
 
 def get_current_user(authorization: str = Header(None)) -> dict:
     """从请求头获取当前用户（用于登录态校验）"""
-    from xiaoai_media.services.user_service import get_user_service
-    
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="未授权")
     
@@ -83,8 +61,6 @@ def get_current_user_or_skip_for_lan(
     
     用于 proxy 路由，允许局域网内的设备（如小爱音箱）无需认证访问
     """
-    from xiaoai_media import config
-    
     # 获取客户端 IP
     client_ip = request.client.host if request.client else None
     

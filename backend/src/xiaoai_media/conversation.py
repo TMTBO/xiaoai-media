@@ -11,7 +11,7 @@ import re
 import time
 from typing import Callable
 
-from xiaoai_media.api.dependencies import get_client_sync
+from xiaoai_media.client import get_client_sync
 from xiaoai_media.services.state_service import get_state_service
 
 _log = get_logger()

@@ -1,42 +1,44 @@
+"""FastAPI main application module."""
+
 from __future__ import annotations
 
 import asyncio
 import logging
 import os
-from pathlib import Path
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
-
-# 注意：日志配置由 run.py 中的 uvicorn.run(log_config=...) 统一管理
-# 这里只设置特定库的日志级别
-# miservice logs every HTTP request at INFO; suppress to WARNING to reduce noise
-logging.getLogger("miservice").setLevel(logging.WARNING)
-
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
+from xiaoai_media import config as app_config
+from xiaoai_media.api.dependencies import set_global_client
 from xiaoai_media.api.routes import (
-    devices,
-    tts,
-    volume,
+    auth,
     command,
     config,
+    devices,
     music,
     playlist,
     proxy,
     scheduler,
     state,
-    auth,
+    tts,
+    volume,
 )
-from xiaoai_media.conversation import ConversationPoller
-from xiaoai_media.command_handler import CommandHandler
 from xiaoai_media.client import XiaoAiClient
-from xiaoai_media.api.dependencies import set_global_client
-from xiaoai_media import config as app_config
-from xiaoai_media.services.scheduler_service import get_scheduler_service, TaskType
+from xiaoai_media.command_handler import CommandHandler
+from xiaoai_media.conversation import ConversationPoller
+from xiaoai_media.playback_controller import get_controller, reset_controller
 from xiaoai_media.scheduler_executor import get_scheduler_executor
+from xiaoai_media.services.scheduler_service import TaskType, get_scheduler_service
+
+# 注意：日志配置由 run.py 中的 uvicorn.run(log_config=...) 统一管理
+# 这里只设置特定库的日志级别
+# miservice logs every HTTP request at INFO; suppress to WARNING to reduce noise
+logging.getLogger("miservice").setLevel(logging.WARNING)
 
 
 @asynccontextmanager
@@ -48,7 +50,6 @@ async def lifespan(app: FastAPI):
     logger.info("应用启动中...")
     
     # Reset controller instance to ensure clean state after reload
-    from xiaoai_media.playback_controller import reset_controller
     reset_controller()
     
     # Initialize global XiaoAiClient
@@ -65,7 +66,6 @@ async def lifespan(app: FastAPI):
     
     # Check and resume playback control if needed
     logger.info("播放控制已启用（定时器模式），检查是否需要恢复监听...")
-    from xiaoai_media.playback_controller import get_controller
     controller = get_controller()
     await controller.check_and_resume()
     
@@ -153,7 +153,6 @@ async def lifespan(app: FastAPI):
     
     try:
         # 停止播放控制器
-        from xiaoai_media.playback_controller import get_controller
         controller = get_controller()
         await asyncio.wait_for(controller.stop(), timeout=1.0)
         logger.info("播放控制器已停止")

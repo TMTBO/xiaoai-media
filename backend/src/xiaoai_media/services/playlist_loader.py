@@ -6,13 +6,15 @@
 from __future__ import annotations
 
 import logging
-from xiaoai_media.logger import get_logger
 from typing import Any
 
 from fastapi import HTTPException
 from pydantic import BaseModel
 
+from xiaoai_media.logger import get_logger
 from xiaoai_media.player import get_player
+from xiaoai_media.services.playlist_storage import PlaylistStorage
+
 from .music_service import MusicService
 
 _log = get_logger()
@@ -279,8 +281,6 @@ class PlaylistLoaderService:
             加载结果
         """
         # 导入播放列表加载函数
-        from xiaoai_media.services.playlist_storage import PlaylistStorage
-
         index = PlaylistStorage.load_index()
         if playlist_id not in index:
             raise HTTPException(

@@ -7,7 +7,6 @@ from __future__ import annotations
 import asyncio
 import importlib.util
 import logging
-from xiaoai_media.logger import get_logger
 import random
 import time
 from datetime import datetime
@@ -15,7 +14,9 @@ from pathlib import Path
 from urllib.parse import quote, unquote
 
 from xiaoai_media import config
-from xiaoai_media.api.dependencies import get_client_sync
+from xiaoai_media.client import get_client_sync
+from xiaoai_media.logger import get_logger
+from xiaoai_media.playback_controller import get_controller
 from xiaoai_media.services.playlist_models import (
     AddItemRequest,
     ContinuePlayRequest,
@@ -28,6 +29,7 @@ from xiaoai_media.services.playlist_models import (
     UpdatePlaylistRequest,
 )
 from xiaoai_media.services.playlist_storage import PlaylistStorage
+from xiaoai_media.services.state_service import get_state_service
 
 _log = get_logger()
 
@@ -349,7 +351,6 @@ class PlaylistService:
         PlaylistStorage.save_playlist(playlist)
 
         # 保存当前播放的播单ID到状态服务
-        from xiaoai_media.services.state_service import get_state_service
         state_service = get_state_service()
         state_service.set(f"current_playlist_{req.device_id or 'default'}", playlist_id)
 
@@ -386,7 +387,6 @@ class PlaylistService:
         _log.info("Play URL result: %s", result)
 
         # 启动播放控制器
-        from xiaoai_media.playback_controller import get_controller
         controller = get_controller()
         
         # 构建初始播放状态（基于播放项信息）
@@ -474,7 +474,6 @@ class PlaylistService:
         # 只有在真正需要结束播放会话时才清除状态（如播放完所有歌曲）
 
         # 通知 controller 停止播放
-        from xiaoai_media.playback_controller import get_controller
         controller = get_controller()
         await controller.on_play_paused(device_id or "default")
         _log.info("已通知播放控制器停止播放")
