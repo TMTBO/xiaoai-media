@@ -482,19 +482,17 @@ class PlaylistService:
 
     @staticmethod
     async def stop_playlist(playlist_id: str, device_id: str | None = None) -> dict:
-        """停止播放播单"""
+        """停止播放播单（暂停播放，但保留播单状态）"""
         playlist = PlaylistStorage.load_playlist(playlist_id)
         if playlist is None:
             raise ValueError(f"Playlist not found: {playlist_id}")
 
         # 发送停止命令
         client = get_client_sync()
-        await client.player_stop(device_id)
+        await client.player_pause(device_id)
 
-        # 清除播放状态
-        from xiaoai_media.services.state_service import get_state_service
-        state_service = get_state_service()
-        state_service.set(f"current_playlist_{device_id or 'default'}", None)
+        # 注意：不清除 current_playlist_ 状态，以便用户可以继续播放
+        # 只有在真正需要结束播放会话时才清除状态（如播放完所有歌曲）
 
         # 通知 controller/monitor 停止播放
         from xiaoai_media import config as app_config
@@ -502,7 +500,7 @@ class PlaylistService:
             if app_config.PLAYBACK_MODE == "controller":
                 from xiaoai_media.playback_controller import get_controller
                 controller = get_controller()
-                await controller.on_play_stopped(device_id or "default")
+                await controller.on_play_paused(device_id or "default")
                 _log.info("已通知播放控制器停止播放")
 
         _log.info("Stopped playlist: %s", playlist.name)

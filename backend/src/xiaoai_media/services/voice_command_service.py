@@ -96,7 +96,7 @@ class VoiceCommandService:
         # 播放控制
         if "继续播放" in text:
             return await VoiceCommandService._handle_continue_command(device_id)
-        if "停止播放" in text or "停止" in text:
+        if "停止播放" in text or "暂停播放" in text:
             return await VoiceCommandService._handle_stop_command(device_id)
         if "下一首" in text:
             return await VoiceCommandService._handle_next_command(device_id)
