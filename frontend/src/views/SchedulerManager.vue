@@ -309,8 +309,8 @@
               
               <el-form-item label="执行方式">
                 <el-radio-group v-model="quickCommand.mode">
-                  <el-radio label="cron">定时执行</el-radio>
-                  <el-radio label="delay">延迟执行</el-radio>
+                  <el-radio value="cron">定时执行</el-radio>
+                  <el-radio value="delay">延迟执行</el-radio>
                 </el-radio-group>
               </el-form-item>
               
@@ -419,8 +419,8 @@
 
         <el-form-item label="触发方式" prop="trigger_type">
           <el-radio-group v-model="taskForm.trigger_type" :disabled="!!editingTask">
-            <el-radio label="cron">周期性（Cron）</el-radio>
-            <el-radio label="date">一次性</el-radio>
+            <el-radio value="cron">周期性（Cron）</el-radio>
+            <el-radio value="date">一次性</el-radio>
           </el-radio-group>
         </el-form-item>
 
