@@ -11,7 +11,7 @@
             <el-option label="提醒" value="reminder" />
             <el-option label="执行指令" value="command" />
           </el-select>
-          <el-button type="primary" @click="showCreateDialog = true">
+          <el-button type="primary" @click="openCreateDialog">
             <el-icon style="margin-right: 6px;"><Plus /></el-icon>
             创建任务
           </el-button>
@@ -391,6 +391,7 @@
       v-model="showCreateDialog"
       :title="editingTask ? '编辑任务' : '创建任务'"
       width="600px"
+      @close="resetTaskForm"
     >
       <el-form
         ref="taskFormRef"
@@ -529,7 +530,7 @@
       </el-form>
 
       <template #footer>
-        <el-button @click="showCreateDialog = false">取消</el-button>
+        <el-button @click="cancelTask">取消</el-button>
         <el-button
           type="primary"
           @click="submitTask"
@@ -813,6 +814,16 @@ function resetTaskForm() {
   taskForm.command = ''
   taskForm.device_id = ''
   taskFormRef.value?.clearValidate()
+}
+
+function cancelTask() {
+  showCreateDialog.value = false
+  resetTaskForm()
+}
+
+function openCreateDialog() {
+  resetTaskForm()
+  showCreateDialog.value = true
 }
 
 async function createQuickReminder() {

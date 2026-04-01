@@ -14,6 +14,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Callable, Optional
 from enum import Enum
+from zoneinfo import ZoneInfo
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.jobstores.memory import MemoryJobStore
@@ -79,6 +80,31 @@ class SchedulerService:
         self._tasks_metadata: dict[str, dict[str, Any]] = {}
         
         self._load_tasks()
+    
+    def _get_timezone_aware_now(self) -> datetime:
+        """获取时区感知的当前时间
+        
+        Returns:
+            带时区信息的当前时间
+        """
+        from xiaoai_media import config
+        timezone = getattr(config, 'TIMEZONE', 'Asia/Shanghai')
+        return datetime.now(ZoneInfo(timezone))
+    
+    def _ensure_timezone_aware(self, dt: datetime) -> datetime:
+        """确保 datetime 对象带有时区信息
+        
+        Args:
+            dt: datetime 对象
+            
+        Returns:
+            带时区信息的 datetime 对象
+        """
+        if dt.tzinfo is None:
+            from xiaoai_media import config
+            timezone = getattr(config, 'TIMEZONE', 'Asia/Shanghai')
+            return dt.replace(tzinfo=ZoneInfo(timezone))
+        return dt
     
     async def update_timezone(self, timezone: str):
         """更新调度器时区
@@ -185,7 +211,8 @@ class SchedulerService:
                 # 检查一次性任务是否已过期
                 if metadata.get("trigger_type") == "date":
                     run_date = datetime.fromisoformat(metadata["run_date"])
-                    if run_date < datetime.now():
+                    run_date = self._ensure_timezone_aware(run_date)
+                    if run_date < self._get_timezone_aware_now():
                         _log.info("任务 %s 已过期，跳过恢复", task_id)
                         expired_tasks.append(task_id)
                         continue
@@ -312,6 +339,7 @@ class SchedulerService:
             )
         
         # 保存元数据
+        now = self._get_timezone_aware_now()
         metadata = {
             "task_id": task_id,
             "task_type": task_type.value,
@@ -320,8 +348,8 @@ class SchedulerService:
             "cron_expression": cron_expression,
             "params": params,
             "enabled": enabled,
-            "created_at": datetime.now().isoformat(),
-            "updated_at": datetime.now().isoformat()
+            "created_at": now.isoformat(),
+            "updated_at": now.isoformat()
         }
         
         self._tasks_metadata[task_id] = metadata
@@ -359,13 +387,16 @@ class SchedulerService:
         if params is None:
             params = {}
         
-        # 检查时间是否已过期
-        if run_date < datetime.now():
-            raise ValueError("执行时间不能早于当前时间")
-        
         # 从配置获取时区
         from xiaoai_media import config
         timezone = getattr(config, 'TIMEZONE', 'Asia/Shanghai')
+        
+        # 确保 run_date 带有时区信息
+        run_date = self._ensure_timezone_aware(run_date)
+        
+        # 检查时间是否已过期
+        if run_date < self._get_timezone_aware_now():
+            raise ValueError("执行时间不能早于当前时间")
         
         # 创建触发器
         trigger = DateTrigger(run_date=run_date, timezone=timezone)
@@ -382,6 +413,7 @@ class SchedulerService:
             )
         
         # 保存元数据
+        now = self._get_timezone_aware_now()
         metadata = {
             "task_id": task_id,
             "task_type": task_type.value,
@@ -390,8 +422,8 @@ class SchedulerService:
             "run_date": run_date.isoformat(),
             "params": params,
             "enabled": enabled,
-            "created_at": datetime.now().isoformat(),
-            "updated_at": datetime.now().isoformat()
+            "created_at": now.isoformat(),
+            "updated_at": now.isoformat()
         }
         
         self._tasks_metadata[task_id] = metadata
@@ -460,11 +492,12 @@ class SchedulerService:
         if metadata["trigger_type"] == "cron" and cron_expression is not None:
             metadata["cron_expression"] = cron_expression
         elif metadata["trigger_type"] == "date" and run_date is not None:
-            if run_date < datetime.now():
+            run_date = self._ensure_timezone_aware(run_date)
+            if run_date < self._get_timezone_aware_now():
                 raise ValueError("执行时间不能早于当前时间")
             metadata["run_date"] = run_date.isoformat()
         
-        metadata["updated_at"] = datetime.now().isoformat()
+        metadata["updated_at"] = self._get_timezone_aware_now().isoformat()
         
         # 重新创建任务
         await self.delete_task(task_id)

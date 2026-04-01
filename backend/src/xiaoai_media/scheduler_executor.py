@@ -7,7 +7,7 @@ import logging
 from typing import Any
 
 from xiaoai_media.api.dependencies import get_client
-from xiaoai_media.client import XiaoAiClient
+from xiaoai_media.client import XiaoAiClient, get_client_sync
 from xiaoai_media.command_handler import CommandHandler
 from xiaoai_media.logger import get_logger
 from xiaoai_media.services.music_service import MusicService
@@ -39,7 +39,7 @@ class SchedulerExecutor:
             _log.info("任务 %s: 使用指定设备 %s", task_id, device_id)
             return device_id
         else:
-            client = get_client()
+            client = get_client_sync()
             default_device_id = client.device_id
             _log.debug("任务 %s: 使用默认设备 %s", task_id, default_device_id)
             return default_device_id
@@ -63,7 +63,7 @@ class SchedulerExecutor:
             return
         
         try:
-            client = get_client()
+            client = get_client_sync()
             
             # 搜索歌曲
             search_query = f"{song_name} {artist}" if artist else song_name
@@ -104,7 +104,7 @@ class SchedulerExecutor:
             return
         
         try:
-            client = get_client()
+            client = get_client_sync()
             
             _log.info("任务 %s: 播放播放列表 '%s'", task_id, playlist_id)
             
@@ -145,7 +145,7 @@ class SchedulerExecutor:
             return
         
         try:
-            client = get_client()
+            client = get_client_sync()
             
             _log.info("任务 %s: 发送提醒 '%s' (设备: %s)", task_id, message, device_id)
             
@@ -174,10 +174,20 @@ class SchedulerExecutor:
             return
         
         try:
+            from xiaoai_media import config
+            
             _log.info("任务 %s: 执行指令 '%s' (设备: %s)", task_id, command, device_id)
             
-            # 使用 CommandHandler 处理指令
-            await self.command_handler.handle_command(device_id, command)
+            # 检查是否应该本地处理（是否在 wake words 中）
+            if config.should_handle_command(command):
+                _log.debug("任务 %s: 指令包含唤醒词，本地处理", task_id)
+                # 使用 CommandHandler 本地处理指令
+                await self.command_handler.handle_command(device_id, command)
+            else:
+                _log.debug("任务 %s: 指令不包含唤醒词，发送给小爱音箱处理", task_id)
+                # 发送给小爱音箱处理
+                client = get_client_sync()
+                await client.send_command(command, device_id=device_id)
             
             _log.info("任务 %s: 指令执行完成", task_id)
             
