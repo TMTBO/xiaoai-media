@@ -96,6 +96,20 @@
           <el-option value="CRITICAL" label="CRITICAL - 严重" />
         </el-select>
       </el-form-item>
+      <el-form-item label="时区">
+        <el-select v-model="form.TIMEZONE" filterable allow-create default-first-option>
+          <el-option value="Asia/Shanghai" label="亚洲/上海 (北京时间)" />
+          <el-option value="Asia/Hong_Kong" label="亚洲/香港" />
+          <el-option value="Asia/Tokyo" label="亚洲/东京" />
+          <el-option value="Asia/Singapore" label="亚洲/新加坡" />
+          <el-option value="Europe/London" label="欧洲/伦敦" />
+          <el-option value="Europe/Paris" label="欧洲/巴黎" />
+          <el-option value="America/New_York" label="美洲/纽约" />
+          <el-option value="America/Los_Angeles" label="美洲/洛杉矶" />
+          <el-option value="UTC" label="UTC (协调世界时)" />
+        </el-select>
+        <div class="el-form-item__explain">设置日志和定时任务的时区，支持 IANA 时区标识符</div>
+      </el-form-item>
       <el-divider content-position="left" style="margin: 20px 0 16px">代理访问控制</el-divider>
       <el-form-item label="局域网跳过认证">
         <div style="width: 100%">
@@ -151,6 +165,7 @@ const form = ref<Config>({
   ENABLE_WAKE_WORD_FILTER: true,
   WAKE_WORDS: [],
   LOG_LEVEL: 'INFO',
+  TIMEZONE: 'Asia/Shanghai',
   PROXY_SKIP_AUTH_FOR_LAN: true,
   PROXY_LAN_NETWORKS: ['192.168.0.0/16', '10.0.0.0/8', '172.16.0.0/12', '127.0.0.0/8'],
 })

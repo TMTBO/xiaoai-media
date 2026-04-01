@@ -168,6 +168,18 @@ def preprocess_command(query: str) -> str:
 # 可选值: DEBUG, INFO, WARNING, ERROR, CRITICAL
 LOG_LEVEL = "INFO"
 
+# 时区配置（IANA 时区标识符）
+# 影响日志时间戳和定时任务执行时间
+# 常用时区：
+#   - Asia/Shanghai: 中国标准时间（北京时间，UTC+8）
+#   - Asia/Hong_Kong: 香港时间（UTC+8）
+#   - Asia/Tokyo: 日本标准时间（UTC+9）
+#   - Europe/London: 英国时间（UTC+0/+1）
+#   - America/New_York: 美国东部时间（UTC-5/-4）
+#   - UTC: 协调世界时（UTC+0）
+# 完整列表：https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+TIMEZONE = "Asia/Shanghai"
+
 
 # ============================================
 # 代理访问控制配置

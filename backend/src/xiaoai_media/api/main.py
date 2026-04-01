@@ -128,6 +128,17 @@ async def lifespan(app: FastAPI):
                 set_log_level(cfg.LOG_LEVEL)
                 logger.info("日志级别已更新: %s", cfg.LOG_LEVEL)
             
+            # 4. 更新时区配置
+            if hasattr(cfg, 'TIMEZONE'):
+                # 更新调度器时区
+                from xiaoai_media.services.scheduler_service import get_scheduler_service
+                try:
+                    scheduler_service = get_scheduler_service()
+                    await scheduler_service.update_timezone(cfg.TIMEZONE)
+                    logger.info("时区已更新: %s", cfg.TIMEZONE)
+                except Exception as e:
+                    logger.error("更新时区失败: %s", e, exc_info=True)
+            
             logger.info("配置变更处理完成")
         except Exception as e:
             logger.error("处理配置变更时出错: %s", e, exc_info=True)

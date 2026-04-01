@@ -49,6 +49,10 @@ class SchedulerService:
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self._tasks_file = self.data_dir / "tasks.json"
         
+        # 从配置获取时区
+        from xiaoai_media import config
+        timezone = getattr(config, 'TIMEZONE', 'Asia/Shanghai')
+        
         # 配置调度器
         jobstores = {
             'default': MemoryJobStore()
@@ -65,7 +69,7 @@ class SchedulerService:
             jobstores=jobstores,
             executors=executors,
             job_defaults=job_defaults,
-            timezone='Asia/Shanghai'
+            timezone=timezone
         )
         
         # 任务回调函数
@@ -75,6 +79,51 @@ class SchedulerService:
         self._tasks_metadata: dict[str, dict[str, Any]] = {}
         
         self._load_tasks()
+    
+    async def update_timezone(self, timezone: str):
+        """更新调度器时区
+        
+        Args:
+            timezone: 新的时区标识符
+        """
+        try:
+            was_running = self.scheduler.running
+            
+            # 如果调度器正在运行，需要先完全停止
+            if was_running:
+                self.scheduler.shutdown(wait=True)
+                _log.info("调度器已停止以更新时区")
+            
+            # 重新创建调度器实例（使用新时区）
+            from apscheduler.schedulers.asyncio import AsyncIOScheduler
+            from apscheduler.jobstores.memory import MemoryJobStore
+            from apscheduler.executors.asyncio import AsyncIOExecutor
+            
+            jobstores = {
+                'default': MemoryJobStore()
+            }
+            executors = {
+                'default': AsyncIOExecutor()
+            }
+            job_defaults = {
+                'coalesce': True,
+                'max_instances': 3
+            }
+            
+            self.scheduler = AsyncIOScheduler(
+                jobstores=jobstores,
+                executors=executors,
+                job_defaults=job_defaults,
+                timezone=timezone
+            )
+            
+            _log.info("调度器时区已更新为: %s", timezone)
+            
+            # 如果之前在运行，重新启动并恢复任务
+            if was_running:
+                await self.start()
+        except Exception as e:
+            _log.error("更新调度器时区失败: %s", e, exc_info=True)
     
     def _load_tasks(self):
         """从磁盘加载任务元数据"""
@@ -237,6 +286,10 @@ class SchedulerService:
         
         minute, hour, day, month, day_of_week = parts
         
+        # 从配置获取时区
+        from xiaoai_media import config
+        timezone = getattr(config, 'TIMEZONE', 'Asia/Shanghai')
+        
         # 创建触发器
         trigger = CronTrigger(
             minute=minute,
@@ -244,7 +297,7 @@ class SchedulerService:
             day=day,
             month=month,
             day_of_week=day_of_week,
-            timezone='Asia/Shanghai'
+            timezone=timezone
         )
         
         # 添加任务到调度器
@@ -310,8 +363,12 @@ class SchedulerService:
         if run_date < datetime.now():
             raise ValueError("执行时间不能早于当前时间")
         
+        # 从配置获取时区
+        from xiaoai_media import config
+        timezone = getattr(config, 'TIMEZONE', 'Asia/Shanghai')
+        
         # 创建触发器
-        trigger = DateTrigger(run_date=run_date, timezone='Asia/Shanghai')
+        trigger = DateTrigger(run_date=run_date, timezone=timezone)
         
         # 添加任务到调度器
         if enabled:

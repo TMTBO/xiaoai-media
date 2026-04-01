@@ -25,6 +25,8 @@
 | 用户认证 | 用户登录和权限管理 | [config/USER_AUTH.md](config/USER_AUTH.md) ⭐ |
 | 用户认证快速开始 | 快速上手用户认证 | [config/USER_AUTH_QUICKSTART.md](config/USER_AUTH_QUICKSTART.md) |
 | 用户启用/禁用 | 用户启用禁用功能 | [config/USER_LOGIN_ENABLED_FEATURE.md](config/USER_LOGIN_ENABLED_FEATURE.md) |
+| 时区配置 | 时区配置说明 | [TIMEZONE_CONFIG.md](TIMEZONE_CONFIG.md) ⭐ |
+| 时区热重载 | 时区热重载技术文档 | [TIMEZONE_HOT_RELOAD.md](TIMEZONE_HOT_RELOAD.md) |
 | 开发环境 | 本地开发配置 | [config/DEV_ENVIRONMENT.md](config/DEV_ENVIRONMENT.md) |
 | 数据存储 | 数据目录说明 | [config/DATA_STORAGE.md](config/DATA_STORAGE.md) |
 | 配置 FAQ | 常见问题 | [config/CONFIG_FAQ.md](config/CONFIG_FAQ.md) |

@@ -27,6 +27,7 @@ class ConfigUpdate(BaseModel):
     ENABLE_WAKE_WORD_FILTER: bool | None = None
     WAKE_WORDS: list[str] | None = None
     LOG_LEVEL: str | None = Field(None, pattern="^(DEBUG|INFO|WARNING|ERROR|CRITICAL)$")
+    TIMEZONE: str | None = None
     PROXY_SKIP_AUTH_FOR_LAN: bool | None = None
     PROXY_LAN_NETWORKS: list[str] | None = None
 

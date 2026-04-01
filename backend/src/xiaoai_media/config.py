@@ -152,7 +152,7 @@ def reload_config() -> None:
     global SERVER_BASE_URL
     global ENABLE_CONVERSATION_POLLING, CONVERSATION_POLL_INTERVAL
     global WAKE_WORDS, ENABLE_WAKE_WORD_FILTER
-    global LOG_LEVEL
+    global LOG_LEVEL, TIMEZONE
     global PROXY_SKIP_AUTH_FOR_LAN, PROXY_LAN_NETWORKS
     
     _get_logger().info("开始重新加载配置...")
@@ -186,6 +186,7 @@ def reload_config() -> None:
     ])
     
     LOG_LEVEL = _get_config("LOG_LEVEL", "INFO")
+    TIMEZONE = _get_config("TIMEZONE", "Asia/Shanghai")
     
     _get_logger().info("配置已重新加载")
     
@@ -274,6 +275,12 @@ PROXY_LAN_NETWORKS: list[str] = _get_config("PROXY_LAN_NETWORKS", [
 # ============================================
 
 LOG_LEVEL: str = _get_config("LOG_LEVEL", "INFO")
+
+# ============================================
+# 时区配置
+# ============================================
+
+TIMEZONE: str = _get_config("TIMEZONE", "Asia/Shanghai")
 
 # ============================================
 # 自定义处理函数

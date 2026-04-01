@@ -5,6 +5,8 @@
 import os
 import sys
 import logging
+from datetime import datetime
+import time
 
 
 # ANSI颜色代码
@@ -39,6 +41,26 @@ class CustomFormatter(logging.Formatter):
             self.use_colors = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
         else:
             self.use_colors = use_colors
+    
+    def converter(self, timestamp):
+        """转换时间戳为配置的时区"""
+        try:
+            from xiaoai_media import config
+            import zoneinfo
+            tz = zoneinfo.ZoneInfo(config.TIMEZONE)
+            return datetime.fromtimestamp(timestamp, tz=tz)
+        except Exception:
+            # 如果导入失败或时区无效，使用本地时间
+            return datetime.fromtimestamp(timestamp)
+    
+    def formatTime(self, record, datefmt=None):
+        """格式化时间，使用配置的时区"""
+        ct = self.converter(record.created)
+        if datefmt:
+            s = ct.strftime(datefmt)
+        else:
+            s = ct.strftime("%Y-%m-%d %H:%M:%S")
+        return s
     
     def format(self, record):
         # 保存原始levelname
@@ -85,6 +107,26 @@ class AccessFormatter(logging.Formatter):
             self.use_colors = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
         else:
             self.use_colors = use_colors
+    
+    def converter(self, timestamp):
+        """转换时间戳为配置的时区"""
+        try:
+            from xiaoai_media import config
+            import zoneinfo
+            tz = zoneinfo.ZoneInfo(config.TIMEZONE)
+            return datetime.fromtimestamp(timestamp, tz=tz)
+        except Exception:
+            # 如果导入失败或时区无效，使用本地时间
+            return datetime.fromtimestamp(timestamp)
+    
+    def formatTime(self, record, datefmt=None):
+        """格式化时间，使用配置的时区"""
+        ct = self.converter(record.created)
+        if datefmt:
+            s = ct.strftime(datefmt)
+        else:
+            s = ct.strftime("%Y-%m-%d %H:%M:%S")
+        return s
     
     def format(self, record):
         # 保存原始值

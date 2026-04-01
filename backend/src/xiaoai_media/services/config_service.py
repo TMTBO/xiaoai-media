@@ -28,6 +28,7 @@ ALLOWED_KEYS = {
     "ENABLE_WAKE_WORD_FILTER",
     "WAKE_WORDS",
     "LOG_LEVEL",
+    "TIMEZONE",
     "PROXY_SKIP_AUTH_FOR_LAN",
     "PROXY_LAN_NETWORKS",
 }
@@ -217,6 +218,7 @@ class ConfigService:
             "ENABLE_WAKE_WORD_FILTER": config.ENABLE_WAKE_WORD_FILTER,
             "WAKE_WORDS": config.WAKE_WORDS,
             "LOG_LEVEL": getattr(config, "LOG_LEVEL", "INFO"),
+            "TIMEZONE": getattr(config, "TIMEZONE", "Asia/Shanghai"),
             "PROXY_SKIP_AUTH_FOR_LAN": getattr(config, "PROXY_SKIP_AUTH_FOR_LAN", True),
             "PROXY_LAN_NETWORKS": getattr(config, "PROXY_LAN_NETWORKS", [
                 "192.168.0.0/16",
