@@ -25,7 +25,7 @@ class SchedulerExecutor:
         self.playlist_service = PlaylistService()
         self.command_handler = CommandHandler()
 
-    def _get_device_id(self, task_id: str, device_id: str | None) -> str:
+    async def _get_device_id(self, task_id: str, device_id: str | None) -> str:
         """获取设备ID（如果未指定则使用默认设备）
         
         Args:
@@ -40,7 +40,8 @@ class SchedulerExecutor:
             return device_id
         else:
             client = get_client_sync()
-            default_device_id = client.device_id
+            # 使用 client 的 _resolve_device_id 方法获取默认设备
+            default_device_id = await client._resolve_device_id(None)
             _log.debug("任务 %s: 使用默认设备 %s", task_id, default_device_id)
             return default_device_id
 
@@ -56,20 +57,24 @@ class SchedulerExecutor:
         """
         song_name = params.get("song_name")
         artist = params.get("artist")
-        device_id = self._get_device_id(task_id, params.get("device_id"))
+        device_id = await self._get_device_id(task_id, params.get("device_id"))
         
         if not song_name:
             _log.error("任务 %s: 缺少歌曲名称参数", task_id)
             return
         
         try:
+            from xiaoai_media.player import get_player
+            
             client = get_client_sync()
+            player = get_player()
             
             # 搜索歌曲
             search_query = f"{song_name} {artist}" if artist else song_name
             _log.info("任务 %s: 搜索歌曲 '%s'", task_id, search_query)
             
-            songs = await self.music_service.search_songs(search_query, limit=1)
+            result = await self.music_service.search_music(search_query, limit=1)
+            songs = result.get("songs", [])
             
             if not songs:
                 _log.warning("任务 %s: 未找到歌曲 '%s'", task_id, search_query)
@@ -78,10 +83,11 @@ class SchedulerExecutor:
                 return
             
             song = songs[0]
-            _log.info("任务 %s: 找到歌曲 '%s - %s'", task_id, song.get("name"), song.get("artist"))
+            _log.info("任务 %s: 找到歌曲 '%s - %s'", task_id, song.get("name"), song.get("singer"))
             
-            # 播放歌曲
-            await self.music_service.play_song(song["id"], device_id=device_id)
+            # 设置播放列表并播放
+            player.set_playlist(device_id, songs, current_index=0)
+            await player.play_at_index(device_id, 0, stop_first=True)
             _log.info("任务 %s: 开始播放歌曲 '%s' (设备: %s)", task_id, song.get("name"), device_id)
             
         except Exception as e:
@@ -96,8 +102,10 @@ class SchedulerExecutor:
                 - playlist_id: 播放列表ID
                 - device_id: 设备ID（可选，默认使用主设备）
         """
+        from xiaoai_media.services.playlist_models import PlayPlaylistRequest
+        
         playlist_id = params.get("playlist_id")
-        device_id = self._get_device_id(task_id, params.get("device_id"))
+        device_id = await self._get_device_id(task_id, params.get("device_id"))
         
         if not playlist_id:
             _log.error("任务 %s: 缺少播放列表ID参数", task_id)
@@ -116,14 +124,19 @@ class SchedulerExecutor:
                 await client.text_to_speech(f"播放列表不存在", device_id=device_id)
                 return
             
-            if not playlist.get("songs"):
+            if not playlist.items:
                 _log.warning("任务 %s: 播放列表 '%s' 为空", task_id, playlist_id)
                 await client.text_to_speech(f"播放列表为空", device_id=device_id)
                 return
             
             # 播放播放列表
-            await self.playlist_service.play_playlist(playlist_id, device_id=device_id)
-            _log.info("任务 %s: 开始播放播放列表 '%s' (设备: %s)", task_id, playlist.get("name"), device_id)
+            play_request = PlayPlaylistRequest(
+                device_id=device_id,
+                start_index=0,
+                announce=True
+            )
+            await self.playlist_service.play_playlist(playlist_id, play_request)
+            _log.info("任务 %s: 开始播放播放列表 '%s' (设备: %s)", task_id, playlist.name, device_id)
             
         except Exception as e:
             _log.error("任务 %s: 播放播放列表失败: %s", task_id, e, exc_info=True)
@@ -138,7 +151,7 @@ class SchedulerExecutor:
                 - device_id: 设备ID（可选，默认使用主设备）
         """
         message = params.get("message")
-        device_id = self._get_device_id(task_id, params.get("device_id"))
+        device_id = await self._get_device_id(task_id, params.get("device_id"))
         
         if not message:
             _log.error("任务 %s: 缺少提醒内容参数", task_id)
@@ -167,7 +180,7 @@ class SchedulerExecutor:
                 - device_id: 设备ID（可选，默认使用主设备）
         """
         command = params.get("command")
-        device_id = self._get_device_id(task_id, params.get("device_id"))
+        device_id = await self._get_device_id(task_id, params.get("device_id"))
         
         if not command:
             _log.error("任务 %s: 缺少指令内容参数", task_id)

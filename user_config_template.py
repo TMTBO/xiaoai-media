@@ -76,8 +76,13 @@ CONVERSATION_POLL_INTERVAL = 2.0
 # 只有包含这些唤醒词的指令才会被处理
 # 如果为空列表，则处理所有指令
 WAKE_WORDS = [
-    "小爱同学",
-    "小爱",
+    "播放",
+    "加载",
+    "切换",
+    "查找",
+    "搜索",
+    "停止播放",
+    "暂停播放",
 ]
 
 # 是否启用唤醒词过滤
@@ -93,6 +98,65 @@ ENABLE_WAKE_WORD_FILTER = True
 # 开发环境：HOME=. 设置后，数据存储在项目根目录
 # Docker 环境：HOME=/data，数据存储在 /data 目录（挂载卷）
 # 注意：播单数据会自动存储在 $HOME/playlists/ 目录中，无需单独配置
+
+
+# ============================================
+# 日志配置
+# ============================================
+
+# 日志级别
+# 可选值: DEBUG, INFO, WARNING, ERROR, CRITICAL
+LOG_LEVEL = "INFO"
+
+# 时区配置（IANA 时区标识符）
+# 影响日志时间戳和定时任务执行时间
+# 常用时区：
+#   - Asia/Shanghai: 中国标准时间（北京时间，UTC+8）
+#   - Asia/Hong_Kong: 香港时间（UTC+8）
+#   - Asia/Tokyo: 日本标准时间（UTC+9）
+#   - Europe/London: 英国时间（UTC+0/+1）
+#   - America/New_York: 美国东部时间（UTC-5/-4）
+#   - UTC: 协调世界时（UTC+0）
+# 完整列表：https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+TIMEZONE = "Asia/Shanghai"
+
+
+# ============================================
+# 代理访问控制配置
+# ============================================
+
+# 局域网访问是否跳过身份校验
+# 设置为 True 时，来自局域网的代理请求无需登录即可访问
+PROXY_SKIP_AUTH_FOR_LAN = True
+
+# 局域网 IP 段配置（CIDR 格式）
+# 定义哪些 IP 段被视为局域网
+PROXY_LAN_NETWORKS = [
+    "192.168.0.0/16",
+    "10.0.0.0/8",
+    "172.16.0.0/12",
+    "127.0.0.0/8",
+]
+
+
+# ============================================
+# 音乐提供者模块导入
+# ============================================
+
+# 导入音乐 URL 提供者模块
+# 注意：需要将 music_provider_template.py 复制为 music_provider.py
+try:
+    from music_provider import get_music_url
+except ImportError as e:
+    import sys
+    from pathlib import Path
+    raise ImportError(
+        "无法导入 music_provider 模块。\n"
+        f"请确保 music_provider.py 与 user_config.py 在同一目录下。\n"
+        f"提示：将 music_provider_template.py 复制为 music_provider.py\n"
+        f"当前目录：{Path(__file__).parent}\n"
+        f"原始错误：{e}"
+    ) from e
 
 
 # ============================================
@@ -160,72 +224,6 @@ def preprocess_command(query: str) -> str:
     return processed.strip()
 
 
-# ============================================
-# 日志配置
-# ============================================
-
-# 日志级别
-# 可选值: DEBUG, INFO, WARNING, ERROR, CRITICAL
-LOG_LEVEL = "INFO"
-
-# 时区配置（IANA 时区标识符）
-# 影响日志时间戳和定时任务执行时间
-# 常用时区：
-#   - Asia/Shanghai: 中国标准时间（北京时间，UTC+8）
-#   - Asia/Hong_Kong: 香港时间（UTC+8）
-#   - Asia/Tokyo: 日本标准时间（UTC+9）
-#   - Europe/London: 英国时间（UTC+0/+1）
-#   - America/New_York: 美国东部时间（UTC-5/-4）
-#   - UTC: 协调世界时（UTC+0）
-# 完整列表：https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
-TIMEZONE = "Asia/Shanghai"
-
-
-# ============================================
-# 代理访问控制配置
-# ============================================
-
-# 局域网访问是否跳过身份校验
-# 设置为 True 时，来自局域网的代理请求无需登录即可访问
-PROXY_SKIP_AUTH_FOR_LAN = True
-
-# 局域网 IP 段配置（CIDR 格式）
-# 定义哪些 IP 段被视为局域网
-PROXY_LAN_NETWORKS = [
-    "192.168.0.0/16",
-    "10.0.0.0/8",
-    "172.16.0.0/12",
-    "127.0.0.0/8",
-]
-
-
-
-
-# ============================================
-# 音乐提供者模块导入
-# ============================================
-
-# 导入音乐 URL 提供者模块
-# 注意：需要将 music_provider_template.py 复制为 music_provider.py
-try:
-    from music_provider import get_music_url
-except ImportError as e:
-    import sys
-    from pathlib import Path
-    raise ImportError(
-        "无法导入 music_provider 模块。\n"
-        f"请确保 music_provider.py 与 user_config.py 在同一目录下。\n"
-        f"提示：将 music_provider_template.py 复制为 music_provider.py\n"
-        f"当前目录：{Path(__file__).parent}\n"
-        f"原始错误：{e}"
-    ) from e
-
-
-# ============================================
-# 音频 URL 获取函数
-# ============================================
-
-
 async def get_audio_url(custom_params: dict) -> str:
     """
     根据音频信息获取播放 URL
@@ -283,4 +281,3 @@ async def get_audio_url(custom_params: dict) -> str:
     else:
         # 默认：返回空字符串或抛出异常
         raise ValueError(f"Unsupported audio type: {audio_type}")
-
