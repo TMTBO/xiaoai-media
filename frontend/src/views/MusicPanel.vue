@@ -1,29 +1,7 @@
 <template>
     <div class="music-panel">
-        <!-- Smart voice command -->
-        <el-card>
-            <template #header>
-                <span>
-                    <el-icon style="vertical-align: middle; margin-right: 6px">
-                        <Mic />
-                    </el-icon>智能语音指令
-                </span>
-            </template>
-            <el-form inline @submit.prevent="handleVoiceCommand">
-                <el-form-item>
-                    <el-input v-model="voiceCommandText" placeholder="例如：播放腾讯热歌榜 · 打开网易云飙升榜" clearable
-                        style="width: 400px" />
-                </el-form-item>
-                <el-form-item>
-                    <el-button type="primary" native-type="submit" :loading="voiceCommandLoading">执行指令</el-button>
-                </el-form-item>
-            </el-form>
-            <el-alert v-if="voiceCommandResult" :title="voiceCommandResultMsg" type="success" show-icon closable
-                style="margin-top: 8px" @close="voiceCommandResult = null" />
-        </el-card>
-
         <!-- Search / Charts tabs -->
-        <el-card style="margin-top: 16px">
+        <el-card>
             <el-tabs v-model="activeTab" @tab-change="onTabChange">
                 <!-- Search Tab -->
                 <el-tab-pane label="搜索音乐" name="search">
@@ -49,11 +27,6 @@
                     <div v-if="searchResults.length"
                         style="margin: 8px 0; display: flex; align-items: center; gap: 8px">
                         <span :style="{ fontSize: '13px', color: 'var(--color-text-regular)' }">共 {{ searchResults.length }} 首歌曲</span>
-                        <el-button size="small" :loading="askPlayLoading" @click="handleAskPlay">
-                            <el-icon style="margin-right: 4px">
-                                <Bell />
-                            </el-icon>询问音箱并播放全部
-                        </el-button>
                         <el-button size="small" type="primary" @click="handleCreatePlaylist('search')">
                             <el-icon style="margin-right: 4px">
                                 <Plus />
@@ -62,8 +35,7 @@
                     </div>
 
                     <el-table :data="searchResults" v-loading="searchLoading" style="width: 100%; margin-top: 8px"
-                        empty-text="暂无结果，请输入关键词搜索" :row-class-name="getSearchRowClassName"
-                        @row-click="handleSearchRowClick">
+                        empty-text="暂无结果，请输入关键词搜索">
                         <el-table-column prop="name" label="歌名" min-width="160" show-overflow-tooltip />
                         <el-table-column prop="singer" label="歌手" min-width="120" show-overflow-tooltip />
                         <el-table-column prop="meta.albumName" label="专辑" min-width="140" show-overflow-tooltip />
@@ -124,8 +96,7 @@
                                     </el-button>
                                 </div>
                                 <el-table :data="chartSongs" v-loading="chartSongsLoading" style="width: 100%"
-                                    empty-text="暂无歌曲" max-height="600" :row-class-name="getRowClassName"
-                                    @row-click="handleRowClick">
+                                    empty-text="暂无歌曲" max-height="600">
                                     <el-table-column type="index" label="#" width="50" />
                                     <el-table-column prop="name" label="歌名" min-width="160" show-overflow-tooltip />
                                     <el-table-column prop="singer" label="歌手" min-width="120" show-overflow-tooltip />
@@ -221,8 +192,6 @@ import {
     CaretRight,
     VideoPlay,
     VideoPause,
-    Mic,
-    Bell,
     Plus,
 } from '@element-plus/icons-vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
@@ -248,7 +217,6 @@ const searchPlatform = ref('tx')
 const searchQuery = ref('')
 const searchLoading = ref(false)
 const searchResults = ref<Song[]>([])
-const playingIdx = ref(-999) // negative idx means chart row, positive means search row
 
 function normalizeSong(raw: Record<string, unknown>, platform: string): Song {
     const qualities: SongQuality[] = Array.isArray(raw.qualities)
@@ -296,33 +264,6 @@ async function doSearch() {
     } finally {
         searchLoading.value = false
     }
-}
-
-async function playFromSearch(index: number) {
-    playingIdx.value = index
-    error.value = ''
-    try {
-        await api.syncPlaylist(searchResults.value, deviceId.value || undefined)
-        await api.playMusic(index, deviceId.value || undefined)
-        playlist.value = [...searchResults.value]
-        playlistIndex.value = index
-        isPaused.value = false
-    } catch (e: unknown) {
-        error.value = e instanceof Error ? e.message : '播放失败'
-    } finally {
-        playingIdx.value = -999
-    }
-}
-
-function handleSearchRowClick(row: Song, column: unknown, event: Event) {
-    const index = searchResults.value.findIndex(s => s.id === row.id)
-    if (index >= 0) {
-        playFromSearch(index)
-    }
-}
-
-function getSearchRowClassName({ rowIndex }: { rowIndex: number }) {
-    return playingIdx.value === rowIndex ? 'playing-row' : 'clickable-row'
 }
 
 // ---------------------------------------------------------------------------
@@ -385,111 +326,6 @@ async function loadChartSongs(chart: Chart) {
         error.value = e instanceof Error ? e.message : '加载歌曲失败'
     } finally {
         chartSongsLoading.value = false
-    }
-}
-
-async function playFromChart(index: number) {
-    playingIdx.value = -(index + 1)
-    error.value = ''
-    try {
-        await api.syncPlaylist(chartSongs.value, deviceId.value || undefined)
-        await api.playMusic(index, deviceId.value || undefined)
-        playlist.value = [...chartSongs.value]
-        playlistIndex.value = index
-        isPaused.value = false
-    } catch (e: unknown) {
-        error.value = e instanceof Error ? e.message : '播放失败'
-    } finally {
-        playingIdx.value = -999
-    }
-}
-
-function handleRowClick(row: Song, column: unknown, event: Event) {
-    const index = chartSongs.value.findIndex(s => s.id === row.id)
-    if (index >= 0) {
-        playFromChart(index)
-    }
-}
-
-function getRowClassName({ rowIndex }: { rowIndex: number }) {
-    return playingIdx.value === -(rowIndex + 1) ? 'playing-row' : 'clickable-row'
-}
-
-// ---------------------------------------------------------------------------
-// Smart voice command
-// ---------------------------------------------------------------------------
-const voiceCommandText = ref('')
-const voiceCommandLoading = ref(false)
-const voiceCommandResult = ref<Record<string, unknown> | null>(null)
-
-const voiceCommandResultMsg = computed(() => {
-    if (!voiceCommandResult.value) return ''
-    const r = voiceCommandResult.value
-    if (r.action === 'play_chart') return `正在播放「${r.chart}」(${r.platform})，共 ${r.total} 首歌曲`
-    return `指令已发送：${r.command}`
-})
-
-async function handleVoiceCommand() {
-    if (!voiceCommandText.value.trim()) return
-    voiceCommandLoading.value = true
-    voiceCommandResult.value = null
-    error.value = ''
-    try {
-        const data = await api.voiceCommand(voiceCommandText.value, deviceId.value || undefined)
-        voiceCommandResult.value = data as Record<string, unknown>
-        if ((data as { action?: string }).action === 'play_chart') {
-            await syncPlaylist()
-        }
-    } catch (e: unknown) {
-        error.value = e instanceof Error ? e.message : '指令执行失败'
-    } finally {
-        voiceCommandLoading.value = false
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Ask & play: TTS announces results to speaker, UI confirm triggers play
-// ---------------------------------------------------------------------------
-const askPlayLoading = ref(false)
-
-async function handleAskPlay() {
-    if (!searchResults.value.length) return
-    askPlayLoading.value = true
-    error.value = ''
-    try {
-        await api.announceSearch(searchQuery.value, searchResults.value.length, deviceId.value || undefined)
-        askPlayLoading.value = false
-        await ElMessageBox.confirm(
-            `音箱已播报：共找到 ${searchResults.value.length} 首「${searchQuery.value}」相关歌曲，确认播放全部？`,
-            '确认播放',
-            { confirmButtonText: '播放全部', cancelButtonText: '取消', type: 'info' },
-        )
-        await api.syncPlaylist(searchResults.value, deviceId.value || undefined)
-        await api.playMusic(0, deviceId.value || undefined)
-        playlist.value = [...searchResults.value]
-        playlistIndex.value = 0
-        isPaused.value = false
-    } catch (e: unknown) {
-        // ElMessageBox cancel rejects with string 'cancel', not an Error — ignore it
-        if (e instanceof Error) error.value = e.message
-    } finally {
-        askPlayLoading.value = false
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Sync frontend playlist from server (used after voice-command plays a chart)
-// ---------------------------------------------------------------------------
-async function syncPlaylist() {
-    try {
-        const data = await api.getPlaylist(deviceId.value || undefined)
-        if (data.total > 0) {
-            playlist.value = data.songs
-            playlistIndex.value = data.current
-            isPaused.value = false
-        }
-    } catch {
-        // best-effort
     }
 }
 
@@ -797,18 +633,5 @@ watch(activeTab, (name) => {
     display: flex;
     align-items: center;
     gap: 8px;
-}
-
-.clickable-row {
-    cursor: pointer;
-}
-
-.clickable-row:hover {
-    background-color: var(--el-fill-color-light) !important;
-}
-
-.playing-row {
-    background-color: var(--el-color-primary-light-9) !important;
-    cursor: pointer;
 }
 </style>
