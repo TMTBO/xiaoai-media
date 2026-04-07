@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import logging
 from xiaoai_media.logger import get_logger
 import time
 from typing import Any
@@ -27,7 +26,7 @@ def set_global_client(client: XiaoAiClient) -> None:
 
 def get_client_sync() -> XiaoAiClient:
     """Get the global XiaoAiClient instance synchronously.
-    
+
     This is used by service classes that need access to the client
     outside of FastAPI route handlers.
     """
@@ -35,6 +34,7 @@ def get_client_sync() -> XiaoAiClient:
     if _global_client is None:
         raise RuntimeError("XiaoAiClient not initialized")
     return _global_client
+
 
 # TTS command mapping: hardware short code → "siid-aiid" for miot_action
 # Reference: https://github.com/hanxi/xiaomusic/blob/main/xiaomusic/const.py
@@ -83,13 +83,14 @@ class XiaoAiClient:
 
     async def connect(self) -> None:
         self._session = ClientSession()
-        
+
         # Use miservice's token store to automatically save/load tokens
         # Store token in data directory (HOME) instead of current working directory
         # This ensures write permissions in Docker environment
         from pathlib import Path
+
         token_store_path = str(Path.home() / ".mi.token")
-        
+
         self._account = MiAccount(
             self._session,
             config.MI_USER,
@@ -114,18 +115,20 @@ class XiaoAiClient:
         # This will trigger login for both micoapi and xiaomiio services
         try:
             _log.info("MiService: testing authentication...")
-            
+
             # Test MiNA service (will trigger login for "micoapi" sid)
             await self._na_service.device_list()
             _log.info("MiService: MiNA authentication successful")
-            
+
             # Test MiIO service (will trigger login for "xiaomiio" sid)
             try:
                 await self._io_service.device_list("full")
                 _log.info("MiService: MiIO authentication successful")
             except Exception as e:
                 _log.warning("MiService: MiIO authentication failed: %s", e)
-                _log.warning("MiService: MiIO features will be unavailable, but MiNA features will work")
+                _log.warning(
+                    "MiService: MiIO features will be unavailable, but MiNA features will work"
+                )
 
         except (KeyError, TypeError) as e:
             # KeyError 或 TypeError 通常意味着登录响应格式不正确
@@ -444,7 +447,7 @@ class XiaoAiClient:
         # 使用 player_get_status 获取音量（已在内部解析）
         status = await self.player_get_status(did)
         volume = status.get("volume")
-        
+
         if volume is None:
             _log.warning("MiService: player_get_status 未返回音量信息")
         else:
@@ -481,7 +484,7 @@ class XiaoAiClient:
             _type: Play type (1=MUSIC with light on, 2=normal)
         """
         import asyncio
-        
+
         assert self._na_service is not None
         did = await self._resolve_device_id(device_id)
         devices = await self.list_devices()
@@ -500,15 +503,21 @@ class XiaoAiClient:
             len(url),
         )
         _log.debug("Full URL: %s", url)
-        
+
         # 验证URL可访问性（仅对代理URL进行检查）
-        if '/api/proxy/stream' in url:
+        if "/api/proxy/stream" in url:
             try:
                 import aiohttp
+
                 async with aiohttp.ClientSession() as session:
-                    async with session.head(url, timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                    async with session.head(
+                        url, timeout=aiohttp.ClientTimeout(total=5)
+                    ) as resp:
                         if resp.status != 200:
-                            _log.warning("Proxy URL returned status %d, may cause playback issues", resp.status)
+                            _log.warning(
+                                "Proxy URL returned status %d, may cause playback issues",
+                                resp.status,
+                            )
             except Exception as e:
                 _log.warning("Failed to verify proxy URL accessibility: %s", e)
 
@@ -533,25 +542,32 @@ class XiaoAiClient:
             # Use play_by_music_url for better compatibility
             # Generate unique audio_id based on timestamp to avoid playback cache issues
             import time
+
             audio_id = str(int(time.time() * 1000000))  # 微秒级时间戳
             cp_id = "355454500"  # Content provider ID, can remain constant
 
             _log.info(
-                "Calling play_by_music_url with audio_id=%s (timestamp-based), cp_id=%s", 
-                audio_id, cp_id
+                "Calling play_by_music_url with audio_id=%s (timestamp-based), cp_id=%s",
+                audio_id,
+                cp_id,
             )
 
             # 添加重试机制处理超时问题
             max_retries = 2
             retry_delay = 1.5
             last_error = None
-            
+
             for attempt in range(max_retries + 1):
                 try:
                     if attempt > 0:
-                        _log.info("Retry attempt %d/%d after %s seconds", attempt, max_retries, retry_delay)
+                        _log.info(
+                            "Retry attempt %d/%d after %s seconds",
+                            attempt,
+                            max_retries,
+                            retry_delay,
+                        )
                         await asyncio.sleep(retry_delay)
-                    
+
                     result = await self._na_service.play_by_music_url(
                         did, url, _type, audio_id, cp_id
                     )
@@ -563,12 +579,16 @@ class XiaoAiClient:
                     # 只对超时错误进行重试
                     if "3012" in error_msg or "超时" in error_msg:
                         if attempt < max_retries:
-                            _log.warning("Play command timeout (attempt %d/%d), will retry: %s", 
-                                       attempt + 1, max_retries + 1, e)
+                            _log.warning(
+                                "Play command timeout (attempt %d/%d), will retry: %s",
+                                attempt + 1,
+                                max_retries + 1,
+                                e,
+                            )
                             continue
                     # 其他错误直接抛出
                     raise
-            
+
             # 如果所有重试都失败，抛出最后一个错误
             if last_error and attempt == max_retries:
                 _log.error("All retry attempts failed")
@@ -610,10 +630,7 @@ class XiaoAiClient:
             }
         except Exception as e:
             _log.error(
-                "=== play_url FAILED === device=%s, error=%s", 
-                did, 
-                e, 
-                exc_info=True
+                "=== play_url FAILED === device=%s, error=%s", did, e, exc_info=True
             )
             raise
 
@@ -673,7 +690,7 @@ class XiaoAiClient:
                 and len(micoapi_data) >= 2
             ):
                 service_token = micoapi_data[1]  # Second element is serviceToken
-            
+
             _log.debug(
                 "Token structure: userId=%s, micoapi=%s",
                 user_id,
@@ -695,8 +712,12 @@ class XiaoAiClient:
                 {
                     "has_token": bool(self._account.token),
                     "has_userId": bool(user_id),
-                    "has_micoapi": bool(self._account.token and self._account.token.get("micoapi")),
-                } if self._account.token else "No token"
+                    "has_micoapi": bool(
+                        self._account.token and self._account.token.get("micoapi")
+                    ),
+                }
+                if self._account.token
+                else "No token",
             )
             return []
 
@@ -852,7 +873,7 @@ class XiaoAiClient:
         """Get current player status with parsed and flattened data.
 
         Uses the player_get_play_status API from miservice_fork.
-        
+
         Returns:
             dict: 展平后的播放状态，包含以下字段：
                 - device: 设备名称和ID
@@ -877,30 +898,32 @@ class XiaoAiClient:
         device_name = next(
             (d.get("name", "") for d in devices if d["deviceID"] == did), ""
         )
-        
+
         # 获取原始状态
         raw_result = await self._na_service.player_get_status(did)
         # _log.info("MiService: player status result: %s", raw_result)
-        
+
         # 解析嵌套的 JSON 数据
         info = {}
         play_song_detail = {}
-        
+
         try:
             if raw_result and isinstance(raw_result, dict):
                 data = raw_result.get("data", {})
                 info_str = data.get("info", "{}")
-                
+
                 if info_str:
                     info = json.loads(info_str)
                     play_song_detail = info.get("play_song_detail", {})
         except (json.JSONDecodeError, TypeError, AttributeError) as e:
             _log.warning("解析播放状态 info 失败: %s", e)
-        
+
         # 提取并展平常用字段
         status_code = info.get("status", 0)
-        status_text = {0: "stopped", 1: "playing", 2: "paused"}.get(status_code, "unknown")
-        
+        status_text = {0: "stopped", 1: "playing", 2: "paused"}.get(
+            status_code, "unknown"
+        )
+
         return {
             "device": f"{device_name}({did})",
             "device_id": did,

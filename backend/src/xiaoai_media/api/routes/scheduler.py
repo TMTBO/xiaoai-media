@@ -1,6 +1,5 @@
 """定时任务管理 API 路由"""
 
-import logging
 from xiaoai_media.logger import get_logger
 import uuid
 from datetime import datetime, timedelta
@@ -27,6 +26,7 @@ router = APIRouter(tags=["scheduler"])
 
 class CronTaskCreate(BaseModel):
     """创建 Cron 定时任务请求"""
+
     task_type: TaskType = Field(..., description="任务类型")
     name: str = Field(..., description="任务名称")
     cron_expression: str = Field(..., description="Cron 表达式 (分 时 日 月 周)")
@@ -36,6 +36,7 @@ class CronTaskCreate(BaseModel):
 
 class DateTaskCreate(BaseModel):
     """创建一次性定时任务请求"""
+
     task_type: TaskType = Field(..., description="任务类型")
     name: str = Field(..., description="任务名称")
     run_date: datetime = Field(..., description="执行时间")
@@ -45,6 +46,7 @@ class DateTaskCreate(BaseModel):
 
 class DelayTaskCreate(BaseModel):
     """创建延迟任务请求（如：10分钟后提醒）"""
+
     task_type: TaskType = Field(..., description="任务类型")
     name: str = Field(..., description="任务名称")
     delay_minutes: int = Field(..., description="延迟分钟数", gt=0)
@@ -53,6 +55,7 @@ class DelayTaskCreate(BaseModel):
 
 class TaskUpdate(BaseModel):
     """更新任务请求"""
+
     name: Optional[str] = Field(None, description="任务名称")
     cron_expression: Optional[str] = Field(None, description="Cron 表达式")
     run_date: Optional[datetime] = Field(None, description="执行时间")
@@ -62,6 +65,7 @@ class TaskUpdate(BaseModel):
 
 class TaskResponse(BaseModel):
     """任务响应"""
+
     task_id: str
     task_type: str
     name: str
@@ -77,12 +81,14 @@ class TaskResponse(BaseModel):
 
 class QuickReminderCreate(BaseModel):
     """快速提醒请求"""
+
     message: str = Field(..., description="提醒内容")
     delay_minutes: int = Field(..., description="延迟分钟数", gt=0, le=1440)
 
 
 class QuickPlayMusicCreate(BaseModel):
     """快速播放音乐请求"""
+
     song_name: str = Field(..., description="歌曲名称")
     artist: Optional[str] = Field(None, description="歌手名称")
     cron_expression: str = Field(..., description="Cron 表达式")
@@ -90,15 +96,19 @@ class QuickPlayMusicCreate(BaseModel):
 
 class QuickPlayPlaylistCreate(BaseModel):
     """快速播放播放列表请求"""
+
     playlist_id: str = Field(..., description="播放列表ID")
     cron_expression: str = Field(..., description="Cron 表达式")
 
 
 class QuickCommandCreate(BaseModel):
     """快速执行指令请求"""
+
     command: str = Field(..., description="语音指令文本")
     cron_expression: Optional[str] = Field(None, description="Cron 表达式（定时执行）")
-    delay_minutes: Optional[int] = Field(None, description="延迟分钟数（延迟执行）", gt=0, le=1440)
+    delay_minutes: Optional[int] = Field(
+        None, description="延迟分钟数（延迟执行）", gt=0, le=1440
+    )
     device_id: Optional[str] = Field(None, description="设备ID（可选）")
 
 
@@ -114,18 +124,17 @@ def get_scheduler() -> SchedulerService:
 
 @router.post("/scheduler/tasks/cron", response_model=TaskResponse)
 async def create_cron_task(
-    task: CronTaskCreate,
-    scheduler: SchedulerService = Depends(get_scheduler)
+    task: CronTaskCreate, scheduler: SchedulerService = Depends(get_scheduler)
 ):
     """创建 Cron 定时任务
-    
+
     Cron 表达式格式: 分 时 日 月 周
     - 分: 0-59
     - 时: 0-23
     - 日: 1-31
     - 月: 1-12
     - 周: 0-6 (0=周日)
-    
+
     示例:
     - "0 7 * * *" - 每天早上7点
     - "30 20 * * 1-5" - 周一到周五晚上8点30分
@@ -139,7 +148,7 @@ async def create_cron_task(
             name=task.name,
             cron_expression=task.cron_expression,
             params=task.params,
-            enabled=task.enabled
+            enabled=task.enabled,
         )
         return TaskResponse(**result)
     except ValueError as e:
@@ -151,8 +160,7 @@ async def create_cron_task(
 
 @router.post("/scheduler/tasks/date", response_model=TaskResponse)
 async def create_date_task(
-    task: DateTaskCreate,
-    scheduler: SchedulerService = Depends(get_scheduler)
+    task: DateTaskCreate, scheduler: SchedulerService = Depends(get_scheduler)
 ):
     """创建一次性定时任务"""
     try:
@@ -163,7 +171,7 @@ async def create_date_task(
             name=task.name,
             run_date=task.run_date,
             params=task.params,
-            enabled=task.enabled
+            enabled=task.enabled,
         )
         return TaskResponse(**result)
     except ValueError as e:
@@ -175,8 +183,7 @@ async def create_date_task(
 
 @router.post("/scheduler/tasks/delay", response_model=TaskResponse)
 async def create_delay_task(
-    task: DelayTaskCreate,
-    scheduler: SchedulerService = Depends(get_scheduler)
+    task: DelayTaskCreate, scheduler: SchedulerService = Depends(get_scheduler)
 ):
     """创建延迟任务（如：10分钟后提醒我）"""
     try:
@@ -188,7 +195,7 @@ async def create_delay_task(
             name=task.name,
             run_date=run_date,
             params=task.params,
-            enabled=True
+            enabled=True,
         )
         return TaskResponse(**result)
     except ValueError as e:
@@ -201,7 +208,7 @@ async def create_delay_task(
 @router.get("/scheduler/tasks", response_model=list[TaskResponse])
 async def list_tasks(
     task_type: Optional[TaskType] = None,
-    scheduler: SchedulerService = Depends(get_scheduler)
+    scheduler: SchedulerService = Depends(get_scheduler),
 ):
     """列出所有任务"""
     try:
@@ -213,10 +220,7 @@ async def list_tasks(
 
 
 @router.get("/scheduler/tasks/{task_id}", response_model=TaskResponse)
-async def get_task(
-    task_id: str,
-    scheduler: SchedulerService = Depends(get_scheduler)
-):
+async def get_task(task_id: str, scheduler: SchedulerService = Depends(get_scheduler)):
     """获取任务详情"""
     task = scheduler.get_task(task_id)
     if task is None:
@@ -228,7 +232,7 @@ async def get_task(
 async def update_task(
     task_id: str,
     task_update: TaskUpdate,
-    scheduler: SchedulerService = Depends(get_scheduler)
+    scheduler: SchedulerService = Depends(get_scheduler),
 ):
     """更新任务"""
     try:
@@ -238,7 +242,7 @@ async def update_task(
             cron_expression=task_update.cron_expression,
             run_date=task_update.run_date,
             params=task_update.params,
-            enabled=task_update.enabled
+            enabled=task_update.enabled,
         )
         return TaskResponse(**result)
     except ValueError as e:
@@ -250,8 +254,7 @@ async def update_task(
 
 @router.delete("/scheduler/tasks/{task_id}")
 async def delete_task(
-    task_id: str,
-    scheduler: SchedulerService = Depends(get_scheduler)
+    task_id: str, scheduler: SchedulerService = Depends(get_scheduler)
 ):
     """删除任务"""
     try:
@@ -269,21 +272,20 @@ async def delete_task(
 
 @router.post("/scheduler/quick/reminder", response_model=TaskResponse)
 async def quick_reminder(
-    reminder: QuickReminderCreate,
-    scheduler: SchedulerService = Depends(get_scheduler)
+    reminder: QuickReminderCreate, scheduler: SchedulerService = Depends(get_scheduler)
 ):
     """快速创建提醒（如：10分钟后提醒我）"""
     try:
         task_id = str(uuid.uuid4())
         run_date = datetime.now() + timedelta(minutes=reminder.delay_minutes)
-        
+
         result = await scheduler.add_date_task(
             task_id=task_id,
             task_type=TaskType.REMINDER,
             name=f"提醒: {reminder.message}",
             run_date=run_date,
             params={"message": reminder.message},
-            enabled=True
+            enabled=True,
         )
         return TaskResponse(**result)
     except Exception as e:
@@ -293,24 +295,23 @@ async def quick_reminder(
 
 @router.post("/scheduler/quick/play-music", response_model=TaskResponse)
 async def quick_play_music(
-    play: QuickPlayMusicCreate,
-    scheduler: SchedulerService = Depends(get_scheduler)
+    play: QuickPlayMusicCreate, scheduler: SchedulerService = Depends(get_scheduler)
 ):
     """快速创建定时播放音乐任务"""
     try:
         task_id = str(uuid.uuid4())
-        
+
         params = {"song_name": play.song_name}
         if play.artist:
             params["artist"] = play.artist
-        
+
         result = await scheduler.add_cron_task(
             task_id=task_id,
             task_type=TaskType.PLAY_MUSIC,
             name=f"播放: {play.song_name}",
             cron_expression=play.cron_expression,
             params=params,
-            enabled=True
+            enabled=True,
         )
         return TaskResponse(**result)
     except Exception as e:
@@ -320,20 +321,19 @@ async def quick_play_music(
 
 @router.post("/scheduler/quick/play-playlist", response_model=TaskResponse)
 async def quick_play_playlist(
-    play: QuickPlayPlaylistCreate,
-    scheduler: SchedulerService = Depends(get_scheduler)
+    play: QuickPlayPlaylistCreate, scheduler: SchedulerService = Depends(get_scheduler)
 ):
     """快速创建定时播放播放列表任务"""
     try:
         task_id = str(uuid.uuid4())
-        
+
         result = await scheduler.add_cron_task(
             task_id=task_id,
             task_type=TaskType.PLAY_PLAYLIST,
             name=f"播放播放列表: {play.playlist_id}",
             cron_expression=play.cron_expression,
             params={"playlist_id": play.playlist_id},
-            enabled=True
+            enabled=True,
         )
         return TaskResponse(**result)
     except Exception as e:
@@ -343,36 +343,33 @@ async def quick_play_playlist(
 
 @router.post("/scheduler/quick/command", response_model=TaskResponse)
 async def quick_command(
-    cmd: QuickCommandCreate,
-    scheduler: SchedulerService = Depends(get_scheduler)
+    cmd: QuickCommandCreate, scheduler: SchedulerService = Depends(get_scheduler)
 ):
     """快速创建定时/延迟执行指令任务
-    
+
     可以创建两种类型的任务：
     1. 定时执行：提供 cron_expression（如："0 7 * * *" 每天早上7点）
     2. 延迟执行：提供 delay_minutes（如：10 表示10分钟后执行）
-    
+
     必须提供 cron_expression 或 delay_minutes 之一
     """
     try:
         # 验证参数
         if not cmd.cron_expression and not cmd.delay_minutes:
             raise HTTPException(
-                status_code=400,
-                detail="必须提供 cron_expression 或 delay_minutes 之一"
+                status_code=400, detail="必须提供 cron_expression 或 delay_minutes 之一"
             )
-        
+
         if cmd.cron_expression and cmd.delay_minutes:
             raise HTTPException(
-                status_code=400,
-                detail="不能同时提供 cron_expression 和 delay_minutes"
+                status_code=400, detail="不能同时提供 cron_expression 和 delay_minutes"
             )
-        
+
         task_id = str(uuid.uuid4())
         params = {"command": cmd.command}
         if cmd.device_id:
             params["device_id"] = cmd.device_id
-        
+
         # 定时执行
         if cmd.cron_expression:
             result = await scheduler.add_cron_task(
@@ -381,7 +378,7 @@ async def quick_command(
                 name=f"执行指令: {cmd.command}",
                 cron_expression=cmd.cron_expression,
                 params=params,
-                enabled=True
+                enabled=True,
             )
         # 延迟执行
         else:
@@ -392,9 +389,9 @@ async def quick_command(
                 name=f"执行指令: {cmd.command}",
                 run_date=run_date,
                 params=params,
-                enabled=True
+                enabled=True,
             )
-        
+
         return TaskResponse(**result)
     except HTTPException:
         raise

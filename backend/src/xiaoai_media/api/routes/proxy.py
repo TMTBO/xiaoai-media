@@ -3,7 +3,6 @@
 为小爱音箱提供音频流代理，解决音乐平台的防盗链限制。
 """
 
-import logging
 from xiaoai_media.logger import get_logger
 from pathlib import Path
 from urllib.parse import unquote, urlparse
@@ -39,22 +38,20 @@ async def proxy_audio_stream(url: str = Query(..., description="原始音频URL"
     if parsed_url.scheme == "file":
         file_path = unquote(parsed_url.path)
         _log.info("Serving local file: %s", file_path)
-        
+
         path = Path(file_path)
         if not path.exists():
             _log.error("File not found: %s", file_path)
             raise HTTPException(status_code=404, detail=f"File not found: {file_path}")
-        
+
         if not path.is_file():
             _log.error("Path is not a file: %s", file_path)
-            raise HTTPException(status_code=400, detail=f"Path is not a file: {file_path}")
-        
+            raise HTTPException(
+                status_code=400, detail=f"Path is not a file: {file_path}"
+            )
+
         # 返回文件响应
-        return FileResponse(
-            path=path,
-            media_type="audio/mpeg",
-            filename=path.name
-        )
+        return FileResponse(path=path, media_type="audio/mpeg", filename=path.name)
 
     # 处理 HTTP/HTTPS 协议的远程文件
     try:

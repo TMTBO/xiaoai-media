@@ -1,187 +1,374 @@
 <template>
-    <div class="music-panel">
-        <!-- Search / Charts tabs -->
-        <el-card>
-            <el-tabs v-model="activeTab" @tab-change="onTabChange">
-                <!-- Search Tab -->
-                <el-tab-pane label="搜索音乐" name="search">
-                    <el-form inline @submit.prevent="doSearch">
-                        <el-form-item label="平台">
-                            <el-select v-model="searchPlatform" style="width: 130px">
-                                <el-option v-for="p in platformOptions" :key="p.value" :label="p.label"
-                                    :value="p.value" />
-                            </el-select>
-                        </el-form-item>
-                        <el-form-item label="关键词">
-                            <el-input v-model="searchQuery" placeholder="搜索歌曲、歌手..." clearable style="width: 260px" />
-                        </el-form-item>
-                        <el-form-item>
-                            <el-button type="primary" native-type="submit" :loading="searchLoading">
-                                <el-icon style="margin-right: 4px">
-                                    <Search />
-                                </el-icon>搜索
-                            </el-button>
-                        </el-form-item>
-                    </el-form>
+  <div class="music-panel">
+    <!-- Search / Charts tabs -->
+    <el-card>
+      <el-tabs
+        v-model="activeTab"
+        @tab-change="onTabChange"
+      >
+        <!-- Search Tab -->
+        <el-tab-pane
+          label="搜索音乐"
+          name="search"
+        >
+          <el-form
+            inline
+            @submit.prevent="doSearch"
+          >
+            <el-form-item label="平台">
+              <el-select
+                v-model="searchPlatform"
+                style="width: 130px"
+              >
+                <el-option
+                  v-for="p in platformOptions"
+                  :key="p.value"
+                  :label="p.label"
+                  :value="p.value"
+                />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="关键词">
+              <el-input
+                v-model="searchQuery"
+                placeholder="搜索歌曲、歌手..."
+                clearable
+                style="width: 260px"
+              />
+            </el-form-item>
+            <el-form-item>
+              <el-button
+                type="primary"
+                native-type="submit"
+                :loading="searchLoading"
+              >
+                <el-icon style="margin-right: 4px">
+                  <Search />
+                </el-icon>搜索
+              </el-button>
+            </el-form-item>
+          </el-form>
 
-                    <div v-if="searchResults.length"
-                        style="margin: 8px 0; display: flex; align-items: center; gap: 8px">
-                        <span :style="{ fontSize: '13px', color: 'var(--color-text-regular)' }">共 {{ searchResults.length }} 首歌曲</span>
-                        <el-button size="small" type="primary" @click="handleCreatePlaylist('search')">
-                            <el-icon style="margin-right: 4px">
-                                <Plus />
-                            </el-icon>创建播单
-                        </el-button>
+          <div
+            v-if="searchResults.length"
+            style="margin: 8px 0; display: flex; align-items: center; gap: 8px"
+          >
+            <span :style="{ fontSize: '13px', color: 'var(--color-text-regular)' }">共 {{ searchResults.length }} 首歌曲</span>
+            <el-button
+              size="small"
+              type="primary"
+              @click="handleCreatePlaylist('search')"
+            >
+              <el-icon style="margin-right: 4px">
+                <Plus />
+              </el-icon>创建播单
+            </el-button>
+          </div>
+
+          <el-table
+            v-loading="searchLoading"
+            :data="searchResults"
+            style="width: 100%; margin-top: 8px"
+            empty-text="暂无结果，请输入关键词搜索"
+          >
+            <el-table-column
+              prop="name"
+              label="歌名"
+              min-width="160"
+              show-overflow-tooltip
+            />
+            <el-table-column
+              prop="singer"
+              label="歌手"
+              min-width="120"
+              show-overflow-tooltip
+            />
+            <el-table-column
+              prop="meta.albumName"
+              label="专辑"
+              min-width="140"
+              show-overflow-tooltip
+            />
+          </el-table>
+        </el-tab-pane>
+
+        <!-- Charts Tab -->
+        <el-tab-pane
+          label="排行榜"
+          name="charts"
+        >
+          <el-form inline>
+            <el-form-item label="平台">
+              <el-select
+                v-model="chartPlatform"
+                style="width: 130px"
+                @change="onChartPlatformChange"
+              >
+                <el-option
+                  v-for="p in platformOptions"
+                  :key="p.value"
+                  :label="p.label"
+                  :value="p.value"
+                />
+              </el-select>
+            </el-form-item>
+            <el-form-item>
+              <el-button
+                :loading="chartsLoading"
+                @click="loadCharts"
+              >
+                <el-icon>
+                  <Refresh />
+                </el-icon>
+              </el-button>
+            </el-form-item>
+          </el-form>
+
+          <div
+            v-if="chartsLoading"
+            v-loading="true"
+            style="height: 80px"
+          />
+          <div
+            v-else-if="charts.length"
+            class="charts-layout"
+          >
+            <!-- Left: Charts List -->
+            <div class="charts-list">
+              <div
+                v-for="chart in charts"
+                :key="chart.id"
+                class="chart-item"
+                :class="{ 'chart-item--active': selectedChart?.id === chart.id }"
+                @click="loadChartSongs(chart)"
+              >
+                <el-image
+                  :src="chart.picUrl"
+                  class="chart-image"
+                  fit="cover"
+                  loading="lazy"
+                >
+                  <template #error>
+                    <div class="chart-image-error">
+                      <el-icon size="24">
+                        <VideoPlay />
+                      </el-icon>
                     </div>
-
-                    <el-table :data="searchResults" v-loading="searchLoading" style="width: 100%; margin-top: 8px"
-                        empty-text="暂无结果，请输入关键词搜索">
-                        <el-table-column prop="name" label="歌名" min-width="160" show-overflow-tooltip />
-                        <el-table-column prop="singer" label="歌手" min-width="120" show-overflow-tooltip />
-                        <el-table-column prop="meta.albumName" label="专辑" min-width="140" show-overflow-tooltip />
-                    </el-table>
-                </el-tab-pane>
-
-                <!-- Charts Tab -->
-                <el-tab-pane label="排行榜" name="charts">
-                    <el-form inline>
-                        <el-form-item label="平台">
-                            <el-select v-model="chartPlatform" style="width: 130px" @change="onChartPlatformChange">
-                                <el-option v-for="p in platformOptions" :key="p.value" :label="p.label"
-                                    :value="p.value" />
-                            </el-select>
-                        </el-form-item>
-                        <el-form-item>
-                            <el-button :loading="chartsLoading" @click="loadCharts">
-                                <el-icon>
-                                    <Refresh />
-                                </el-icon>
-                            </el-button>
-                        </el-form-item>
-                    </el-form>
-
-                    <div v-if="chartsLoading" v-loading="true" style="height: 80px" />
-                    <div v-else-if="charts.length" class="charts-layout">
-                        <!-- Left: Charts List -->
-                        <div class="charts-list">
-                            <div v-for="chart in charts" :key="chart.id" class="chart-item"
-                                :class="{ 'chart-item--active': selectedChart?.id === chart.id }"
-                                @click="loadChartSongs(chart)">
-                                <el-image :src="chart.picUrl" class="chart-image" fit="cover" loading="lazy">
-                                    <template #error>
-                                        <div class="chart-image-error">
-                                            <el-icon size="24">
-                                                <VideoPlay />
-                                            </el-icon>
-                                        </div>
-                                    </template>
-                                </el-image>
-                                <div class="chart-name">{{ chart.name }}</div>
-                            </div>
-                        </div>
-
-                        <!-- Right: Chart Details -->
-                        <div class="chart-details">
-                            <template v-if="selectedChart">
-                                <div
-                                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px">
-                                    <div style="font-size: 16px; font-weight: 600">
-                                        {{ selectedChart.name }}
-                                    </div>
-                                    <el-button v-if="chartSongs.length" size="small" type="primary"
-                                        @click="handleCreatePlaylist('chart')">
-                                        <el-icon style="margin-right: 4px">
-                                            <Plus />
-                                        </el-icon>创建播单
-                                    </el-button>
-                                </div>
-                                <el-table :data="chartSongs" v-loading="chartSongsLoading" style="width: 100%"
-                                    empty-text="暂无歌曲" max-height="600">
-                                    <el-table-column type="index" label="#" width="50" />
-                                    <el-table-column prop="name" label="歌名" min-width="160" show-overflow-tooltip />
-                                    <el-table-column prop="singer" label="歌手" min-width="120" show-overflow-tooltip />
-                                    <el-table-column prop="meta.albumName" label="专辑" min-width="140"
-                                        show-overflow-tooltip />
-                                </el-table>
-                            </template>
-                            <el-empty v-else description="请点击左侧排行榜查看详情" />
-                        </div>
-                    </div>
-                    <el-empty v-else description="点击刷新按钮加载排行榜" />
-                </el-tab-pane>
-            </el-tabs>
-        </el-card>
-
-        <!-- Player Control Bar -->
-        <el-card v-if="currentSong" class="player-bar" style="margin-top: 16px">
-            <div class="player-content">
-                <div class="song-info">
-                    <span class="song-name">{{ currentSong.name }}</span>
-                    <span class="song-singer">{{ currentSong.singer }}</span>
-                    <el-tag size="small" style="margin-left: 8px">
-                        {{ playlistIndex + 1 }} / {{ playlist.length }}
-                    </el-tag>
+                  </template>
+                </el-image>
+                <div class="chart-name">
+                  {{ chart.name }}
                 </div>
-                <div class="player-controls">
-                    <el-button :loading="controlLoading" circle title="上一首" @click="handlePrev">
-                        <el-icon>
-                            <CaretLeft />
-                        </el-icon>
-                    </el-button>
-                    <el-button type="primary" :loading="controlLoading" circle :title="isPaused ? '继续' : '暂停'"
-                        @click="handlePlayPause">
-                        <el-icon>
-                            <VideoPlay v-if="isPaused" />
-                            <VideoPause v-else />
-                        </el-icon>
-                    </el-button>
-                    <el-button :loading="controlLoading" circle title="下一首" @click="handleNext">
-                        <el-icon>
-                            <CaretRight />
-                        </el-icon>
-                    </el-button>
-                </div>
+              </div>
             </div>
-        </el-card>
 
-        <el-alert v-if="error" :title="error" type="error" show-icon closable style="margin-top: 16px"
-            @close="error = ''" />
+            <!-- Right: Chart Details -->
+            <div class="chart-details">
+              <template v-if="selectedChart">
+                <div
+                  style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px"
+                >
+                  <div style="font-size: 16px; font-weight: 600">
+                    {{ selectedChart.name }}
+                  </div>
+                  <el-button
+                    v-if="chartSongs.length"
+                    size="small"
+                    type="primary"
+                    @click="handleCreatePlaylist('chart')"
+                  >
+                    <el-icon style="margin-right: 4px">
+                      <Plus />
+                    </el-icon>创建播单
+                  </el-button>
+                </div>
+                <el-table
+                  v-loading="chartSongsLoading"
+                  :data="chartSongs"
+                  style="width: 100%"
+                  empty-text="暂无歌曲"
+                  max-height="600"
+                >
+                  <el-table-column
+                    type="index"
+                    label="#"
+                    width="50"
+                  />
+                  <el-table-column
+                    prop="name"
+                    label="歌名"
+                    min-width="160"
+                    show-overflow-tooltip
+                  />
+                  <el-table-column
+                    prop="singer"
+                    label="歌手"
+                    min-width="120"
+                    show-overflow-tooltip
+                  />
+                  <el-table-column
+                    prop="meta.albumName"
+                    label="专辑"
+                    min-width="140"
+                    show-overflow-tooltip
+                  />
+                </el-table>
+              </template>
+              <el-empty
+                v-else
+                description="请点击左侧排行榜查看详情"
+              />
+            </div>
+          </div>
+          <el-empty
+            v-else
+            description="点击刷新按钮加载排行榜"
+          />
+        </el-tab-pane>
+      </el-tabs>
+    </el-card>
 
-        <!-- 创建播单对话框 -->
-        <el-dialog v-model="showCreatePlaylistDialog" title="创建播单" width="500px">
-            <el-form :model="createPlaylistForm" label-width="80px">
-                <el-form-item label="播单名称" required>
-                    <el-input v-model="createPlaylistForm.name" placeholder="请输入播单名称" />
-                </el-form-item>
-                <el-form-item label="类型">
-                    <el-select v-model="createPlaylistForm.type" style="width: 100%">
-                        <el-option label="音乐" value="music" />
-                        <el-option label="有声书" value="audiobook" />
-                        <el-option label="播客" value="podcast" />
-                        <el-option label="其他" value="other" />
-                    </el-select>
-                </el-form-item>
-                <el-form-item label="描述">
-                    <el-input v-model="createPlaylistForm.description" type="textarea" :rows="3"
-                        placeholder="播单描述（可选）" />
-                </el-form-item>
-                <el-form-item>
-                    <el-alert type="info" :closable="false" show-icon>
-                        <template #title>
-                            将从{{ createPlaylistSource === 'search' ? '搜索结果' : '排行榜' }}中添加
-                            {{ createPlaylistSource === 'search' ? searchResults.length : chartSongs.length }} 首歌曲
-                        </template>
-                    </el-alert>
-                </el-form-item>
-            </el-form>
-            <template #footer>
-                <el-button @click="showCreatePlaylistDialog = false">取消</el-button>
-                <el-button type="primary" :loading="createPlaylistLoading" @click="confirmCreatePlaylist">
-                    创建
-                </el-button>
+    <!-- Player Control Bar -->
+    <el-card
+      v-if="currentSong"
+      class="player-bar"
+      style="margin-top: 16px"
+    >
+      <div class="player-content">
+        <div class="song-info">
+          <span class="song-name">{{ currentSong.name }}</span>
+          <span class="song-singer">{{ currentSong.singer }}</span>
+          <el-tag
+            size="small"
+            style="margin-left: 8px"
+          >
+            {{ playlistIndex + 1 }} / {{ playlist.length }}
+          </el-tag>
+        </div>
+        <div class="player-controls">
+          <el-button
+            :loading="controlLoading"
+            circle
+            title="上一首"
+            @click="handlePrev"
+          >
+            <el-icon>
+              <CaretLeft />
+            </el-icon>
+          </el-button>
+          <el-button
+            type="primary"
+            :loading="controlLoading"
+            circle
+            :title="isPaused ? '继续' : '暂停'"
+            @click="handlePlayPause"
+          >
+            <el-icon>
+              <VideoPlay v-if="isPaused" />
+              <VideoPause v-else />
+            </el-icon>
+          </el-button>
+          <el-button
+            :loading="controlLoading"
+            circle
+            title="下一首"
+            @click="handleNext"
+          >
+            <el-icon>
+              <CaretRight />
+            </el-icon>
+          </el-button>
+        </div>
+      </div>
+    </el-card>
+
+    <el-alert
+      v-if="error"
+      :title="error"
+      type="error"
+      show-icon
+      closable
+      style="margin-top: 16px"
+      @close="error = ''"
+    />
+
+    <!-- 创建播单对话框 -->
+    <el-dialog
+      v-model="showCreatePlaylistDialog"
+      title="创建播单"
+      width="500px"
+    >
+      <el-form
+        :model="createPlaylistForm"
+        label-width="80px"
+      >
+        <el-form-item
+          label="播单名称"
+          required
+        >
+          <el-input
+            v-model="createPlaylistForm.name"
+            placeholder="请输入播单名称"
+          />
+        </el-form-item>
+        <el-form-item label="类型">
+          <el-select
+            v-model="createPlaylistForm.type"
+            style="width: 100%"
+          >
+            <el-option
+              label="音乐"
+              value="music"
+            />
+            <el-option
+              label="有声书"
+              value="audiobook"
+            />
+            <el-option
+              label="播客"
+              value="podcast"
+            />
+            <el-option
+              label="其他"
+              value="other"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="描述">
+          <el-input
+            v-model="createPlaylistForm.description"
+            type="textarea"
+            :rows="3"
+            placeholder="播单描述（可选）"
+          />
+        </el-form-item>
+        <el-form-item>
+          <el-alert
+            type="info"
+            :closable="false"
+            show-icon
+          >
+            <template #title>
+              将从{{ createPlaylistSource === 'search' ? '搜索结果' : '排行榜' }}中添加
+              {{ createPlaylistSource === 'search' ? searchResults.length : chartSongs.length }} 首歌曲
             </template>
-        </el-dialog>
-    </div>
+          </el-alert>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showCreatePlaylistDialog = false">
+          取消
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="createPlaylistLoading"
+          @click="confirmCreatePlaylist"
+        >
+          创建
+        </el-button>
+      </template>
+    </el-dialog>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -194,7 +381,7 @@ import {
     VideoPause,
     Plus,
 } from '@element-plus/icons-vue'
-import { ElMessageBox, ElMessage } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { api, type Song, type SongQuality, type Chart, type PlaylistItem } from '@/api'
 import { useDevices } from '@/composables/useDevices'
 
@@ -251,7 +438,7 @@ function normalizeSong(raw: Record<string, unknown>, platform: string): Song {
     }
 }
 
-async function doSearch() {
+async function doSearch(): Promise<void> {
     if (!searchQuery.value.trim()) return
     searchLoading.value = true
     error.value = ''
@@ -276,20 +463,20 @@ const selectedChart = ref<Chart | null>(null)
 const chartSongsLoading = ref(false)
 const chartSongs = ref<Song[]>([])
 
-function onChartPlatformChange() {
+function onChartPlatformChange(): void {
     selectedChart.value = null
     chartSongs.value = []
     charts.value = []
     loadCharts()
 }
 
-function onTabChange(name: string) {
+function onTabChange(name: string): void {
     if (name === 'charts' && charts.value.length === 0) {
         loadCharts()
     }
 }
 
-async function loadCharts() {
+async function loadCharts(): Promise<void> {
     chartsLoading.value = true
     error.value = ''
     selectedChart.value = null
@@ -314,7 +501,7 @@ async function loadCharts() {
     }
 }
 
-async function loadChartSongs(chart: Chart) {
+async function loadChartSongs(chart: Chart): Promise<void> {
     selectedChart.value = chart
     chartSongsLoading.value = true
     error.value = ''
@@ -343,7 +530,7 @@ const currentSong = computed(() =>
         : null,
 )
 
-async function handlePrev() {
+async function handlePrev(): Promise<void> {
     if (!playlist.value.length) return
     controlLoading.value = true
     error.value = ''
@@ -360,7 +547,7 @@ async function handlePrev() {
     }
 }
 
-async function handleNext() {
+async function handleNext(): Promise<void> {
     if (!playlist.value.length) return
     controlLoading.value = true
     error.value = ''
@@ -377,7 +564,7 @@ async function handleNext() {
     }
 }
 
-async function handlePlayPause() {
+async function handlePlayPause(): Promise<void> {
     controlLoading.value = true
     error.value = ''
     try {
@@ -406,7 +593,7 @@ const createPlaylistForm = ref({
 })
 const createPlaylistSource = ref<'search' | 'chart'>('search')
 
-function handleCreatePlaylist(source: 'search' | 'chart') {
+function handleCreatePlaylist(source: 'search' | 'chart'): void {
     createPlaylistSource.value = source
 
     // 预填播单名称
@@ -440,7 +627,7 @@ function parseDuration(interval: number | string): number {
     return 0
 }
 
-async function confirmCreatePlaylist() {
+async function confirmCreatePlaylist(): Promise<void> {
     if (!createPlaylistForm.value.name.trim()) {
         ElMessage.error('请输入播单名称')
         return
@@ -491,8 +678,9 @@ async function confirmCreatePlaylist() {
             type: 'music',
             description: '',
         }
-    } catch (error: any) {
-        ElMessage.error(`创建播单失败: ${error.message}`)
+    } catch (error: unknown) {
+        const err = error as { message?: string }
+        ElMessage.error(`创建播单失败: ${err.message || '未知错误'}`)
     } finally {
         createPlaylistLoading.value = false
     }

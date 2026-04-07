@@ -7,7 +7,6 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 from typing import Any
 
 from fastapi import HTTPException
@@ -225,11 +224,11 @@ class PlaylistPlayer:
         """
         client = get_client_sync()
         result = await client.player_pause(device_id)
-        
+
         # 通知播放控制器
         controller = get_controller()
         await controller.on_play_paused(device_id)
-        
+
         return result
 
     async def resume(self, device_id: str) -> dict:
@@ -243,11 +242,11 @@ class PlaylistPlayer:
         """
         client = get_client_sync()
         result = await client.player_play(device_id)
-        
+
         # 通知播放控制器
         controller = get_controller()
         await controller.on_play_resumed(device_id)
-        
+
         return result
 
     async def stop(self, device_id: str) -> dict:
@@ -261,11 +260,11 @@ class PlaylistPlayer:
         """
         client = get_client_sync()
         result = await client.player_stop(device_id)
-        
+
         # 通知播放控制器
         controller = get_controller()
         await controller.on_play_stopped(device_id)
-        
+
         return result
 
     async def get_status(self, device_id: str) -> dict:
@@ -298,7 +297,9 @@ class PlaylistPlayer:
         return PlaylistItem(
             title=song.get("name", ""),
             artist=song.get("singer", ""),
-            album=song.get("meta", {}).get("albumName", "") if isinstance(song.get("meta"), dict) else "",
+            album=song.get("meta", {}).get("albumName", "")
+            if isinstance(song.get("meta"), dict)
+            else "",
             audio_id=song.get("id", ""),
             url=None,  # 不使用预设 URL，让 get_item_url 动态获取
             custom_params={

@@ -306,13 +306,13 @@ export const darkTheme: ColorTheme = {
 export let currentTheme: ColorTheme = lightTheme
 
 // 切换主题
-export function setTheme(isDark: boolean) {
+export function setTheme(isDark: boolean): void {
     currentTheme = isDark ? darkTheme : lightTheme
     applyTheme()
 }
 
 // 应用主题到 CSS 变量
-export function applyTheme() {
+export function applyTheme(): void {
     const root = document.documentElement
 
     Object.entries(currentTheme).forEach(([key, value]) => {
@@ -323,7 +323,7 @@ export function applyTheme() {
 }
 
 // 初始化主题
-export function initTheme() {
+export function initTheme(): void {
     // 检查用户偏好或本地存储
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
     const savedTheme = localStorage.getItem('theme')
@@ -340,7 +340,7 @@ export function initTheme() {
 }
 
 // 切换主题并保存偏好
-export function toggleTheme() {
+export function toggleTheme(): void {
     const isDark = currentTheme === darkTheme
     setTheme(!isDark)
     localStorage.setItem('theme', isDark ? 'light' : 'dark')

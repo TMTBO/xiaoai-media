@@ -1,18 +1,27 @@
 <template>
   <div class="user-info">
     <div class="user-avatar">
-      <el-icon :size="24"><User /></el-icon>
+      <el-icon :size="24">
+        <User />
+      </el-icon>
     </div>
     <div class="user-details">
-      <div class="username">{{ username }}</div>
+      <div class="username">
+        {{ username }}
+      </div>
       <div class="role">
-        <el-tag :type="isAdmin ? 'danger' : 'info'" size="small">
+        <el-tag
+          :type="isAdmin ? 'danger' : 'info'"
+          size="small"
+        >
           {{ isAdmin ? '管理员' : '普通用户' }}
         </el-tag>
       </div>
     </div>
     <el-dropdown @command="handleCommand">
-      <el-icon class="more-icon"><MoreFilled /></el-icon>
+      <el-icon class="more-icon">
+        <MoreFilled />
+      </el-icon>
       <template #dropdown>
         <el-dropdown-menu>
           <el-dropdown-item command="logout">
@@ -32,7 +41,7 @@ import { useAuth } from '@/composables/useAuth'
 
 const { username, isAdmin } = useAuth()
 
-const handleCommand = (command: string) => {
+const handleCommand = (command: string): void => {
   if (command === 'logout') {
     logout()
   }

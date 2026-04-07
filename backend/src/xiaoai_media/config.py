@@ -1,15 +1,17 @@
 from __future__ import annotations
 
 import importlib.util
-import os
 import sys
 from pathlib import Path
 from typing import Any, Callable
 
+
 # 延迟导入 logger，避免循环依赖
 def _get_logger():
     from xiaoai_media.logger import get_logger
+
     return get_logger()
+
 
 # 数据存储根目录（向后兼容，建议使用 get_data_dir() 方法）
 DATA_DIR = Path.home()
@@ -94,7 +96,7 @@ def _load_user_config() -> Any | None:
         if config_dir not in sys.path:
             sys.path.insert(0, config_dir)
             _get_logger().debug("已将配置目录添加到 sys.path: %s", config_dir)
-        
+
         spec = importlib.util.spec_from_file_location("user_config", config_path)
         if spec and spec.loader:
             user_config = importlib.util.module_from_spec(spec)
@@ -116,9 +118,9 @@ _user_config = _load_user_config()
 
 def register_config_change_callback(callback: Callable[[], None]) -> None:
     """注册配置变更回调函数
-    
+
     当配置重新加载时，会调用所有注册的回调函数
-    
+
     Args:
         callback: 配置变更时要调用的回调函数
     """
@@ -129,7 +131,7 @@ def register_config_change_callback(callback: Callable[[], None]) -> None:
 
 def unregister_config_change_callback(callback: Callable[[], None]) -> None:
     """取消注册配置变更回调函数
-    
+
     Args:
         callback: 要取消注册的回调函数
     """
@@ -140,7 +142,7 @@ def unregister_config_change_callback(callback: Callable[[], None]) -> None:
 
 def reload_config() -> None:
     """重新加载配置并通知所有监听者
-    
+
     此函数会：
     1. 重新加载用户配置文件
     2. 更新所有配置变量
@@ -154,49 +156,54 @@ def reload_config() -> None:
     global WAKE_WORDS, ENABLE_WAKE_WORD_FILTER
     global LOG_LEVEL, TIMEZONE
     global PROXY_SKIP_AUTH_FOR_LAN, PROXY_LAN_NETWORKS
-    
+
     _get_logger().info("开始重新加载配置...")
-    
+
     # 重新加载用户配置
     _user_config = _load_user_config()
-    
+
     # 更新所有配置变量
     MI_USER = _get_config("MI_USER", "")
     MI_PASS = _get_config("MI_PASS", "")
     MI_DID = _get_config("MI_DID", "")
     MI_REGION = _get_config("MI_REGION", "cn")
-    
+
     MUSIC_API_BASE_URL = _get_config("MUSIC_API_BASE_URL", "http://localhost:5050")
     MUSIC_DEFAULT_PLATFORM = _get_config("MUSIC_DEFAULT_PLATFORM", "tx")
-    
+
     SERVER_BASE_URL = _get_config("SERVER_BASE_URL", "http://localhost:8000")
-    
+
     ENABLE_CONVERSATION_POLLING = _get_config("ENABLE_CONVERSATION_POLLING", True)
     CONVERSATION_POLL_INTERVAL = _get_config("CONVERSATION_POLL_INTERVAL", 2.0)
-    
+
     WAKE_WORDS = _get_config("WAKE_WORDS", [])
     ENABLE_WAKE_WORD_FILTER = _get_config("ENABLE_WAKE_WORD_FILTER", True)
-    
+
     PROXY_SKIP_AUTH_FOR_LAN = _get_config("PROXY_SKIP_AUTH_FOR_LAN", True)
-    PROXY_LAN_NETWORKS = _get_config("PROXY_LAN_NETWORKS", [
-        "192.168.0.0/16",
-        "10.0.0.0/8",
-        "172.16.0.0/12",
-        "127.0.0.0/8",
-    ])
-    
+    PROXY_LAN_NETWORKS = _get_config(
+        "PROXY_LAN_NETWORKS",
+        [
+            "192.168.0.0/16",
+            "10.0.0.0/8",
+            "172.16.0.0/12",
+            "127.0.0.0/8",
+        ],
+    )
+
     LOG_LEVEL = _get_config("LOG_LEVEL", "INFO")
     TIMEZONE = _get_config("TIMEZONE", "Asia/Shanghai")
-    
+
     _get_logger().info("配置已重新加载")
-    
+
     # 通知所有监听者
     for callback in _config_change_callbacks:
         try:
             callback()
             _get_logger().debug("已调用配置变更回调: %s", callback.__name__)
         except Exception as e:
-            _get_logger().error("配置变更回调执行失败 (%s): %s", callback.__name__, e, exc_info=True)
+            _get_logger().error(
+                "配置变更回调执行失败 (%s): %s", callback.__name__, e, exc_info=True
+            )
 
 
 def _get_config(key: str, default: Any = "") -> Any:
@@ -262,12 +269,15 @@ ENABLE_WAKE_WORD_FILTER: bool = _get_config("ENABLE_WAKE_WORD_FILTER", True)
 PROXY_SKIP_AUTH_FOR_LAN: bool = _get_config("PROXY_SKIP_AUTH_FOR_LAN", True)
 
 # 局域网 IP 段配置（CIDR 格式）
-PROXY_LAN_NETWORKS: list[str] = _get_config("PROXY_LAN_NETWORKS", [
-    "192.168.0.0/16",
-    "10.0.0.0/8",
-    "172.16.0.0/12",
-    "127.0.0.0/8",
-])
+PROXY_LAN_NETWORKS: list[str] = _get_config(
+    "PROXY_LAN_NETWORKS",
+    [
+        "192.168.0.0/16",
+        "10.0.0.0/8",
+        "172.16.0.0/12",
+        "127.0.0.0/8",
+    ],
+)
 
 
 # ============================================
@@ -340,7 +350,7 @@ def preprocess_command(query: str) -> str:
     processed = query
     for wake_word in WAKE_WORDS:
         if processed.startswith(wake_word):
-            processed = processed[len(wake_word):]
+            processed = processed[len(wake_word) :]
             break  # 只移除第一个匹配的唤醒词
 
     return processed.strip()

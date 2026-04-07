@@ -2,11 +2,20 @@
   <div class="login-container">
     <el-card class="login-card">
       <div class="logo-section">
-        <img src="/logo.svg" alt="XiaoAI Media Logo" class="logo" />
+        <img
+          src="/logo.svg"
+          alt="XiaoAI Media Logo"
+          class="logo"
+        >
         <h2>XiaoAI Media</h2>
       </div>
       
-      <el-form :model="form" :rules="rules" ref="formRef" @submit.prevent="handleLogin">
+      <el-form
+        ref="formRef"
+        :model="form"
+        :rules="rules"
+        @submit.prevent="handleLogin"
+      >
         <el-form-item prop="username">
           <el-input
             v-model="form.username"
@@ -32,8 +41,8 @@
             type="primary"
             size="large"
             :loading="loading"
-            @click="handleLogin"
             style="width: 100%"
+            @click="handleLogin"
           >
             登录
           </el-button>
@@ -41,7 +50,10 @@
       </el-form>
       
       <div class="default-info">
-        <el-text type="info" size="small">
+        <el-text
+          type="info"
+          size="small"
+        >
           默认账号: admin / admin123
         </el-text>
       </div>
@@ -72,7 +84,7 @@ const rules = {
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
 }
 
-const handleLogin = async () => {
+const handleLogin = async (): Promise<void> => {
   if (!formRef.value) return
   
   await formRef.value.validate(async (valid) => {
@@ -87,8 +99,9 @@ const handleLogin = async () => {
       
       ElMessage.success('登录成功')
       router.push('/devices')
-    } catch (error: any) {
-      ElMessage.error(error.response?.data?.detail || '登录失败')
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: string } } }
+      ElMessage.error(err.response?.data?.detail || '登录失败')
     } finally {
       loading.value = false
     }

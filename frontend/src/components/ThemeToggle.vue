@@ -1,6 +1,13 @@
 <template>
-  <el-tooltip :content="tooltipText" placement="bottom">
-    <el-button circle @click="toggleTheme" class="theme-toggle">
+  <el-tooltip
+    :content="tooltipText"
+    placement="bottom"
+  >
+    <el-button
+      circle
+      class="theme-toggle"
+      @click="toggleTheme"
+    >
       <el-icon>
         <Sunny v-if="themeMode === 'light'" />
         <Moon v-else-if="themeMode === 'dark'" />

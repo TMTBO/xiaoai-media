@@ -4,7 +4,11 @@
       <div style="display: flex; justify-content: space-between; align-items: center">
         <span>对话记录</span>
         <div style="display: flex; gap: 8px">
-          <el-button type="primary" :loading="loading" @click="fetchConversations">
+          <el-button
+            type="primary"
+            :loading="loading"
+            @click="fetchConversations"
+          >
             <el-icon>
               <Search />
             </el-icon>
@@ -14,16 +18,26 @@
             v-model="autoRefresh"
             active-text="自动刷新"
             inactive-text=""
-            @change="toggleAutoRefresh"
             style="margin-left: 8px"
+            @change="toggleAutoRefresh"
           />
         </div>
       </div>
     </template>
 
-    <el-alert v-if="error" :title="error" type="error" show-icon style="margin-bottom: 16px" closable />
+    <el-alert
+      v-if="error"
+      :title="error"
+      type="error"
+      show-icon
+      style="margin-bottom: 16px"
+      closable
+    />
 
-    <el-empty v-if="!loading && conversations.length === 0" description="暂无对话记录" />
+    <el-empty
+      v-if="!loading && conversations.length === 0"
+      description="暂无对话记录"
+    />
 
     <el-timeline v-else>
       <el-timeline-item
@@ -35,35 +49,72 @@
         <el-card>
           <div class="conversation-item">
             <div class="question">
-              <el-icon class="icon" :color="'var(--color-icon-primary)'">
+              <el-icon
+                class="icon"
+                :color="'var(--color-icon-primary)'"
+              >
                 <User />
               </el-icon>
               <div class="content">
-                <div class="label">用户问题</div>
-                <div class="text">{{ conv.question }}</div>
-                <el-tag v-if="isPlayCommand(conv.question)" type="success" size="small" style="margin-top: 8px">
-                  <el-icon style="margin-right: 4px"><VideoPlay /></el-icon>
+                <div class="label">
+                  用户问题
+                </div>
+                <div class="text">
+                  {{ conv.question }}
+                </div>
+                <el-tag
+                  v-if="isPlayCommand(conv.question)"
+                  type="success"
+                  size="small"
+                  style="margin-top: 8px"
+                >
+                  <el-icon style="margin-right: 4px">
+                    <VideoPlay />
+                  </el-icon>
                   播放指令（已拦截）
                 </el-tag>
               </div>
             </div>
             <el-divider />
-            <div class="answer" v-if="conv.content">
-              <el-icon class="icon" :color="'var(--color-icon-success)'">
+            <div
+              v-if="conv.content"
+              class="answer"
+            >
+              <el-icon
+                class="icon"
+                :color="'var(--color-icon-success)'"
+              >
                 <ChatDotRound />
               </el-icon>
               <div class="content">
-                <div class="label">小爱回答</div>
-                <div class="text">{{ conv.content }}</div>
+                <div class="label">
+                  小爱回答
+                </div>
+                <div class="text">
+                  {{ conv.content }}
+                </div>
               </div>
             </div>
-            <div class="answer" v-else>
-              <el-icon class="icon" :color="'var(--color-icon-secondary)'">
+            <div
+              v-else
+              class="answer"
+            >
+              <el-icon
+                class="icon"
+                :color="'var(--color-icon-secondary)'"
+              >
                 <ChatDotRound />
               </el-icon>
               <div class="content">
-                <div class="label">小爱回答</div>
-                <div class="text" :style="{ color: 'var(--color-text-secondary)', fontStyle: 'italic' }">暂无回答记录</div>
+                <div class="label">
+                  小爱回答
+                </div>
+                <div
+                  class="text"
+                  :style="{ color: 'var(--color-text-secondary)', fontStyle: 'italic' }"
+                >
+                  暂无回答记录
+                </div>
               </div>
             </div>
           </div>
@@ -71,11 +122,19 @@
       </el-timeline-item>
     </el-timeline>
 
-    <div v-if="loading" style="text-align: center; padding: 40px">
-      <el-icon class="is-loading" :size="40">
+    <div
+      v-if="loading"
+      style="text-align: center; padding: 40px"
+    >
+      <el-icon
+        class="is-loading"
+        :size="40"
+      >
         <Loading />
       </el-icon>
-      <div :style="{ marginTop: '16px', color: 'var(--color-text-secondary)' }">加载中...</div>
+      <div :style="{ marginTop: '16px', color: 'var(--color-text-secondary)' }">
+        加载中...
+      </div>
     </div>
   </el-card>
 </template>
@@ -112,7 +171,7 @@ function isPlayCommand(query: string): boolean {
   return !!content && !controlKeywords.some(kw => content.includes(kw))
 }
 
-function toggleAutoRefresh(enabled: boolean) {
+function toggleAutoRefresh(enabled: boolean): void {
   if (enabled) {
     // 立即刷新一次
     fetchConversations()
@@ -172,7 +231,7 @@ function formatTimestamp(timestamp: number): string {
   })
 }
 
-async function fetchConversations(silent = false) {
+async function fetchConversations(silent = false): Promise<void> {
   loading.value = true
   error.value = ''
   try {

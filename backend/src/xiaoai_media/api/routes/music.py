@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import logging
 from xiaoai_media.logger import get_logger
 
 from fastapi import APIRouter, HTTPException, Query, Request
@@ -34,29 +33,34 @@ router = APIRouter(prefix="/music", tags=["music"])
 
 class PlayRequest(BaseModel):
     """播放请求"""
+
     index: int = 0
     device_id: str | None = None
 
 
 class SyncPlaylistRequest(BaseModel):
     """同步播放列表请求"""
+
     songs: list[SongItem]
     device_id: str | None = None
 
 
 class DeviceRequest(BaseModel):
     """设备请求"""
+
     device_id: str | None = None
 
 
 class VoiceCommandRequest(BaseModel):
     """语音命令请求"""
+
     text: str
     device_id: str | None = None
 
 
 class AnnounceSearchRequest(BaseModel):
     """播报搜索结果请求"""
+
     query: str
     count: int
     device_id: str | None = None
@@ -64,6 +68,7 @@ class AnnounceSearchRequest(BaseModel):
 
 class LoadFromSearchRequest(BaseModel):
     """从搜索加载播放列表请求"""
+
     query: str
     device_id: str | None = None
     platform: str | None = None
@@ -72,6 +77,7 @@ class LoadFromSearchRequest(BaseModel):
 
 class LoadFromChartRequest(BaseModel):
     """从排行榜加载播放列表请求"""
+
     chart_id: str | None = None
     chart_keyword: str | None = None
     device_id: str | None = None
@@ -81,6 +87,7 @@ class LoadFromChartRequest(BaseModel):
 
 class LoadFromPlaylistRequest(BaseModel):
     """从保存的播放列表加载请求"""
+
     playlist_id: str
     device_id: str | None = None
     auto_play: bool = True
@@ -231,36 +238,36 @@ async def get_player_status(device_id: str | None = None):
 @router.get("/status/stream")
 async def stream_player_status(
     request: Request,
-    device_id: str | None = Query(None, description="设备ID，不指定则监听所有设备")
+    device_id: str | None = Query(None, description="设备ID，不指定则监听所有设备"),
 ):
     """SSE 流式推送播放器状态变化
-    
+
     当播放状态发生变化时，主动推送给前端，避免轮询。
-    
+
     返回格式：
         event: status
         data: {"device_id": "xxx", "status": "playing", "audio_id": "xxx", ...}
     """
+
     async def event_generator():
         """SSE 事件生成器"""
         queue: asyncio.Queue = asyncio.Queue()
-        
+
         async def status_callback(dev_id: str, status: dict):
             """状态变化回调，将状态推送到队列"""
             # 如果指定了 device_id，只推送该设备的状态
             if device_id and dev_id != device_id:
                 return
-            
-            await queue.put({
-                "device_id": dev_id,
-                **status
-            })
-        
+
+            await queue.put({"device_id": dev_id, **status})
+
         # 注册回调
+        from xiaoai_media.api.dependencies import get_monitor
+
         monitor = get_monitor()
         monitor.add_status_callback(status_callback)
         _log.info("SSE 客户端已连接: device_id=%s", device_id)
-        
+
         try:
             # 首次连接时，立即发送当前状态
             try:
@@ -269,32 +276,32 @@ async def stream_player_status(
                 yield f"event: status\ndata: {json.dumps(current_status)}\n\n"
             except Exception as e:
                 _log.warning("获取初始状态失败: %s", e)
-            
+
             # 持续推送状态变化
             while True:
                 # 检查客户端是否断开连接
                 if await request.is_disconnected():
                     _log.info("SSE 客户端已断开连接: device_id=%s", device_id)
                     break
-                
+
                 try:
                     # 等待状态变化，设置超时以便定期检查连接状态
                     status_data = await asyncio.wait_for(queue.get(), timeout=30.0)
-                    
+
                     # 发送 SSE 事件
                     yield f"event: status\ndata: {json.dumps(status_data)}\n\n"
-                    
+
                 except asyncio.TimeoutError:
                     # 发送心跳保持连接
-                    yield f": heartbeat\n\n"
-                    
+                    yield ": heartbeat\n\n"
+
         except asyncio.CancelledError:
             _log.info("SSE 连接被取消: device_id=%s", device_id)
         finally:
             # 清理：移除回调
             monitor.remove_status_callback(status_callback)
             _log.info("SSE 客户端已清理: device_id=%s", device_id)
-    
+
     return StreamingResponse(
         event_generator(),
         media_type="text/event-stream",
@@ -302,7 +309,7 @@ async def stream_player_status(
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
             "X-Accel-Buffering": "no",  # 禁用 nginx 缓冲
-        }
+        },
     )
 
 
@@ -314,9 +321,9 @@ async def stream_player_status(
 @router.post("/load-from-search")
 async def load_from_search(req: LoadFromSearchRequest):
     """从搜索结果加载播放列表并可选自动播放
-    
+
     允许用户搜索歌曲并将其加载到播放列表中进行语音控制。
-    
+
     示例:
         POST /api/music/load-from-search
         {
@@ -334,9 +341,9 @@ async def load_from_search(req: LoadFromSearchRequest):
 @router.post("/load-from-chart")
 async def load_from_chart(req: LoadFromChartRequest):
     """从排行榜加载播放列表并可选自动播放
-    
+
     允许用户加载整个排行榜进行语音控制。
-    
+
     示例:
         POST /api/music/load-from-chart
         {
@@ -358,9 +365,9 @@ async def load_from_chart(req: LoadFromChartRequest):
 @router.post("/load-from-playlist")
 async def load_from_playlist(req: LoadFromPlaylistRequest):
     """从保存的播放列表加载并可选自动播放
-    
+
     允许用户加载他们保存的播放列表进行语音控制。
-    
+
     示例:
         POST /api/music/load-from-playlist
         {
@@ -377,7 +384,7 @@ async def load_from_playlist(req: LoadFromPlaylistRequest):
 @router.post("/voice-command")
 async def voice_command(req: VoiceCommandRequest):
     """解析并执行自然语言语音命令
-    
+
     支持的命令模式：
     - "播放/打开 [平台] [排行榜名称]" → 加载排行榜并播放
     - "播放 [播单名称]" → 加载保存的播放列表并播放

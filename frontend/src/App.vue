@@ -1,18 +1,33 @@
 <template>
   <!-- 登录页面：全屏显示 -->
-  <div v-if="isLoginPage" class="login-layout">
+  <div
+    v-if="isLoginPage"
+    class="login-layout"
+  >
     <router-view />
   </div>
 
   <!-- 主应用：带侧边栏布局 -->
-  <el-container v-else class="app-layout">
-    <el-aside width="200px" class="aside">
+  <el-container
+    v-else
+    class="app-layout"
+  >
+    <el-aside
+      width="200px"
+      class="aside"
+    >
       <div class="logo">
-        <img src="/logo.svg" alt="XiaoAI Media Logo" />
+        <img
+          src="/logo.svg"
+          alt="XiaoAI Media Logo"
+        >
         <span>XiaoAI Media</span>
         <ThemeToggle />
       </div>
-      <el-menu :default-active="$route.path" router>
+      <el-menu
+        :default-active="$route.path"
+        router
+      >
         <el-menu-item index="/devices">
           <el-icon>
             <Monitor />
@@ -67,7 +82,10 @@
           </el-icon>
           <span>配置管理</span>
         </el-menu-item>
-        <el-menu-item v-if="isAdmin" index="/users">
+        <el-menu-item
+          v-if="isAdmin"
+          index="/users"
+        >
           <el-icon>
             <UserFilled />
           </el-icon>

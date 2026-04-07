@@ -53,7 +53,18 @@ let reconnectAttempts = 0
 const maxReconnectAttempts = 5
 const reconnectDelay = 3000
 
-export function useGlobalState(deviceId: Ref<string | null> | string | null) {
+export function useGlobalState(deviceId: Ref<string | null> | string | null): {
+    state: typeof globalState
+    connected: typeof connected
+    error: typeof error
+    isPlaying: ReturnType<typeof computed<boolean>>
+    isPaused: ReturnType<typeof computed<boolean>>
+    currentSong: ReturnType<typeof computed<CurrentSong | null>>
+    playlist: ReturnType<typeof computed<PlaylistInfo | null>>
+    progress: ReturnType<typeof computed<number>>
+    reconnect: () => void
+    disconnect: () => void
+} {
     const deviceIdRef = isRef(deviceId) ? deviceId : ref(deviceId)
 
     // 计算属性
@@ -80,7 +91,7 @@ export function useGlobalState(deviceId: Ref<string | null> | string | null) {
         return (position / duration) * 100
     })
 
-    function connect() {
+    function connect(): void {
         // 检查是否已登录，未登录则不连接
         const token = localStorage.getItem('token')
         if (!token) {
@@ -122,7 +133,6 @@ export function useGlobalState(deviceId: Ref<string | null> | string | null) {
 
                 connected.value = true
                 error.value = null
-                console.log('Global state SSE connected:', deviceIdRef.value)
 
                 const reader = response.body?.getReader()
                 const decoder = new TextDecoder()
@@ -133,11 +143,11 @@ export function useGlobalState(deviceId: Ref<string | null> | string | null) {
 
                 let buffer = ''
 
+                // eslint-disable-next-line no-constant-condition
                 while (true) {
                     const { done, value } = await reader.read()
 
                     if (done) {
-                        console.log('SSE stream ended')
                         break
                     }
 
@@ -168,29 +178,24 @@ export function useGlobalState(deviceId: Ref<string | null> | string | null) {
             })
             .catch((err) => {
                 if (err.name === 'AbortError') {
-                    console.log('SSE connection aborted')
                     return
                 }
 
-                console.error('Global state SSE error:', err)
                 connected.value = false
                 error.value = err as Error
 
                 // 自动重连
                 if (reconnectAttempts < maxReconnectAttempts) {
                     reconnectAttempts++
-                    console.log(`Reconnecting... (${reconnectAttempts}/${maxReconnectAttempts})`)
 
                     reconnectTimer = window.setTimeout(() => {
                         connect()
                     }, reconnectDelay)
-                } else {
-                    console.error('Max reconnect attempts reached')
                 }
             })
     }
 
-    function handleSSEMessage(eventType: string, data: string) {
+    function handleSSEMessage(eventType: string, data: string): void {
         if (eventType === 'state') {
             try {
                 const parsedData = JSON.parse(data)
@@ -198,7 +203,6 @@ export function useGlobalState(deviceId: Ref<string | null> | string | null) {
                 error.value = null
                 reconnectAttempts = 0
             } catch (err) {
-                console.error('Failed to parse SSE state data:', err)
                 error.value = err as Error
             }
         } else if (eventType === 'heartbeat') {
@@ -206,7 +210,7 @@ export function useGlobalState(deviceId: Ref<string | null> | string | null) {
         }
     }
 
-    function disconnect() {
+    function disconnect(): void {
         if (reconnectTimer) {
             clearTimeout(reconnectTimer)
             reconnectTimer = null
@@ -216,7 +220,6 @@ export function useGlobalState(deviceId: Ref<string | null> | string | null) {
             abortController.abort()
             abortController = null
             connected.value = false
-            console.log('Global state SSE disconnected')
         }
     }
 

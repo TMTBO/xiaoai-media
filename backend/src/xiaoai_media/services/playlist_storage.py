@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import json
-import logging
 from xiaoai_media.logger import get_logger
 from pathlib import Path
 

@@ -4,15 +4,41 @@
       <div class="header">
         <h2>定时任务管理</h2>
         <div class="header-actions">
-          <el-select v-model="filterType" placeholder="任务类型" clearable @change="loadTasks" style="width: 180px; margin-right: 12px;">
-            <el-option label="全部任务" value="" />
-            <el-option label="播放音乐" value="play_music" />
-            <el-option label="播放播放列表" value="play_playlist" />
-            <el-option label="提醒" value="reminder" />
-            <el-option label="执行指令" value="command" />
+          <el-select
+            v-model="filterType"
+            placeholder="任务类型"
+            clearable
+            style="width: 180px; margin-right: 12px;"
+            @change="loadTasks"
+          >
+            <el-option
+              label="全部任务"
+              value=""
+            />
+            <el-option
+              label="播放音乐"
+              value="play_music"
+            />
+            <el-option
+              label="播放播放列表"
+              value="play_playlist"
+            />
+            <el-option
+              label="提醒"
+              value="reminder"
+            />
+            <el-option
+              label="执行指令"
+              value="command"
+            />
           </el-select>
-          <el-button type="primary" @click="openCreateDialog">
-            <el-icon style="margin-right: 6px;"><Plus /></el-icon>
+          <el-button
+            type="primary"
+            @click="openCreateDialog"
+          >
+            <el-icon style="margin-right: 6px;">
+              <Plus />
+            </el-icon>
             创建任务
           </el-button>
         </div>
@@ -20,12 +46,21 @@
     </el-card>
 
     <!-- 任务列表 -->
-    <el-card v-loading="loading" class="task-list-card">
-      <div v-if="tasks.length === 0" class="empty-state">
+    <el-card
+      v-loading="loading"
+      class="task-list-card"
+    >
+      <div
+        v-if="tasks.length === 0"
+        class="empty-state"
+      >
         <el-empty description="暂无任务" />
       </div>
       
-      <div v-else class="task-list">
+      <div
+        v-else
+        class="task-list"
+      >
         <el-card
           v-for="task in tasks"
           :key="task.task_id"
@@ -36,7 +71,10 @@
             <div class="task-info">
               <div class="task-header">
                 <h3>{{ task.name }}</h3>
-                <el-tag :type="getTaskTypeColor(task.task_type)" size="small">
+                <el-tag
+                  :type="getTaskTypeColor(task.task_type)"
+                  size="small"
+                >
                   {{ getTaskTypeLabel(task.task_type) }}
                 </el-tag>
               </div>
@@ -50,7 +88,10 @@
                   </span>
                 </div>
                 
-                <div v-if="task.next_run_time" class="detail-item">
+                <div
+                  v-if="task.next_run_time"
+                  class="detail-item"
+                >
                   <el-icon><Timer /></el-icon>
                   <span class="label">下次执行：</span>
                   <span class="value">{{ formatDateTime(task.next_run_time) }}</span>
@@ -67,9 +108,9 @@
             <div class="task-actions">
               <el-switch
                 v-model="task.enabled"
-                @change="toggleTask(task)"
                 active-text="启用"
                 inactive-text="禁用"
+                @change="toggleTask(task)"
               />
               
               <el-button
@@ -105,16 +146,28 @@
       
       <el-row :gutter="20">
         <!-- 快速提醒 -->
-        <el-col :xs="24" :sm="12" :md="6">
-          <el-card shadow="hover" class="action-card">
+        <el-col
+          :xs="24"
+          :sm="12"
+          :md="6"
+        >
+          <el-card
+            shadow="hover"
+            class="action-card"
+          >
             <template #header>
               <div class="action-header">
-                <el-icon size="20"><Bell /></el-icon>
+                <el-icon size="20">
+                  <Bell />
+                </el-icon>
                 <span>快速提醒</span>
               </div>
             </template>
             
-            <el-form :model="quickReminder" label-position="top">
+            <el-form
+              :model="quickReminder"
+              label-position="top"
+            >
               <el-form-item label="提醒内容">
                 <el-input
                   v-model="quickReminder.message"
@@ -154,8 +207,8 @@
               <el-button
                 type="primary"
                 style="width: 100%"
-                @click="createQuickReminder"
                 :loading="quickReminder.loading"
+                @click="createQuickReminder"
               >
                 创建提醒
               </el-button>
@@ -164,16 +217,28 @@
         </el-col>
 
         <!-- 快速播放音乐 -->
-        <el-col :xs="24" :sm="12" :md="6">
-          <el-card shadow="hover" class="action-card">
+        <el-col
+          :xs="24"
+          :sm="12"
+          :md="6"
+        >
+          <el-card
+            shadow="hover"
+            class="action-card"
+          >
             <template #header>
               <div class="action-header">
-                <el-icon size="20"><Headset /></el-icon>
+                <el-icon size="20">
+                  <Headset />
+                </el-icon>
                 <span>定时播放音乐</span>
               </div>
             </template>
             
-            <el-form :model="quickMusic" label-position="top">
+            <el-form
+              :model="quickMusic"
+              label-position="top"
+            >
               <el-form-item label="歌曲名称">
                 <el-input
                   v-model="quickMusic.song_name"
@@ -215,8 +280,8 @@
               <el-button
                 type="primary"
                 style="width: 100%"
-                @click="createQuickPlayMusic"
                 :loading="quickMusic.loading"
+                @click="createQuickPlayMusic"
               >
                 创建任务
               </el-button>
@@ -225,16 +290,28 @@
         </el-col>
 
         <!-- 快速播放播放列表 -->
-        <el-col :xs="24" :sm="12" :md="6">
-          <el-card shadow="hover" class="action-card">
+        <el-col
+          :xs="24"
+          :sm="12"
+          :md="6"
+        >
+          <el-card
+            shadow="hover"
+            class="action-card"
+          >
             <template #header>
               <div class="action-header">
-                <el-icon size="20"><List /></el-icon>
+                <el-icon size="20">
+                  <List />
+                </el-icon>
                 <span>定时播放播放列表</span>
               </div>
             </template>
             
-            <el-form :model="quickPlaylist" label-position="top">
+            <el-form
+              :model="quickPlaylist"
+              label-position="top"
+            >
               <el-form-item label="播放列表">
                 <el-select
                   v-model="quickPlaylist.playlist_id"
@@ -278,8 +355,8 @@
               <el-button
                 type="primary"
                 style="width: 100%"
-                @click="createQuickPlayPlaylist"
                 :loading="quickPlaylist.loading"
+                @click="createQuickPlayPlaylist"
               >
                 创建任务
               </el-button>
@@ -288,16 +365,28 @@
         </el-col>
 
         <!-- 快速执行指令 -->
-        <el-col :xs="24" :sm="12" :md="6">
-          <el-card shadow="hover" class="action-card">
+        <el-col
+          :xs="24"
+          :sm="12"
+          :md="6"
+        >
+          <el-card
+            shadow="hover"
+            class="action-card"
+          >
             <template #header>
               <div class="action-header">
-                <el-icon size="20"><ChatDotRound /></el-icon>
+                <el-icon size="20">
+                  <ChatDotRound />
+                </el-icon>
                 <span>定时/延迟执行指令</span>
               </div>
             </template>
             
-            <el-form :model="quickCommand" label-position="top">
+            <el-form
+              :model="quickCommand"
+              label-position="top"
+            >
               <el-form-item label="语音指令">
                 <el-input
                   v-model="quickCommand.command"
@@ -309,8 +398,12 @@
               
               <el-form-item label="执行方式">
                 <el-radio-group v-model="quickCommand.mode">
-                  <el-radio value="cron">定时执行</el-radio>
-                  <el-radio value="delay">延迟执行</el-radio>
+                  <el-radio value="cron">
+                    定时执行
+                  </el-radio>
+                  <el-radio value="delay">
+                    延迟执行
+                  </el-radio>
                 </el-radio-group>
               </el-form-item>
               
@@ -357,8 +450,8 @@
               <el-button
                 type="primary"
                 style="width: 100%"
-                @click="createQuickCommand"
                 :loading="quickCommand.loading"
+                @click="createQuickCommand"
               >
                 创建任务
               </el-button>
@@ -399,28 +492,59 @@
         :rules="taskFormRules"
         label-width="120px"
       >
-        <el-form-item label="任务类型" prop="task_type">
+        <el-form-item
+          label="任务类型"
+          prop="task_type"
+        >
           <el-select
             v-model="taskForm.task_type"
             placeholder="选择任务类型"
             style="width: 100%"
             :disabled="!!editingTask"
           >
-            <el-option label="播放音乐" value="play_music" />
-            <el-option label="播放播放列表" value="play_playlist" />
-            <el-option label="提醒" value="reminder" />
-            <el-option label="执行指令" value="command" />
+            <el-option
+              label="播放音乐"
+              value="play_music"
+            />
+            <el-option
+              label="播放播放列表"
+              value="play_playlist"
+            />
+            <el-option
+              label="提醒"
+              value="reminder"
+            />
+            <el-option
+              label="执行指令"
+              value="command"
+            />
           </el-select>
         </el-form-item>
 
-        <el-form-item label="任务名称" prop="name">
-          <el-input v-model="taskForm.name" placeholder="输入任务名称" />
+        <el-form-item
+          label="任务名称"
+          prop="name"
+        >
+          <el-input
+            v-model="taskForm.name"
+            placeholder="输入任务名称"
+          />
         </el-form-item>
 
-        <el-form-item label="触发方式" prop="trigger_type">
-          <el-radio-group v-model="taskForm.trigger_type" :disabled="!!editingTask">
-            <el-radio value="cron">周期性（Cron）</el-radio>
-            <el-radio value="date">一次性</el-radio>
+        <el-form-item
+          label="触发方式"
+          prop="trigger_type"
+        >
+          <el-radio-group
+            v-model="taskForm.trigger_type"
+            :disabled="!!editingTask"
+          >
+            <el-radio value="cron">
+              周期性（Cron）
+            </el-radio>
+            <el-radio value="date">
+              一次性
+            </el-radio>
           </el-radio-group>
         </el-form-item>
 
@@ -451,16 +575,28 @@
 
         <!-- 任务参数 -->
         <template v-if="taskForm.task_type === 'play_music'">
-          <el-form-item label="歌曲名称" prop="song_name">
-            <el-input v-model="taskForm.song_name" placeholder="输入歌曲名称" />
+          <el-form-item
+            label="歌曲名称"
+            prop="song_name"
+          >
+            <el-input
+              v-model="taskForm.song_name"
+              placeholder="输入歌曲名称"
+            />
           </el-form-item>
           <el-form-item label="歌手">
-            <el-input v-model="taskForm.artist" placeholder="输入歌手名称（可选）" />
+            <el-input
+              v-model="taskForm.artist"
+              placeholder="输入歌手名称（可选）"
+            />
           </el-form-item>
         </template>
 
         <template v-if="taskForm.task_type === 'play_playlist'">
-          <el-form-item label="播放列表" prop="playlist_id">
+          <el-form-item
+            label="播放列表"
+            prop="playlist_id"
+          >
             <el-select
               v-model="taskForm.playlist_id"
               placeholder="选择播放列表"
@@ -478,7 +614,10 @@
         </template>
 
         <template v-if="taskForm.task_type === 'reminder'">
-          <el-form-item label="提醒内容" prop="message">
+          <el-form-item
+            label="提醒内容"
+            prop="message"
+          >
             <el-input
               v-model="taskForm.message"
               type="textarea"
@@ -491,7 +630,10 @@
         </template>
 
         <template v-if="taskForm.task_type === 'command'">
-          <el-form-item label="语音指令" prop="command">
+          <el-form-item
+            label="语音指令"
+            prop="command"
+          >
             <el-input
               v-model="taskForm.command"
               placeholder="如: 播放周杰伦的歌"
@@ -530,11 +672,13 @@
       </el-form>
 
       <template #footer>
-        <el-button @click="cancelTask">取消</el-button>
+        <el-button @click="cancelTask">
+          取消
+        </el-button>
         <el-button
           type="primary"
-          @click="submitTask"
           :loading="submitting"
+          @click="submitTask"
         >
           {{ editingTask ? '更新' : '创建' }}
         </el-button>
@@ -633,46 +777,48 @@ const quickCommand = reactive({
   loading: false,
 })
 
-async function loadTasks() {
+async function loadTasks(): Promise<void> {
   loading.value = true
   try {
     tasks.value = await schedulerApi.listTasks(filterType.value || undefined)
-  } catch (error: any) {
-    ElMessage.error('加载任务失败: ' + (error.response?.data?.detail || error.message))
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: { detail?: string } }; message?: string }
+    ElMessage.error('加载任务失败: ' + (err.response?.data?.detail || err.message || '未知错误'))
   } finally {
     loading.value = false
   }
 }
 
-async function loadPlaylists() {
+async function loadPlaylists(): Promise<void> {
   try {
     const data = await api.listPlaylists()
     playlists.value = data.playlists
-  } catch (error: any) {
-    console.error('加载播放列表失败:', error)
+  } catch (error: unknown) {
+    // Silently fail - playlists are optional
   }
 }
 
-async function loadDevices() {
+async function loadDevices(): Promise<void> {
   try {
     const data = await api.listDevices()
     devices.value = data.devices
-  } catch (error: any) {
-    console.error('加载设备列表失败:', error)
+  } catch (error: unknown) {
+    // Silently fail - devices are optional
   }
 }
 
-async function toggleTask(task: Task) {
+async function toggleTask(task: Task): Promise<void> {
   try {
     await schedulerApi.updateTask(task.task_id, { enabled: task.enabled })
     ElMessage.success(task.enabled ? '任务已启用' : '任务已禁用')
-  } catch (error: any) {
+  } catch (error: unknown) {
     task.enabled = !task.enabled // 恢复状态
-    ElMessage.error('操作失败: ' + (error.response?.data?.detail || error.message))
+    const err = error as { response?: { data?: { detail?: string } }; message?: string }
+    ElMessage.error('操作失败: ' + (err.response?.data?.detail || err.message || '未知错误'))
   }
 }
 
-function editTask(task: Task) {
+function editTask(task: Task): void {
   editingTask.value = task
   taskForm.task_type = task.task_type
   taskForm.name = task.name
@@ -699,7 +845,7 @@ function editTask(task: Task) {
   showCreateDialog.value = true
 }
 
-async function deleteTask(task: Task) {
+async function deleteTask(task: Task): Promise<void> {
   try {
     await ElMessageBox.confirm(
       `确定要删除任务"${task.name}"吗？`,
@@ -714,14 +860,15 @@ async function deleteTask(task: Task) {
     await schedulerApi.deleteTask(task.task_id)
     ElMessage.success('任务已删除')
     await loadTasks()
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error !== 'cancel') {
-      ElMessage.error('删除失败: ' + (error.response?.data?.detail || error.message))
+      const err = error as { response?: { data?: { detail?: string } }; message?: string }
+      ElMessage.error('删除失败: ' + (err.response?.data?.detail || err.message || '未知错误'))
     }
   }
 }
 
-async function submitTask() {
+async function submitTask(): Promise<void> {
   if (!taskFormRef.value) return
 
   try {
@@ -733,7 +880,7 @@ async function submitTask() {
   submitting.value = true
 
   try {
-    const params: Record<string, any> = {}
+    const params: Record<string, unknown> = {}
 
     if (taskForm.task_type === 'play_music') {
       params.song_name = taskForm.song_name
@@ -753,7 +900,7 @@ async function submitTask() {
 
     if (editingTask.value) {
       // 更新任务
-      const updateData: any = {
+      const updateData: Record<string, unknown> = {
         name: taskForm.name,
         params,
         enabled: taskForm.enabled,
@@ -792,14 +939,15 @@ async function submitTask() {
     showCreateDialog.value = false
     resetTaskForm()
     await loadTasks()
-  } catch (error: any) {
-    ElMessage.error('操作失败: ' + (error.response?.data?.detail || error.message))
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: { detail?: string } }; message?: string }
+    ElMessage.error('操作失败: ' + (err.response?.data?.detail || err.message || '未知错误'))
   } finally {
     submitting.value = false
   }
 }
 
-function resetTaskForm() {
+function resetTaskForm(): void {
   editingTask.value = null
   taskForm.task_type = 'play_music'
   taskForm.name = ''
@@ -816,17 +964,17 @@ function resetTaskForm() {
   taskFormRef.value?.clearValidate()
 }
 
-function cancelTask() {
+function cancelTask(): void {
   showCreateDialog.value = false
   resetTaskForm()
 }
 
-function openCreateDialog() {
+function openCreateDialog(): void {
   resetTaskForm()
   showCreateDialog.value = true
 }
 
-async function createQuickReminder() {
+async function createQuickReminder(): Promise<void> {
   if (!quickReminder.message) {
     ElMessage.warning('请输入提醒内容')
     return
@@ -834,7 +982,7 @@ async function createQuickReminder() {
 
   quickReminder.loading = true
   try {
-    const data: any = {
+    const data: Record<string, unknown> = {
       message: quickReminder.message,
       delay_minutes: quickReminder.delay_minutes,
     }
@@ -848,14 +996,15 @@ async function createQuickReminder() {
     quickReminder.delay_minutes = 10
     quickReminder.device_id = ''
     await loadTasks()
-  } catch (error: any) {
-    ElMessage.error('创建失败: ' + (error.response?.data?.detail || error.message))
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: { detail?: string } }; message?: string }
+    ElMessage.error('创建失败: ' + (err.response?.data?.detail || err.message || '未知错误'))
   } finally {
     quickReminder.loading = false
   }
 }
 
-async function createQuickPlayMusic() {
+async function createQuickPlayMusic(): Promise<void> {
   if (!quickMusic.song_name || !quickMusic.cron_expression) {
     ElMessage.warning('请填写歌曲名称和 Cron 表达式')
     return
@@ -863,7 +1012,7 @@ async function createQuickPlayMusic() {
 
   quickMusic.loading = true
   try {
-    const data: any = {
+    const data: Record<string, unknown> = {
       song_name: quickMusic.song_name,
       cron_expression: quickMusic.cron_expression,
     }
@@ -880,14 +1029,15 @@ async function createQuickPlayMusic() {
     quickMusic.artist = ''
     quickMusic.device_id = ''
     await loadTasks()
-  } catch (error: any) {
-    ElMessage.error('创建失败: ' + (error.response?.data?.detail || error.message))
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: { detail?: string } }; message?: string }
+    ElMessage.error('创建失败: ' + (err.response?.data?.detail || err.message || '未知错误'))
   } finally {
     quickMusic.loading = false
   }
 }
 
-async function createQuickPlayPlaylist() {
+async function createQuickPlayPlaylist(): Promise<void> {
   if (!quickPlaylist.playlist_id || !quickPlaylist.cron_expression) {
     ElMessage.warning('请选择播放列表和 Cron 表达式')
     return
@@ -895,7 +1045,7 @@ async function createQuickPlayPlaylist() {
 
   quickPlaylist.loading = true
   try {
-    const data: any = {
+    const data: Record<string, unknown> = {
       playlist_id: quickPlaylist.playlist_id,
       cron_expression: quickPlaylist.cron_expression,
     }
@@ -908,8 +1058,9 @@ async function createQuickPlayPlaylist() {
     quickPlaylist.playlist_id = ''
     quickPlaylist.device_id = ''
     await loadTasks()
-  } catch (error: any) {
-    ElMessage.error('创建失败: ' + (error.response?.data?.detail || error.message))
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: { detail?: string } }; message?: string }
+    ElMessage.error('创建失败: ' + (err.response?.data?.detail || err.message || '未知错误'))
   } finally {
     quickPlaylist.loading = false
   }
@@ -945,7 +1096,7 @@ function formatDateTime(dateStr: string): string {
   })
 }
 
-function formatParams(params: Record<string, any>): string {
+function formatParams(params: Record<string, unknown>): string {
   if (params.song_name) {
     return params.artist ? `${params.song_name} - ${params.artist}` : params.song_name
   }
@@ -962,7 +1113,7 @@ function formatParams(params: Record<string, any>): string {
   return JSON.stringify(params)
 }
 
-async function createQuickCommand() {
+async function createQuickCommand(): Promise<void> {
   if (!quickCommand.command) {
     ElMessage.warning('请输入语音指令')
     return
@@ -975,7 +1126,7 @@ async function createQuickCommand() {
 
   quickCommand.loading = true
   try {
-    const data: any = {
+    const data: Record<string, unknown> = {
       command: quickCommand.command,
     }
 
@@ -997,8 +1148,9 @@ async function createQuickCommand() {
     quickCommand.delay_minutes = 10
     quickCommand.device_id = ''
     await loadTasks()
-  } catch (error: any) {
-    ElMessage.error('创建失败: ' + (error.response?.data?.detail || error.message))
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: { detail?: string } }; message?: string }
+    ElMessage.error('创建失败: ' + (err.response?.data?.detail || err.message || '未知错误'))
   } finally {
     quickCommand.loading = false
   }

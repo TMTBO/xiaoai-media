@@ -1,221 +1,243 @@
 <template>
-    <div class="path-selector">
-        <!-- 当前选择显示 -->
-        <div style="display: flex; align-items: center; gap: 8px">
-            <el-input 
-                :model-value="displayText" 
-                :placeholder="placeholder"
-                readonly
-                @click="openBrowser"
-                style="cursor: pointer"
-            />
-            <el-button @click="openBrowser">
-                <el-icon style="margin-right: 4px">
-                    <FolderOpened />
-                </el-icon>
-                浏览
-            </el-button>
-        </div>
-        <div v-if="hint" :style="{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '4px' }">
-            {{ hint }}
-        </div>
-
-        <!-- 已选择的内容 -->
-        <div v-if="hasSelection" style="margin-top: 8px">
-            <!-- 已选择的目录（旧版单目录支持） -->
-            <el-tag 
-                v-if="selectedDirectory"
-                closable
-                @close="clearDirectory"
-                type="success"
-                style="margin-right: 8px; margin-bottom: 8px"
-            >
-                <el-icon style="margin-right: 4px"><Folder /></el-icon>
-                {{ getFileName(selectedDirectory) }}
-            </el-tag>
-            
-            <!-- 已选择的目录（新版多目录支持） -->
-            <el-tag 
-                v-for="(dir, index) in selectedDirectories" 
-                :key="dir"
-                closable
-                @close="removeDirectory(index)"
-                type="success"
-                style="margin-right: 8px; margin-bottom: 8px"
-            >
-                <el-icon style="margin-right: 4px"><Folder /></el-icon>
-                {{ getFileName(dir) }}
-            </el-tag>
-            
-            <!-- 已选择的文件 -->
-            <el-tag 
-                v-for="(file, index) in selectedFiles" 
-                :key="file"
-                closable
-                @close="removeFile(index)"
-                style="margin-right: 8px; margin-bottom: 8px"
-            >
-                <el-icon style="margin-right: 4px"><Document /></el-icon>
-                {{ getFileName(file) }}
-            </el-tag>
-        </div>
-
-        <!-- 浏览器对话框 -->
-        <el-dialog 
-            v-model="showBrowser" 
-            title="选择目录或文件" 
-            width="600px"
-        >
-            <!-- 当前路径 -->
-            <div style="margin-bottom: 16px">
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px">
-                    <el-button 
-                        size="small" 
-                        :disabled="!currentPath || !parentPath"
-                        @click="browseParent"
-                    >
-                        <el-icon><ArrowUp /></el-icon>
-                        上级目录
-                    </el-button>
-                    <span :style="{ flex: 1, fontSize: '14px', color: 'var(--color-text-regular)' }">
-                        {{ currentPath || '加载中...' }}
-                    </span>
-                    <el-button 
-                        v-if="currentPath"
-                        size="small" 
-                        :type="isCurrentDirectorySelected ? 'success' : 'primary'"
-                        @click="selectCurrentDirectory"
-                    >
-                        <el-icon style="margin-right: 4px">
-                            <Select v-if="isCurrentDirectorySelected" />
-                            <Folder v-else />
-                        </el-icon>
-                        选择当前目录
-                    </el-button>
-                </div>
-            </div>
-
-            <!-- 目录和文件列表 -->
-            <el-scrollbar height="400px">
-                <div v-loading="loading">
-                    <!-- 目录列表 -->
-                    <div 
-                        v-for="dir in directories" 
-                        :key="dir.path"
-                        class="item directory-item"
-                        :class="{ 
-                            'item-disabled': !dir.is_accessible,
-                            'item-selected': isDirectorySelected(dir.path)
-                        }"
-                    >
-                        <el-checkbox 
-                            :model-value="isDirectorySelected(dir.path)"
-                            :disabled="!dir.is_accessible"
-                            @change="() => toggleDirectory(dir.path)"
-                            @click.stop
-                            style="margin-right: 8px"
-                        />
-                        <el-icon :style="{ marginRight: '8px', fontSize: '18px', color: 'var(--color-success)' }">
-                            <Folder />
-                        </el-icon>
-                        <span 
-                            style="flex: 1; cursor: pointer"
-                            @click="dir.is_accessible !== false && browseSub(dir.path)"
-                        >
-                            {{ dir.name }}
-                        </span>
-                        <el-icon 
-                            v-if="dir.is_accessible !== false" 
-                            :style="{ color: 'var(--color-text-secondary)', cursor: 'pointer' }"
-                            @click="browseSub(dir.path)"
-                        >
-                            <ArrowRight />
-                        </el-icon>
-                        <el-icon v-else :style="{ color: 'var(--color-danger)' }">
-                            <Lock />
-                        </el-icon>
-                    </div>
-
-                    <!-- 文件列表 -->
-                    <div 
-                        v-for="file in allFiles" 
-                        :key="file.path"
-                        class="item file-item"
-                        :class="{ 
-                            'item-selected': isFileSelected(file.path),
-                            'item-disabled': !file.is_audio
-                        }"
-                        @click="file.is_audio && toggleFile(file.path)"
-                    >
-                        <el-checkbox 
-                            :model-value="isFileSelected(file.path)"
-                            :disabled="!file.is_audio"
-                            @change="() => toggleFile(file.path)"
-                            @click.stop
-                            style="margin-right: 8px"
-                        />
-                        <el-icon 
-                            :style="{ 
-                                marginRight: '8px', 
-                                fontSize: '18px',
-                                color: file.is_audio ? 'var(--color-primary)' : 'var(--color-text-disabled)' 
-                            }"
-                        >
-                            <Document />
-                        </el-icon>
-                        <span :style="{ 
-                            flex: 1, 
-                            color: file.is_audio ? 'var(--color-text-primary)' : 'var(--color-text-disabled)' 
-                        }">
-                            {{ file.name }}
-                        </span>
-                        <span 
-                            :style="{ 
-                                fontSize: '12px', 
-                                color: file.is_audio ? 'var(--color-text-secondary)' : 'var(--color-text-disabled)' 
-                            }"
-                        >
-                            {{ formatSize(file.size) }}
-                        </span>
-                    </div>
-
-                    <el-empty 
-                        v-if="!loading && directories.length === 0 && allFiles.length === 0" 
-                        description="此目录为空" 
-                    />
-                </div>
-            </el-scrollbar>
-
-            <template #footer>
-                <div style="display: flex; justify-content: space-between; align-items: center">
-                    <span :style="{ fontSize: '14px', color: 'var(--color-text-regular)' }">
-                        <span v-if="tempSelectedDirectories.length > 0 && tempSelectedFiles.length > 0">
-                            已选择 {{ tempSelectedDirectories.length }} 个目录和 {{ tempSelectedFiles.length }} 个文件
-                        </span>
-                        <span v-else-if="tempSelectedDirectories.length > 0">
-                            已选择 {{ tempSelectedDirectories.length }} 个目录
-                        </span>
-                        <span v-else-if="tempSelectedFiles.length > 0">
-                            已选择 {{ tempSelectedFiles.length }} 个文件
-                        </span>
-                        <span v-else :style="{ color: 'var(--color-text-disabled)' }">
-                            请选择目录或文件
-                        </span>
-                    </span>
-                    <div>
-                        <el-button @click="showBrowser = false">取消</el-button>
-                        <el-button 
-                            type="primary" 
-                            @click="confirmSelection"
-                            :disabled="tempSelectedDirectories.length === 0 && tempSelectedFiles.length === 0"
-                        >
-                            确定
-                        </el-button>
-                    </div>
-                </div>
-            </template>
-        </el-dialog>
+  <div class="path-selector">
+    <!-- 当前选择显示 -->
+    <div style="display: flex; align-items: center; gap: 8px">
+      <el-input 
+        :model-value="displayText" 
+        :placeholder="placeholder"
+        readonly
+        style="cursor: pointer"
+        @click="openBrowser"
+      />
+      <el-button @click="openBrowser">
+        <el-icon style="margin-right: 4px">
+          <FolderOpened />
+        </el-icon>
+        浏览
+      </el-button>
     </div>
+    <div
+      v-if="hint"
+      :style="{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '4px' }"
+    >
+      {{ hint }}
+    </div>
+
+    <!-- 已选择的内容 -->
+    <div
+      v-if="hasSelection"
+      style="margin-top: 8px"
+    >
+      <!-- 已选择的目录（旧版单目录支持） -->
+      <el-tag 
+        v-if="selectedDirectory"
+        closable
+        type="success"
+        style="margin-right: 8px; margin-bottom: 8px"
+        @close="clearDirectory"
+      >
+        <el-icon style="margin-right: 4px">
+          <Folder />
+        </el-icon>
+        {{ getFileName(selectedDirectory) }}
+      </el-tag>
+            
+      <!-- 已选择的目录（新版多目录支持） -->
+      <el-tag 
+        v-for="(dir, index) in selectedDirectories" 
+        :key="dir"
+        closable
+        type="success"
+        style="margin-right: 8px; margin-bottom: 8px"
+        @close="removeDirectory(index)"
+      >
+        <el-icon style="margin-right: 4px">
+          <Folder />
+        </el-icon>
+        {{ getFileName(dir) }}
+      </el-tag>
+            
+      <!-- 已选择的文件 -->
+      <el-tag 
+        v-for="(file, index) in selectedFiles" 
+        :key="file"
+        closable
+        style="margin-right: 8px; margin-bottom: 8px"
+        @close="removeFile(index)"
+      >
+        <el-icon style="margin-right: 4px">
+          <Document />
+        </el-icon>
+        {{ getFileName(file) }}
+      </el-tag>
+    </div>
+
+    <!-- 浏览器对话框 -->
+    <el-dialog 
+      v-model="showBrowser" 
+      title="选择目录或文件" 
+      width="600px"
+    >
+      <!-- 当前路径 -->
+      <div style="margin-bottom: 16px">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px">
+          <el-button 
+            size="small" 
+            :disabled="!currentPath || !parentPath"
+            @click="browseParent"
+          >
+            <el-icon><ArrowUp /></el-icon>
+            上级目录
+          </el-button>
+          <span :style="{ flex: 1, fontSize: '14px', color: 'var(--color-text-regular)' }">
+            {{ currentPath || '加载中...' }}
+          </span>
+          <el-button 
+            v-if="currentPath"
+            size="small" 
+            :type="isCurrentDirectorySelected ? 'success' : 'primary'"
+            @click="selectCurrentDirectory"
+          >
+            <el-icon style="margin-right: 4px">
+              <Select v-if="isCurrentDirectorySelected" />
+              <Folder v-else />
+            </el-icon>
+            选择当前目录
+          </el-button>
+        </div>
+      </div>
+
+      <!-- 目录和文件列表 -->
+      <el-scrollbar height="400px">
+        <div v-loading="loading">
+          <!-- 目录列表 -->
+          <div 
+            v-for="dir in browsedDirectories" 
+            :key="dir.path"
+            class="item directory-item"
+            :class="{ 
+              'item-disabled': !dir.is_accessible,
+              'item-selected': isDirectorySelected(dir.path)
+            }"
+          >
+            <el-checkbox 
+              :model-value="isDirectorySelected(dir.path)"
+              :disabled="!dir.is_accessible"
+              style="margin-right: 8px"
+              @change="() => toggleDirectory(dir.path)"
+              @click.stop
+            />
+            <el-icon :style="{ marginRight: '8px', fontSize: '18px', color: 'var(--color-success)' }">
+              <Folder />
+            </el-icon>
+            <span 
+              style="flex: 1; cursor: pointer"
+              @click="dir.is_accessible !== false && browseSub(dir.path)"
+            >
+              {{ dir.name }}
+            </span>
+            <el-icon 
+              v-if="dir.is_accessible !== false" 
+              :style="{ color: 'var(--color-text-secondary)', cursor: 'pointer' }"
+              @click="browseSub(dir.path)"
+            >
+              <ArrowRight />
+            </el-icon>
+            <el-icon
+              v-else
+              :style="{ color: 'var(--color-danger)' }"
+            >
+              <Lock />
+            </el-icon>
+          </div>
+
+          <!-- 文件列表 -->
+          <div 
+            v-for="file in allFiles" 
+            :key="file.path"
+            class="item file-item"
+            :class="{ 
+              'item-selected': isFileSelected(file.path),
+              'item-disabled': !file.is_audio
+            }"
+            @click="file.is_audio && toggleFile(file.path)"
+          >
+            <el-checkbox 
+              :model-value="isFileSelected(file.path)"
+              :disabled="!file.is_audio"
+              style="margin-right: 8px"
+              @change="() => toggleFile(file.path)"
+              @click.stop
+            />
+            <el-icon 
+              :style="{ 
+                marginRight: '8px', 
+                fontSize: '18px',
+                color: file.is_audio ? 'var(--color-primary)' : 'var(--color-text-disabled)' 
+              }"
+            >
+              <Document />
+            </el-icon>
+            <span
+              :style="{ 
+                flex: 1, 
+                color: file.is_audio ? 'var(--color-text-primary)' : 'var(--color-text-disabled)' 
+              }"
+            >
+              {{ file.name }}
+            </span>
+            <span 
+              :style="{ 
+                fontSize: '12px', 
+                color: file.is_audio ? 'var(--color-text-secondary)' : 'var(--color-text-disabled)' 
+              }"
+            >
+              {{ formatSize(file.size) }}
+            </span>
+          </div>
+
+          <el-empty 
+            v-if="!loading && browsedDirectories.length === 0 && allFiles.length === 0" 
+            description="此目录为空" 
+          />
+        </div>
+      </el-scrollbar>
+
+      <template #footer>
+        <div style="display: flex; justify-content: space-between; align-items: center">
+          <span :style="{ fontSize: '14px', color: 'var(--color-text-regular)' }">
+            <span v-if="tempSelectedDirectories.length > 0 && tempSelectedFiles.length > 0">
+              已选择 {{ tempSelectedDirectories.length }} 个目录和 {{ tempSelectedFiles.length }} 个文件
+            </span>
+            <span v-else-if="tempSelectedDirectories.length > 0">
+              已选择 {{ tempSelectedDirectories.length }} 个目录
+            </span>
+            <span v-else-if="tempSelectedFiles.length > 0">
+              已选择 {{ tempSelectedFiles.length }} 个文件
+            </span>
+            <span
+              v-else
+              :style="{ color: 'var(--color-text-disabled)' }"
+            >
+              请选择目录或文件
+            </span>
+          </span>
+          <div>
+            <el-button @click="showBrowser = false">
+              取消
+            </el-button>
+            <el-button 
+              type="primary" 
+              :disabled="tempSelectedDirectories.length === 0 && tempSelectedFiles.length === 0"
+              @click="confirmSelection"
+            >
+              确定
+            </el-button>
+          </div>
+        </div>
+      </template>
+    </el-dialog>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -259,7 +281,7 @@ const showBrowser = ref(false)
 const loading = ref(false)
 const currentPath = ref('')
 const parentPath = ref<string | null>(null)
-const directories = ref<DirectoryInfo[]>([])
+const browsedDirectories = ref<DirectoryInfo[]>([])
 const allFiles = ref<FileInfoExtended[]>([])
 
 // 临时选择状态
@@ -330,7 +352,7 @@ const isCurrentDirectorySelected = computed(() => {
 })
 
 // 打开浏览器
-function openBrowser() {
+function openBrowser(): void {
     // 初始化临时选择状态
     tempSelectedDirectories.value = [...selectedDirectories.value]
     // 兼容旧版单目录
@@ -342,35 +364,36 @@ function openBrowser() {
 }
 
 // 浏览子目录
-async function browseSub(path: string) {
+async function browseSub(path: string): Promise<void> {
     loading.value = true
     try {
         const data = await api.browseDirectory(path)
         currentPath.value = data.current_path
         parentPath.value = data.parent_path
-        directories.value = data.directories
+        browsedDirectories.value = data.directories
         
         // 处理文件列表，标记是否为音频文件
         allFiles.value = (data.files || []).map(file => ({
             ...file,
             is_audio: isAudioFile(file.name)
         }))
-    } catch (error: any) {
-        ElMessage.error(`浏览目录失败: ${error.response?.data?.detail || error.message}`)
+    } catch (error: unknown) {
+        const err = error as { response?: { data?: { detail?: string } }; message?: string }
+        ElMessage.error(`浏览目录失败: ${err.response?.data?.detail || err.message || '未知错误'}`)
     } finally {
         loading.value = false
     }
 }
 
 // 浏览父目录
-async function browseParent() {
+async function browseParent(): Promise<void> {
     if (parentPath.value) {
         await browseSub(parentPath.value)
     }
 }
 
 // 选择当前目录
-function selectCurrentDirectory() {
+function selectCurrentDirectory(): void {
     if (currentPath.value) {
         toggleDirectory(currentPath.value)
     }
@@ -401,7 +424,7 @@ function isDirectorySelected(path: string): boolean {
 }
 
 // 切换目录选择状态
-function toggleDirectory(path: string) {
+function toggleDirectory(path: string): void {
     const index = tempSelectedDirectories.value.indexOf(path)
     if (index > -1) {
         // 取消选择
@@ -435,7 +458,7 @@ function isFileSelected(path: string): boolean {
 }
 
 // 切换文件选择状态
-function toggleFile(path: string) {
+function toggleFile(path: string): void {
     const index = tempSelectedFiles.value.indexOf(path)
     if (index > -1) {
         tempSelectedFiles.value.splice(index, 1)
@@ -445,26 +468,26 @@ function toggleFile(path: string) {
 }
 
 // 清除目录选择（旧版单目录）
-function clearDirectory() {
+function clearDirectory(): void {
     emit('update:directory', '')
 }
 
 // 移除目录（新版多目录）
-function removeDirectory(index: number) {
+function removeDirectory(index: number): void {
     const newDirs = [...selectedDirectories.value]
     newDirs.splice(index, 1)
     emit('update:directories', newDirs)
 }
 
 // 移除文件
-function removeFile(index: number) {
+function removeFile(index: number): void {
     const newFiles = [...selectedFiles.value]
     newFiles.splice(index, 1)
     emit('update:files', newFiles)
 }
 
 // 确认选择
-function confirmSelection() {
+function confirmSelection(): void {
     // 更新目录（新版多目录）
     emit('update:directories', [...tempSelectedDirectories.value])
     

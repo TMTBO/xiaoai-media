@@ -138,7 +138,7 @@ export interface PlaylistItem {
   album: string          // 专辑名
   audio_id: string       // 音频ID
   url?: string           // 音频URL
-  custom_params: Record<string, any>
+  custom_params: Record<string, unknown>
 }
 
 export interface PlaylistIndex {

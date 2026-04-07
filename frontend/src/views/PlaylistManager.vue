@@ -1,289 +1,568 @@
 <template>
-    <div class="playlist-manager">
-        <!-- 播单列表 -->
-        <el-card>
-            <template #header>
-                <div style="display: flex; justify-content: space-between; align-items: center">
-                    <span>
-                        <el-icon style="vertical-align: middle; margin-right: 6px">
-                            <List />
-                        </el-icon>播单管理
-                    </span>
-                    <el-button type="primary" size="small" @click="showCreateDialog = true">
-                        <el-icon style="margin-right: 4px">
-                            <Plus />
-                        </el-icon>新建播单
-                    </el-button>
-                </div>
-            </template>
+  <div class="playlist-manager">
+    <!-- 播单列表 -->
+    <el-card>
+      <template #header>
+        <div style="display: flex; justify-content: space-between; align-items: center">
+          <span>
+            <el-icon style="vertical-align: middle; margin-right: 6px">
+              <List />
+            </el-icon>播单管理
+          </span>
+          <el-button
+            type="primary"
+            size="small"
+            @click="showCreateDialog = true"
+          >
+            <el-icon style="margin-right: 4px">
+              <Plus />
+            </el-icon>新建播单
+          </el-button>
+        </div>
+      </template>
 
-            <el-table :data="playlists" v-loading="playlistsLoading" style="width: 100%" empty-text="暂无播单，点击上方按钮创建新播单">
-                <el-table-column prop="name" label="播单名称" min-width="150" />
-                <el-table-column label="类型" width="120">
-                    <template #default="{ row }">
-                        {{ getPlaylistTypeName(row.type) }}
-                    </template>
-                </el-table-column>
-                <el-table-column label="项目数" width="100">
-                    <template #default="{ row }">
-                        {{ row.item_count }}
-                    </template>
-                </el-table-column>
-                <el-table-column prop="voice_keywords" label="语音关键词" min-width="200">
-                    <template #default="{ row }">
-                        <el-tag v-for="keyword in row.voice_keywords" :key="keyword" size="small"
-                            style="margin-right: 4px">
-                            {{ keyword }}
-                        </el-tag>
-                    </template>
-                </el-table-column>
-                <el-table-column label="播放模式" width="120">
-                    <template #default="{ row }">
-                        <el-select v-model="row.play_mode" size="small" @change="handlePlayModeChange(row)">
-                            <el-option label="列表循环" value="loop" />
-                            <el-option label="单曲循环" value="single" />
-                            <el-option label="随机播放" value="random" />
-                        </el-select>
-                    </template>
-                </el-table-column>
-                <el-table-column label="当前位置" width="100">
-                    <template #default="{ row }">
-                        {{ row.current_index + 1 }} / {{ row.item_count }}
-                    </template>
-                </el-table-column>
-                <el-table-column label="操作" width="280" fixed="right">
-                    <template #default="{ row }">
-                        <div style="display: flex; flex-direction: column; gap: 4px;">
-                            <div style="display: flex; gap: 4px;">
-                                <el-button size="small" type="success" :disabled="!row.item_count" @click="handlePlay(row)" style="flex: 1;">
-                                    <el-icon style="margin-right: 4px">
-                                        <VideoPlay />
-                                    </el-icon>播放
-                                </el-button>
-                                <el-button size="small" type="primary" :disabled="!row.item_count" @click="handleContinue(row)" style="flex: 1;">
-                                    <el-icon style="margin-right: 4px">
-                                        <CaretRight />
-                                    </el-icon>继续
-                                </el-button>
-                                <el-button size="small" type="warning" :disabled="!row.item_count" @click="handleStop(row)" style="flex: 1;">
-                                    <el-icon style="margin-right: 4px">
-                                        <VideoPause />
-                                    </el-icon>停止
-                                </el-button>
-                            </div>
-                            <div style="display: flex; gap: 4px;">
-                                <el-button size="small" @click="handleEdit(row)" style="flex: 1;">编辑</el-button>
-                                <el-button size="small" @click="handleManageItems(row)" style="flex: 1;">项目</el-button>
-                                <el-button size="small" type="danger" @click="handleDelete(row)" style="flex: 1;">删除</el-button>
-                            </div>
-                        </div>
-                    </template>
-                </el-table-column>
-            </el-table>
-        </el-card>
-
-        <!-- 创建/编辑播单对话框 -->
-        <el-dialog v-model="showCreateDialog" :title="editingPlaylist ? '编辑播单' : '创建播单'" width="600px">
-            <el-form :model="playlistForm" label-width="100px">
-                <el-form-item label="播单名称" required>
-                    <el-input v-model="playlistForm.name" placeholder="例如：我的音乐" />
-                </el-form-item>
-                <el-form-item label="类型">
-                    <el-select v-model="playlistForm.type" placeholder="请选择播单类型" clearable style="width: 100%">
-                        <el-option label="音乐" value="music" />
-                        <el-option label="有声书" value="audiobook" />
-                        <el-option label="播客" value="podcast" />
-                        <el-option label="广播剧" value="radio_drama" />
-                        <el-option label="其他" value="other" />
-                    </el-select>
-                </el-form-item>
-                <el-form-item label="描述">
-                    <el-input v-model="playlistForm.description" type="textarea" :rows="3" placeholder="播单描述（可选）" />
-                </el-form-item>
-                <el-form-item label="语音关键词">
-                    <el-select v-model="playlistForm.voice_keywords" multiple filterable allow-create
-                        default-first-option placeholder="输入关键词后按回车添加，例如：音乐、我的歌单" style="width: 100%">
-                    </el-select>
-                    <div :style="{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '4px' }">
-                        语音关键词用于语音命令识别，例如："播放音乐播单"
-                    </div>
-                </el-form-item>
-            </el-form>
-            <template #footer>
-                <el-button @click="showCreateDialog = false">取消</el-button>
-                <el-button type="primary" @click="handleSavePlaylist" :loading="saving">
-                    {{ editingPlaylist ? '保存' : '创建' }}
-                </el-button>
-            </template>
-        </el-dialog>
-
-        <!-- 编辑播单项对话框 -->
-        <el-dialog v-model="showItemsDialog" :title="`编辑播单：${currentPlaylist?.name}`" width="900px">
-            <div style="margin-bottom: 16px">
-                <el-button type="primary" size="small" @click="showAddItemDialog = true">
-                    <el-icon style="margin-right: 4px">
-                        <Plus />
-                    </el-icon>添加项目
-                </el-button>
-                <el-button type="success" size="small" @click="showBatchImportDialog = true" style="margin-left: 8px">
-                    <el-icon style="margin-right: 4px">
-                        <FolderOpened />
-                    </el-icon>批量导入
-                </el-button>
-            </div>
-
-            <el-table :data="currentPlaylist?.items" style="width: 100%" empty-text="暂无项目，点击上方按钮添加">
-                <el-table-column type="index" label="#" width="50" />
-                <el-table-column prop="title" label="标题" min-width="180" show-overflow-tooltip />
-                <el-table-column prop="artist" label="艺术家" width="120" show-overflow-tooltip />
-                <el-table-column prop="album" label="专辑" width="120" show-overflow-tooltip />
-                <el-table-column label="URL" width="100">
-                    <template #default="{ row }">
-                        <el-tag v-if="row.url" type="success" size="small">有</el-tag>
-                        <el-tag v-else type="info" size="small">动态获取</el-tag>
-                    </template>
-                </el-table-column>
-                <el-table-column label="操作" width="100">
-                    <template #default="{ $index }">
-                        <el-button size="small" type="danger" @click="handleDeleteItem($index)">删除</el-button>
-                    </template>
-                </el-table-column>
-            </el-table>
-
-            <template #footer>
-                <el-button @click="showItemsDialog = false">关闭</el-button>
-            </template>
-        </el-dialog>
-
-        <!-- 添加项目对话框 -->
-        <el-dialog v-model="showAddItemDialog" title="添加项目" width="600px">
-            <el-form :model="itemForm" label-width="100px">
-                <el-form-item label="标题" required>
-                    <el-input v-model="itemForm.title" placeholder="歌曲名" />
-                </el-form-item>
-                <el-form-item label="艺术家">
-                    <el-input v-model="itemForm.artist" placeholder="艺术家" />
-                </el-form-item>
-                <el-form-item label="专辑">
-                    <el-input v-model="itemForm.album" placeholder="专辑名" />
-                </el-form-item>
-                <el-form-item label="音频ID">
-                    <el-input v-model="itemForm.audio_id" placeholder="音频ID（可选）" />
-                </el-form-item>
-                <el-form-item label="音频 URL">
-                    <el-input v-model="itemForm.url" type="textarea" :rows="2"
-                        placeholder="如果留空，则需要配置音频ID或自定义参数通过 user_config.py 动态获取" />
-                </el-form-item>
-                <el-form-item label="自定义参数">
-                    <el-input v-model="customParamsText" type="textarea" :rows="4"
-                        placeholder='JSON 格式，例如：{"type": "music", "platform": "tx", "song_id": "123"}' />
-                    <div :style="{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '4px' }">
-                        当音频 URL 为空时，会将此参数传递给 user_config.py 中的 get_audio_url 函数
-                    </div>
-                </el-form-item>
-            </el-form>
-            <template #footer>
-                <el-button @click="showAddItemDialog = false">取消</el-button>
-                <el-button type="primary" @click="handleAddItem" :loading="saving">添加</el-button>
-            </template>
-        </el-dialog>
-
-        <!-- 批量导入对话框 -->
-        <el-dialog v-model="showBatchImportDialog" title="批量导入音频文件" width="700px">
-            <!-- 环境提示 -->
-            <el-alert 
-                :title="isDockerEnv ? 'Docker模式' : '本地模式'" 
-                :type="isDockerEnv ? 'info' : 'success'"
-                :description="environmentMessage"
-                style="margin-bottom: 20px"
-                show-icon
-                :closable="false"
-            />
-
-            <el-form :model="importForm" label-width="120px">
-                <!-- 音频格式选择 -->
-                <el-form-item label="音频格式" required>
-                    <el-checkbox-group v-model="importForm.file_extensions">
-                        <el-checkbox label=".mp3">MP3</el-checkbox>
-                        <el-checkbox label=".m4a">M4A</el-checkbox>
-                        <el-checkbox label=".flac">FLAC</el-checkbox>
-                        <el-checkbox label=".wav">WAV</el-checkbox>
-                        <el-checkbox label=".ogg">OGG</el-checkbox>
-                        <el-checkbox label=".aac">AAC</el-checkbox>
-                        <el-checkbox label=".wma">WMA</el-checkbox>
-                    </el-checkbox-group>
-                    <div :style="{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '4px' }">
-                        选择要导入的音频文件格式，PathSelector中只会显示选中格式的文件
-                    </div>
-                </el-form-item>
-
-                <!-- 统一的路径选择器 -->
-                <el-form-item label="选择路径" required>
-                    <PathSelector 
-                        v-model:directories="importForm.directories"
-                        v-model:files="importForm.files"
-                        :audio-extensions="importForm.file_extensions"
-                        placeholder="点击选择目录或文件"
-                        hint="可以选择一个或多个目录批量导入，或选择一个或多个文件精确导入"
-                    />
-                </el-form-item>
-
-                <!-- 导入选项（仅目录模式） -->
-                <el-form-item v-if="importForm.directories.length > 0" label="扫描选项">
-                    <el-checkbox v-model="importForm.recursive">
-                        递归扫描子目录
-                    </el-checkbox>
-                    <div :style="{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '4px' }">
-                        开启后会扫描所有子目录中的音频文件
-                    </div>
-                </el-form-item>
-            </el-form>
-
-            <!-- 导入结果 -->
-            <el-alert 
-                v-if="importResult"
-                title="导入完成"
-                type="success"
-                style="margin-top: 20px"
-                :closable="false"
+      <el-table
+        v-loading="playlistsLoading"
+        :data="playlists"
+        style="width: 100%"
+        empty-text="暂无播单，点击上方按钮创建新播单"
+      >
+        <el-table-column
+          prop="name"
+          label="播单名称"
+          min-width="150"
+        />
+        <el-table-column
+          label="类型"
+          width="120"
+        >
+          <template #default="{ row }">
+            {{ getPlaylistTypeName(row.type) }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="项目数"
+          width="100"
+        >
+          <template #default="{ row }">
+            {{ row.item_count }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="voice_keywords"
+          label="语音关键词"
+          min-width="200"
+        >
+          <template #default="{ row }">
+            <el-tag
+              v-for="keyword in row.voice_keywords"
+              :key="keyword"
+              size="small"
+              style="margin-right: 4px"
             >
-                <template #default>
-                    <div style="line-height: 1.8">
-                        <div>✅ 成功导入：<strong>{{ importResult.imported }}</strong> 个文件</div>
-                        <div>⏭️ 跳过：<strong>{{ importResult.skipped }}</strong> 个文件</div>
-                        <div>📁 扫描总数：<strong>{{ importResult.total_scanned }}</strong> 个文件</div>
-                        <div>🎵 播单总数：<strong>{{ importResult.playlist_total_items }}</strong> 首</div>
-                        <div v-if="importResult.skipped_files && importResult.skipped_files.length > 0" style="margin-top: 8px">
-                            <el-divider style="margin: 8px 0" />
-                            <div :style="{ color: 'var(--color-warning)' }">部分文件被跳过：</div>
-                            <ul style="margin: 4px 0; padding-left: 20px; font-size: 12px">
-                                <li v-for="file in importResult.skipped_files" :key="file">{{ file }}</li>
-                            </ul>
-                        </div>
-                    </div>
-                </template>
-            </el-alert>
-
-            <template #footer>
-                <el-button @click="closeBatchImportDialog">关闭</el-button>
-                <el-button 
-                    type="primary" 
-                    @click="handleBatchImport" 
-                    :loading="importing"
-                    :disabled="(importForm.directories.length === 0 && importForm.files.length === 0) || importForm.file_extensions.length === 0 || importResult !== null"
+              {{ keyword }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="播放模式"
+          width="120"
+        >
+          <template #default="{ row }">
+            <el-select
+              v-model="row.play_mode"
+              size="small"
+              @change="handlePlayModeChange(row)"
+            >
+              <el-option
+                label="列表循环"
+                value="loop"
+              />
+              <el-option
+                label="单曲循环"
+                value="single"
+              />
+              <el-option
+                label="随机播放"
+                value="random"
+              />
+            </el-select>
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="当前位置"
+          width="100"
+        >
+          <template #default="{ row }">
+            {{ row.current_index + 1 }} / {{ row.item_count }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="操作"
+          width="280"
+          fixed="right"
+        >
+          <template #default="{ row }">
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <div style="display: flex; gap: 4px;">
+                <el-button
+                  size="small"
+                  type="success"
+                  :disabled="!row.item_count"
+                  style="flex: 1;"
+                  @click="handlePlay(row)"
                 >
-                    {{ importing ? '导入中...' : '开始导入' }}
+                  <el-icon style="margin-right: 4px">
+                    <VideoPlay />
+                  </el-icon>播放
                 </el-button>
-            </template>
-        </el-dialog>
-    </div>
+                <el-button
+                  size="small"
+                  type="primary"
+                  :disabled="!row.item_count"
+                  style="flex: 1;"
+                  @click="handleContinue(row)"
+                >
+                  <el-icon style="margin-right: 4px">
+                    <CaretRight />
+                  </el-icon>继续
+                </el-button>
+                <el-button
+                  size="small"
+                  type="warning"
+                  :disabled="!row.item_count"
+                  style="flex: 1;"
+                  @click="handleStop(row)"
+                >
+                  <el-icon style="margin-right: 4px">
+                    <VideoPause />
+                  </el-icon>停止
+                </el-button>
+              </div>
+              <div style="display: flex; gap: 4px;">
+                <el-button
+                  size="small"
+                  style="flex: 1;"
+                  @click="handleEdit(row)"
+                >
+                  编辑
+                </el-button>
+                <el-button
+                  size="small"
+                  style="flex: 1;"
+                  @click="handleManageItems(row)"
+                >
+                  项目
+                </el-button>
+                <el-button
+                  size="small"
+                  type="danger"
+                  style="flex: 1;"
+                  @click="handleDelete(row)"
+                >
+                  删除
+                </el-button>
+              </div>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+
+    <!-- 创建/编辑播单对话框 -->
+    <el-dialog
+      v-model="showCreateDialog"
+      :title="editingPlaylist ? '编辑播单' : '创建播单'"
+      width="600px"
+    >
+      <el-form
+        :model="playlistForm"
+        label-width="100px"
+      >
+        <el-form-item
+          label="播单名称"
+          required
+        >
+          <el-input
+            v-model="playlistForm.name"
+            placeholder="例如：我的音乐"
+          />
+        </el-form-item>
+        <el-form-item label="类型">
+          <el-select
+            v-model="playlistForm.type"
+            placeholder="请选择播单类型"
+            clearable
+            style="width: 100%"
+          >
+            <el-option
+              label="音乐"
+              value="music"
+            />
+            <el-option
+              label="有声书"
+              value="audiobook"
+            />
+            <el-option
+              label="播客"
+              value="podcast"
+            />
+            <el-option
+              label="广播剧"
+              value="radio_drama"
+            />
+            <el-option
+              label="其他"
+              value="other"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="描述">
+          <el-input
+            v-model="playlistForm.description"
+            type="textarea"
+            :rows="3"
+            placeholder="播单描述（可选）"
+          />
+        </el-form-item>
+        <el-form-item label="语音关键词">
+          <el-select
+            v-model="playlistForm.voice_keywords"
+            multiple
+            filterable
+            allow-create
+            default-first-option
+            placeholder="输入关键词后按回车添加，例如：音乐、我的歌单"
+            style="width: 100%"
+          />
+          <div :style="{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '4px' }">
+            语音关键词用于语音命令识别，例如："播放音乐播单"
+          </div>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showCreateDialog = false">
+          取消
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="saving"
+          @click="handleSavePlaylist"
+        >
+          {{ editingPlaylist ? '保存' : '创建' }}
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 编辑播单项对话框 -->
+    <el-dialog
+      v-model="showItemsDialog"
+      :title="`编辑播单：${currentPlaylist?.name}`"
+      width="900px"
+    >
+      <div style="margin-bottom: 16px">
+        <el-button
+          type="primary"
+          size="small"
+          @click="showAddItemDialog = true"
+        >
+          <el-icon style="margin-right: 4px">
+            <Plus />
+          </el-icon>添加项目
+        </el-button>
+        <el-button
+          type="success"
+          size="small"
+          style="margin-left: 8px"
+          @click="showBatchImportDialog = true"
+        >
+          <el-icon style="margin-right: 4px">
+            <FolderOpened />
+          </el-icon>批量导入
+        </el-button>
+      </div>
+
+      <el-table
+        :data="currentPlaylist?.items"
+        style="width: 100%"
+        empty-text="暂无项目，点击上方按钮添加"
+      >
+        <el-table-column
+          type="index"
+          label="#"
+          width="50"
+        />
+        <el-table-column
+          prop="title"
+          label="标题"
+          min-width="180"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="artist"
+          label="艺术家"
+          width="120"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="album"
+          label="专辑"
+          width="120"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          label="URL"
+          width="100"
+        >
+          <template #default="{ row }">
+            <el-tag
+              v-if="row.url"
+              type="success"
+              size="small"
+            >
+              有
+            </el-tag>
+            <el-tag
+              v-else
+              type="info"
+              size="small"
+            >
+              动态获取
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="操作"
+          width="100"
+        >
+          <template #default="{ $index }">
+            <el-button
+              size="small"
+              type="danger"
+              @click="handleDeleteItem($index)"
+            >
+              删除
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <template #footer>
+        <el-button @click="showItemsDialog = false">
+          关闭
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 添加项目对话框 -->
+    <el-dialog
+      v-model="showAddItemDialog"
+      title="添加项目"
+      width="600px"
+    >
+      <el-form
+        :model="itemForm"
+        label-width="100px"
+      >
+        <el-form-item
+          label="标题"
+          required
+        >
+          <el-input
+            v-model="itemForm.title"
+            placeholder="歌曲名"
+          />
+        </el-form-item>
+        <el-form-item label="艺术家">
+          <el-input
+            v-model="itemForm.artist"
+            placeholder="艺术家"
+          />
+        </el-form-item>
+        <el-form-item label="专辑">
+          <el-input
+            v-model="itemForm.album"
+            placeholder="专辑名"
+          />
+        </el-form-item>
+        <el-form-item label="音频ID">
+          <el-input
+            v-model="itemForm.audio_id"
+            placeholder="音频ID（可选）"
+          />
+        </el-form-item>
+        <el-form-item label="音频 URL">
+          <el-input
+            v-model="itemForm.url"
+            type="textarea"
+            :rows="2"
+            placeholder="如果留空，则需要配置音频ID或自定义参数通过 user_config.py 动态获取"
+          />
+        </el-form-item>
+        <el-form-item label="自定义参数">
+          <el-input
+            v-model="customParamsText"
+            type="textarea"
+            :rows="4"
+            placeholder="JSON 格式，例如：{&quot;type&quot;: &quot;music&quot;, &quot;platform&quot;: &quot;tx&quot;, &quot;song_id&quot;: &quot;123&quot;}"
+          />
+          <div :style="{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '4px' }">
+            当音频 URL 为空时，会将此参数传递给 user_config.py 中的 get_audio_url 函数
+          </div>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showAddItemDialog = false">
+          取消
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="saving"
+          @click="handleAddItem"
+        >
+          添加
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 批量导入对话框 -->
+    <el-dialog
+      v-model="showBatchImportDialog"
+      title="批量导入音频文件"
+      width="700px"
+    >
+      <!-- 环境提示 -->
+      <el-alert 
+        :title="isDockerEnv ? 'Docker模式' : '本地模式'" 
+        :type="isDockerEnv ? 'info' : 'success'"
+        :description="environmentMessage"
+        style="margin-bottom: 20px"
+        show-icon
+        :closable="false"
+      />
+
+      <el-form
+        :model="importForm"
+        label-width="120px"
+      >
+        <!-- 音频格式选择 -->
+        <el-form-item
+          label="音频格式"
+          required
+        >
+          <el-checkbox-group v-model="importForm.file_extensions">
+            <el-checkbox label=".mp3">
+              MP3
+            </el-checkbox>
+            <el-checkbox label=".m4a">
+              M4A
+            </el-checkbox>
+            <el-checkbox label=".flac">
+              FLAC
+            </el-checkbox>
+            <el-checkbox label=".wav">
+              WAV
+            </el-checkbox>
+            <el-checkbox label=".ogg">
+              OGG
+            </el-checkbox>
+            <el-checkbox label=".aac">
+              AAC
+            </el-checkbox>
+            <el-checkbox label=".wma">
+              WMA
+            </el-checkbox>
+          </el-checkbox-group>
+          <div :style="{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '4px' }">
+            选择要导入的音频文件格式，PathSelector中只会显示选中格式的文件
+          </div>
+        </el-form-item>
+
+        <!-- 统一的路径选择器 -->
+        <el-form-item
+          label="选择路径"
+          required
+        >
+          <PathSelector 
+            v-model:directories="importForm.directories"
+            v-model:files="importForm.files"
+            :audio-extensions="importForm.file_extensions"
+            placeholder="点击选择目录或文件"
+            hint="可以选择一个或多个目录批量导入，或选择一个或多个文件精确导入"
+          />
+        </el-form-item>
+
+        <!-- 导入选项（仅目录模式） -->
+        <el-form-item
+          v-if="importForm.directories.length > 0"
+          label="扫描选项"
+        >
+          <el-checkbox v-model="importForm.recursive">
+            递归扫描子目录
+          </el-checkbox>
+          <div :style="{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '4px' }">
+            开启后会扫描所有子目录中的音频文件
+          </div>
+        </el-form-item>
+      </el-form>
+
+      <!-- 导入结果 -->
+      <el-alert 
+        v-if="importResult"
+        title="导入完成"
+        type="success"
+        style="margin-top: 20px"
+        :closable="false"
+      >
+        <template #default>
+          <div style="line-height: 1.8">
+            <div>✅ 成功导入：<strong>{{ importResult.imported }}</strong> 个文件</div>
+            <div>⏭️ 跳过：<strong>{{ importResult.skipped }}</strong> 个文件</div>
+            <div>📁 扫描总数：<strong>{{ importResult.total_scanned }}</strong> 个文件</div>
+            <div>🎵 播单总数：<strong>{{ importResult.playlist_total_items }}</strong> 首</div>
+            <div
+              v-if="importResult.skipped_files && importResult.skipped_files.length > 0"
+              style="margin-top: 8px"
+            >
+              <el-divider style="margin: 8px 0" />
+              <div :style="{ color: 'var(--color-warning)' }">
+                部分文件被跳过：
+              </div>
+              <ul style="margin: 4px 0; padding-left: 20px; font-size: 12px">
+                <li
+                  v-for="file in importResult.skipped_files"
+                  :key="file"
+                >
+                  {{ file }}
+                </li>
+              </ul>
+            </div>
+          </div>
+        </template>
+      </el-alert>
+
+      <template #footer>
+        <el-button @click="closeBatchImportDialog">
+          关闭
+        </el-button>
+        <el-button 
+          type="primary" 
+          :loading="importing" 
+          :disabled="(importForm.directories.length === 0 && importForm.files.length === 0) || importForm.file_extensions.length === 0 || importResult !== null"
+          @click="handleBatchImport"
+        >
+          {{ importing ? '导入中...' : '开始导入' }}
+        </el-button>
+      </template>
+    </el-dialog>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { List, Plus, VideoPlay, CaretRight, VideoPause, FolderOpened } from '@element-plus/icons-vue'
-import { api, type Device, type Playlist, type PlaylistIndex, type PlaylistItem, type DirectoryInfo, type ImportResult } from '@/api'
+import { api, type Playlist, type PlaylistIndex, type PlaylistItem, type ImportResult } from '@/api'
 import PathSelector from '@/components/PathSelector.vue'
 import { useDevices } from '@/composables/useDevices'
 
@@ -337,20 +616,21 @@ const importForm = ref({
 })
 
 // 加载播单列表
-async function loadPlaylists() {
+async function loadPlaylists(): Promise<void> {
     playlistsLoading.value = true
     try {
         const data = await api.listPlaylists()
         playlists.value = data.playlists
-    } catch (error: any) {
-        ElMessage.error(`加载播单失败: ${error.message}`)
+    } catch (error: unknown) {
+        const err = error as { message?: string }
+        ElMessage.error(`加载播单失败: ${err.message || '未知错误'}`)
     } finally {
         playlistsLoading.value = false
     }
 }
 
 // 保存播单
-async function handleSavePlaylist() {
+async function handleSavePlaylist(): Promise<void> {
     if (!playlistForm.value.name) {
         ElMessage.error('请输入播单名称')
         return
@@ -369,15 +649,16 @@ async function handleSavePlaylist() {
         }
         showCreateDialog.value = false
         await loadPlaylists()
-    } catch (error: any) {
-        ElMessage.error(`保存失败: ${error.message}`)
+    } catch (error: unknown) {
+        const err = error as { message?: string }
+        ElMessage.error(`保存失败: ${err.message || '未知错误'}`)
     } finally {
         saving.value = false
     }
 }
 
 // 编辑播单基本信息
-function handleEdit(playlist: PlaylistIndex) {
+function handleEdit(playlist: PlaylistIndex): void {
     editingPlaylist.value = playlist
     playlistForm.value = {
         name: playlist.name,
@@ -389,19 +670,20 @@ function handleEdit(playlist: PlaylistIndex) {
 }
 
 // 管理播单项
-async function handleManageItems(playlist: PlaylistIndex) {
+async function handleManageItems(playlist: PlaylistIndex): Promise<void> {
     try {
         // 加载完整的播单数据
         const fullPlaylist = await api.getPlaylistById(playlist.id)
         currentPlaylist.value = fullPlaylist
         showItemsDialog.value = true
-    } catch (error: any) {
-        ElMessage.error(`加载播单失败: ${error.message}`)
+    } catch (error: unknown) {
+        const err = error as { message?: string }
+        ElMessage.error(`加载播单失败: ${err.message || '未知错误'}`)
     }
 }
 
 // 删除播单
-async function handleDelete(playlist: PlaylistIndex) {
+async function handleDelete(playlist: PlaylistIndex): Promise<void> {
     try {
         await ElMessageBox.confirm(`确定要删除播单"${playlist.name}"吗？`, '确认删除', {
             confirmButtonText: '删除',
@@ -412,15 +694,16 @@ async function handleDelete(playlist: PlaylistIndex) {
         await api.deletePlaylist(playlist.id)
         ElMessage.success('删除成功')
         await loadPlaylists()
-    } catch (error: any) {
+    } catch (error: unknown) {
         if (error !== 'cancel') {
-            ElMessage.error(`删除失败: ${error.message}`)
+            const err = error as { message?: string }
+            ElMessage.error(`删除失败: ${err.message || '未知错误'}`)
         }
     }
 }
 
 // 播放播单
-async function handlePlay(playlist: PlaylistIndex) {
+async function handlePlay(playlist: PlaylistIndex): Promise<void> {
     try {
         await api.playPlaylist(playlist.id, {
             device_id: deviceId.value || undefined,
@@ -429,38 +712,42 @@ async function handlePlay(playlist: PlaylistIndex) {
         })
         ElMessage.success(`正在播放：${playlist.name}`)
         await loadPlaylists()
-    } catch (error: any) {
-        ElMessage.error(`播放失败: ${error.message}`)
+    } catch (error: unknown) {
+        const err = error as { message?: string }
+        ElMessage.error(`播放失败: ${err.message || '未知错误'}`)
     }
 }
 
 // 继续播放播单
-async function handleContinue(playlist: PlaylistIndex) {
+async function handleContinue(playlist: PlaylistIndex): Promise<void> {
     try {
         await api.continuePlaylist(playlist.id, deviceId.value || undefined, true)
         ElMessage.success(`继续播放：${playlist.name}`)
-    } catch (error: any) {
-        ElMessage.error(`继续播放失败: ${error.message}`)
+    } catch (error: unknown) {
+        const err = error as { message?: string }
+        ElMessage.error(`继续播放失败: ${err.message || '未知错误'}`)
     }
 }
 
 // 停止播放播单
-async function handleStop(playlist: PlaylistIndex) {
+async function handleStop(playlist: PlaylistIndex): Promise<void> {
     try {
         await api.stopPlaylist(playlist.id, deviceId.value || undefined)
         ElMessage.success(`已停止：${playlist.name}`)
-    } catch (error: any) {
-        ElMessage.error(`停止失败: ${error.message}`)
+    } catch (error: unknown) {
+        const err = error as { message?: string }
+        ElMessage.error(`停止失败: ${err.message || '未知错误'}`)
     }
 }
 
 // 修改播放模式
-async function handlePlayModeChange(playlist: PlaylistIndex) {
+async function handlePlayModeChange(playlist: PlaylistIndex): Promise<void> {
     try {
         await api.setPlayMode(playlist.id, playlist.play_mode)
         ElMessage.success(`播放模式已更新为：${getPlayModeName(playlist.play_mode)}`)
-    } catch (error: any) {
-        ElMessage.error(`更新播放模式失败: ${error.message}`)
+    } catch (error: unknown) {
+        const err = error as { message?: string }
+        ElMessage.error(`更新播放模式失败: ${err.message || '未知错误'}`)
         await loadPlaylists()
     }
 }
@@ -499,7 +786,7 @@ watch(showCreateDialog, (val) => {
         resetCreateForm()
     }
 })
-async function handleAddItem() {
+async function handleAddItem(): Promise<void> {
     if (!itemForm.value.title) {
         ElMessage.error('请输入标题')
         return
@@ -544,15 +831,16 @@ async function handleAddItem() {
         // 更新当前播单（需要重新加载完整数据）
         const fullPlaylist = await api.getPlaylistById(currentPlaylist.value!.id)
         currentPlaylist.value = fullPlaylist
-    } catch (error: any) {
-        ElMessage.error(`添加失败: ${error.message}`)
+    } catch (error: unknown) {
+        const err = error as { message?: string }
+        ElMessage.error(`添加失败: ${err.message || '未知错误'}`)
     } finally {
         saving.value = false
     }
 }
 
 // 删除播单项
-async function handleDeleteItem(index: number) {
+async function handleDeleteItem(index: number): Promise<void> {
     try {
         await ElMessageBox.confirm('确定要删除该项吗？', '确认删除', {
             confirmButtonText: '删除',
@@ -569,15 +857,16 @@ async function handleDeleteItem(index: number) {
         // 更新当前播单（需要重新加载完整数据）
         const fullPlaylist = await api.getPlaylistById(currentPlaylist.value!.id)
         currentPlaylist.value = fullPlaylist
-    } catch (error: any) {
+    } catch (error: unknown) {
         if (error !== 'cancel') {
-            ElMessage.error(`删除失败: ${error.message}`)
+            const err = error as { message?: string }
+            ElMessage.error(`删除失败: ${err.message || '未知错误'}`)
         }
     }
 }
 
 // 在创建对话框关闭时重置表单
-function resetCreateForm() {
+function resetCreateForm(): void {
     editingPlaylist.value = null
     playlistForm.value = {
         name: '',
@@ -588,18 +877,19 @@ function resetCreateForm() {
 }
 
 // 加载环境信息
-async function loadEnvironmentInfo() {
+async function loadEnvironmentInfo(): Promise<void> {
     try {
         const data = await api.getAvailableDirectories()
         isDockerEnv.value = data.is_docker
         environmentMessage.value = data.message
-    } catch (error: any) {
-        ElMessage.error(`加载环境信息失败: ${error.message}`)
+    } catch (error: unknown) {
+        const err = error as { message?: string }
+        ElMessage.error(`加载环境信息失败: ${err.message || '未知错误'}`)
     }
 }
 
 // 批量导入
-async function handleBatchImport() {
+async function handleBatchImport(): Promise<void> {
     // 验证输入
     const hasDirectories = importForm.value.directories && importForm.value.directories.length > 0
     const hasFiles = importForm.value.files && importForm.value.files.length > 0
@@ -630,7 +920,7 @@ async function handleBatchImport() {
         
         if (hasDirectories) {
             for (const directory of importForm.value.directories) {
-                const requestData: any = {
+                const requestData: Record<string, unknown> = {
                     directory: directory,
                     recursive: importForm.value.recursive,
                     file_extensions: importForm.value.file_extensions
@@ -644,7 +934,7 @@ async function handleBatchImport() {
         }
         
         if (hasFiles) {
-            const requestData: any = {
+            const requestData: Record<string, unknown> = {
                 files: importForm.value.files
             }
             
@@ -676,15 +966,16 @@ async function handleBatchImport() {
         } else {
             ElMessage.warning('没有文件被导入，请检查路径和文件格式')
         }
-    } catch (error: any) {
-        ElMessage.error(`导入失败: ${error.response?.data?.detail || error.message}`)
+    } catch (error: unknown) {
+        const err = error as { response?: { data?: { detail?: string } }; message?: string }
+        ElMessage.error(`导入失败: ${err.response?.data?.detail || err.message || '未知错误'}`)
     } finally {
         importing.value = false
     }
 }
 
 // 重置批量导入表单
-function resetImportForm() {
+function resetImportForm(): void {
     importForm.value = {
         directories: [],
         files: [],
@@ -695,7 +986,7 @@ function resetImportForm() {
 }
 
 // 关闭批量导入对话框
-function closeBatchImportDialog() {
+function closeBatchImportDialog(): void {
     showBatchImportDialog.value = false
     // 关闭时重置表单
     resetImportForm()

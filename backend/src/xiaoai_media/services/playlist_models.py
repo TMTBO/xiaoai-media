@@ -17,7 +17,8 @@ class PlaylistItem(BaseModel):
     album: str = Field("", description="专辑名")
     audio_id: str = Field("", description="音频ID（如果有）")
     url: str | None = Field(
-        None, description="音频URL，如果为空则需要通过 audio_id 或 custom_params 动态获取"
+        None,
+        description="音频URL，如果为空则需要通过 audio_id 或 custom_params 动态获取",
     )
     duration: int = Field(0, description="音频时长（秒）")
     cover_url: str = Field("", description="封面图片URL")
@@ -41,7 +42,10 @@ class PlaylistIndex(BaseModel):
     item_count: int = Field(0, description="播单项数量")
     created_at: str = ""
     updated_at: str = ""
-    play_mode: str = Field("loop", description="播放模式：loop(列表循环), single(单曲循环), random(随机播放)")
+    play_mode: str = Field(
+        "loop",
+        description="播放模式：loop(列表循环), single(单曲循环), random(随机播放)",
+    )
     current_index: int = Field(0, description="当前播放的索引位置")
 
 
@@ -59,7 +63,10 @@ class Playlist(BaseModel):
     )
     created_at: str = ""
     updated_at: str = ""
-    play_mode: str = Field("loop", description="播放模式：loop(列表循环), single(单曲循环), random(随机播放)")
+    play_mode: str = Field(
+        "loop",
+        description="播放模式：loop(列表循环), single(单曲循环), random(随机播放)",
+    )
     current_index: int = Field(0, description="当前播放的索引位置")
 
 
@@ -100,7 +107,9 @@ class PlayPlaylistRequest(BaseModel):
 class PlayModeRequest(BaseModel):
     """设置播放模式请求"""
 
-    play_mode: str = Field(..., description="播放模式：loop(列表循环), single(单曲循环), random(随机播放)")
+    play_mode: str = Field(
+        ..., description="播放模式：loop(列表循环), single(单曲循环), random(随机播放)"
+    )
 
 
 class ContinuePlayRequest(BaseModel):
@@ -113,10 +122,14 @@ class ContinuePlayRequest(BaseModel):
 class ImportFromDirectoryRequest(BaseModel):
     """从目录或文件批量导入请求"""
 
-    directory: str | None = Field(None, description="要导入的目录路径（与 files 二选一）")
-    files: list[str] | None = Field(None, description="要导入的文件路径列表（与 directory 二选一）")
+    directory: str | None = Field(
+        None, description="要导入的目录路径（与 files 二选一）"
+    )
+    files: list[str] | None = Field(
+        None, description="要导入的文件路径列表（与 directory 二选一）"
+    )
     recursive: bool = Field(False, description="是否递归扫描子目录（仅目录模式有效）")
     file_extensions: list[str] = Field(
         default_factory=lambda: [".mp3", ".m4a", ".flac", ".wav", ".ogg", ".aac"],
-        description="要导入的文件扩展名列表（仅目录模式有效）"
+        description="要导入的文件扩展名列表（仅目录模式有效）",
     )

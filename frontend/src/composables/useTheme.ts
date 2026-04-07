@@ -12,7 +12,7 @@ function getSystemTheme(): boolean {
 }
 
 // 初始化主题
-function initTheme() {
+function initTheme(): void {
     // 从本地存储读取主题偏好
     const savedTheme = localStorage.getItem(THEME_KEY) as ThemeMode | null
 
@@ -34,7 +34,7 @@ function initTheme() {
 }
 
 // 更新主题状态
-function updateTheme() {
+function updateTheme(): void {
     if (themeMode.value === 'auto') {
         isDark.value = getSystemTheme()
     } else {
@@ -44,7 +44,7 @@ function updateTheme() {
 }
 
 // 应用主题
-function applyTheme() {
+function applyTheme(): void {
     if (isDark.value) {
         document.documentElement.setAttribute('data-theme', 'dark')
         document.documentElement.classList.add('dark')
@@ -55,7 +55,7 @@ function applyTheme() {
 }
 
 // 切换主题（循环切换：浅色 -> 深色 -> 跟随系统）
-function toggleTheme() {
+function toggleTheme(): void {
     if (themeMode.value === 'light') {
         themeMode.value = 'dark'
     } else if (themeMode.value === 'dark') {
@@ -68,7 +68,7 @@ function toggleTheme() {
 }
 
 // 设置主题模式
-function setThemeMode(mode: ThemeMode) {
+function setThemeMode(mode: ThemeMode): void {
     themeMode.value = mode
     localStorage.setItem(THEME_KEY, mode)
     updateTheme()
@@ -79,7 +79,13 @@ watch(isDark, () => {
     applyTheme()
 })
 
-export function useTheme() {
+export function useTheme(): {
+    isDark: typeof isDark
+    themeMode: typeof themeMode
+    toggleTheme: typeof toggleTheme
+    setThemeMode: typeof setThemeMode
+    initTheme: typeof initTheme
+} {
     return {
         isDark,
         themeMode,

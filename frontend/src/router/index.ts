@@ -5,11 +5,11 @@ import TTSControl from '@/views/TTSControl.vue'
 import VolumeControl from '@/views/VolumeControl.vue'
 import CommandPanel from '@/views/CommandPanel.vue'
 import ConversationHistory from '@/views/ConversationHistory.vue'
-import Settings from '@/views/Settings.vue'
+import Settings from '@/views/SettingsPage.vue'
 import MusicPanel from '@/views/MusicPanel.vue'
 import PlaylistManager from '@/views/PlaylistManager.vue'
 import SchedulerManager from '@/views/SchedulerManager.vue'
-import Login from '@/views/Login.vue'
+import Login from '@/views/LoginPage.vue'
 import UserManagement from '@/views/UserManagement.vue'
 
 const router = createRouter({

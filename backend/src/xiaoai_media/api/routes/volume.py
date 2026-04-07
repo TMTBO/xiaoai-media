@@ -20,16 +20,18 @@ async def set_volume(req: VolumeRequest, client: XiaoAiClient = Depends(get_clie
         return result
     except Exception as e:
         import logging
+
         logging.getLogger(__name__).error("Volume API error: %s", e, exc_info=True)
         raise HTTPException(status_code=502, detail=f"Failed to set volume: {str(e)}")
 
 
 @router.get("")
-async def get_volume(device_id: str | None = None, client: XiaoAiClient = Depends(get_client)):
+async def get_volume(
+    device_id: str | None = None, client: XiaoAiClient = Depends(get_client)
+):
     """Get current speaker volume."""
     try:
         result = await client.get_volume(device_id)
         return result
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))
-

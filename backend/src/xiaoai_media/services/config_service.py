@@ -5,9 +5,7 @@
 
 from __future__ import annotations
 
-import importlib
 import re
-from pathlib import Path
 
 from fastapi import HTTPException
 
@@ -40,7 +38,7 @@ class ConfigService:
     @staticmethod
     def read_user_config() -> dict[str, str | bool | int | float]:
         """读取 user_config.py 中的配置变量
-        
+
         Returns:
             配置字典，键为配置项名称，值为配置值
         """
@@ -90,23 +88,25 @@ class ConfigService:
     @staticmethod
     def write_user_config(data: dict[str, str | bool | int | float | list]) -> None:
         """更新 user_config.py 中的配置变量
-        
+
         Args:
             data: 要更新的配置字典
-            
+
         Raises:
             HTTPException: 当配置文件路径无法确定时
         """
         config_path = config.get_config_file_path(required=True)
         if not config_path:
-            raise HTTPException(status_code=500, detail="Cannot determine config file path")
-        
+            raise HTTPException(
+                status_code=500, detail="Cannot determine config file path"
+            )
+
         # 如果配置文件不存在，创建默认配置文件
         if not config_path.exists():
             # 确保数据目录存在
             data_dir = config.get_data_dir()
             data_dir.mkdir(parents=True, exist_ok=True)
-            
+
             # 创建空配置文件
             config_path.write_text("# XiaoAi Media 配置文件\n\n", encoding="utf-8")
 
@@ -154,7 +154,9 @@ class ConfigService:
                         if "\n" in val_str:
                             # 多行列表
                             formatted_lines = val_str.split("\n")
-                            new_lines.append(" " * indent + f"{key} = {formatted_lines[0]}")
+                            new_lines.append(
+                                " " * indent + f"{key} = {formatted_lines[0]}"
+                            )
                             for fl in formatted_lines[1:]:
                                 new_lines.append(" " * indent + fl)
                         else:
@@ -201,7 +203,7 @@ class ConfigService:
     @staticmethod
     def get_current_config() -> dict:
         """获取当前配置（敏感字段会被掩码）
-        
+
         Returns:
             当前配置字典
         """
@@ -220,35 +222,41 @@ class ConfigService:
             "LOG_LEVEL": getattr(config, "LOG_LEVEL", "INFO"),
             "TIMEZONE": getattr(config, "TIMEZONE", "Asia/Shanghai"),
             "PROXY_SKIP_AUTH_FOR_LAN": getattr(config, "PROXY_SKIP_AUTH_FOR_LAN", True),
-            "PROXY_LAN_NETWORKS": getattr(config, "PROXY_LAN_NETWORKS", [
-                "192.168.0.0/16",
-                "10.0.0.0/8",
-                "172.16.0.0/12",
-                "127.0.0.0/8",
-            ]),
+            "PROXY_LAN_NETWORKS": getattr(
+                config,
+                "PROXY_LAN_NETWORKS",
+                [
+                    "192.168.0.0/16",
+                    "10.0.0.0/8",
+                    "172.16.0.0/12",
+                    "127.0.0.0/8",
+                ],
+            ),
         }
 
     @staticmethod
     def validate_config_keys(updates: dict) -> None:
         """验证配置项键是否允许修改
-        
+
         Args:
             updates: 要更新的配置字典
-            
+
         Raises:
             HTTPException: 当包含不允许的配置项时
         """
         for key in updates.keys():
             if key not in ALLOWED_KEYS:
-                raise HTTPException(status_code=422, detail=f"Unknown config key: {key}")
+                raise HTTPException(
+                    status_code=422, detail=f"Unknown config key: {key}"
+                )
 
     @staticmethod
     def filter_sensitive_fields(updates: dict) -> dict:
         """过滤掉值为 "***" 的敏感字段（表示不更改）
-        
+
         Args:
             updates: 原始更新字典
-            
+
         Returns:
             过滤后的更新字典
         """

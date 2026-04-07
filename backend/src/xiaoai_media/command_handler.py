@@ -1,8 +1,5 @@
 """Command handler for processing voice commands from speakers."""
 
-import logging
-import re
-
 from xiaoai_media import config
 from xiaoai_media.client import get_client_sync
 from xiaoai_media.logger import get_logger
@@ -45,8 +42,7 @@ class CommandHandler:
         # 直接调用 VoiceCommandService 处理命令
         try:
             result = await VoiceCommandService.execute_command(
-                text=processed_query,
-                device_id=device_id
+                text=processed_query, device_id=device_id
             )
             _log.info("语音命令处理成功: action=%s", result.get("action"))
 
@@ -55,5 +51,5 @@ class CommandHandler:
             try:
                 client = get_client_sync()
                 await client.text_to_speech("命令处理出错", device_id)
-            except:
+            except Exception:
                 pass

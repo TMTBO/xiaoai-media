@@ -4,6 +4,7 @@
 提供全局的 logger 实例，所有模块都应该使用这个 logger。
 这样可以统一管理日志级别和配置。
 """
+
 import logging
 from typing import Optional
 
@@ -13,7 +14,7 @@ _logger: Optional[logging.Logger] = None
 
 def get_logger() -> logging.Logger:
     """获取全局 logger 实例
-    
+
     Returns:
         全局 logger 实例
     """
@@ -25,22 +26,22 @@ def get_logger() -> logging.Logger:
 
 def set_log_level(level: str) -> None:
     """设置日志级别
-    
+
     Args:
         level: 日志级别 (DEBUG, INFO, WARNING, ERROR, CRITICAL)
     """
     logger = get_logger()
     logger.setLevel(level.upper())
-    
+
     # 同时更新所有子 logger
     for name in logging.root.manager.loggerDict:
-        if name.startswith('xiaoai_media'):
+        if name.startswith("xiaoai_media"):
             logging.getLogger(name).setLevel(level.upper())
 
 
 def get_log_level() -> str:
     """获取当前日志级别
-    
+
     Returns:
         当前日志级别名称
     """

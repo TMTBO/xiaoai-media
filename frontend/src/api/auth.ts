@@ -120,7 +120,7 @@ export function isAdmin(): boolean {
     return localStorage.getItem('role') === 'admin'
 }
 
-export function logout() {
+export function logout(): void {
     // 重置跳转标志，确保登录页面可以正常发送请求
     isRedirecting = false
     // 注意：这里仍然直接操作 localStorage，因为 logout 后会跳转到登录页

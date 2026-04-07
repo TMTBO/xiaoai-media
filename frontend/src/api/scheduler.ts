@@ -41,7 +41,7 @@ export interface Task {
     trigger_type: TriggerType
     cron_expression?: string
     run_date?: string
-    params: Record<string, any>
+    params: Record<string, unknown>
     enabled: boolean
     next_run_time?: string
     created_at: string
@@ -52,7 +52,7 @@ export interface CreateCronTaskRequest {
     task_type: TaskType
     name: string
     cron_expression: string
-    params?: Record<string, any>
+    params?: Record<string, unknown>
     enabled?: boolean
 }
 
@@ -60,7 +60,7 @@ export interface CreateDateTaskRequest {
     task_type: TaskType
     name: string
     run_date: string
-    params?: Record<string, any>
+    params?: Record<string, unknown>
     enabled?: boolean
 }
 
@@ -68,14 +68,14 @@ export interface CreateDelayTaskRequest {
     task_type: TaskType
     name: string
     delay_minutes: number
-    params?: Record<string, any>
+    params?: Record<string, unknown>
 }
 
 export interface UpdateTaskRequest {
     name?: string
     cron_expression?: string
     run_date?: string
-    params?: Record<string, any>
+    params?: Record<string, unknown>
     enabled?: boolean
 }
 

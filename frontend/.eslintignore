@@ -1,0 +1,11 @@
+node_modules
+dist
+*.config.js
+*.config.ts
+.vite
+.vscode
+public
+debug-check.js
+diagnose.html
+.eslintrc.cjs
+vite.config.ts

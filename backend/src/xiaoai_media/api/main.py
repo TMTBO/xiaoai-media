@@ -4,17 +4,19 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from xiaoai_media import config as app_config
-from xiaoai_media.api.dependencies import set_global_client
+from xiaoai_media.api.dependencies import (
+    get_current_user,
+    get_current_user_or_skip_for_lan,
+)
 from xiaoai_media.api.routes import (
     auth,
     command,
@@ -28,7 +30,7 @@ from xiaoai_media.api.routes import (
     tts,
     volume,
 )
-from xiaoai_media.client import XiaoAiClient
+from xiaoai_media.client import XiaoAiClient, set_global_client
 from xiaoai_media.command_handler import CommandHandler
 from xiaoai_media.conversation import ConversationPoller
 from xiaoai_media.playback_controller import get_controller, reset_controller
@@ -45,58 +47,62 @@ logging.getLogger("miservice").setLevel(logging.WARNING)
 async def lifespan(app: FastAPI):
     """Application lifespan manager for startup and shutdown."""
     logger = logging.getLogger(__name__)
-    
+
     # Startup
     logger.info("应用启动中...")
-    
+
     # Reset controller instance to ensure clean state after reload
     reset_controller()
-    
+
     # Initialize global XiaoAiClient
     client = XiaoAiClient()
     await client.connect()
     set_global_client(client)
     logger.info("XiaoAiClient 已初始化")
-    
+
     if app_config.ENABLE_CONVERSATION_POLLING:
         await conversation_poller.start()
         logger.info("对话监听已启用")
     else:
         logger.info("对话监听已禁用")
-    
+
     # Check and resume playback control if needed
     logger.info("播放控制已启用（定时器模式），检查是否需要恢复监听...")
     controller = get_controller()
     await controller.check_and_resume()
-    
+
     # Initialize scheduler service
     scheduler_service = get_scheduler_service()
     executor = get_scheduler_executor()
-    
+
     # Register task callbacks
-    scheduler_service.register_callback(TaskType.PLAY_MUSIC, executor.execute_play_music)
-    scheduler_service.register_callback(TaskType.PLAY_PLAYLIST, executor.execute_play_playlist)
+    scheduler_service.register_callback(
+        TaskType.PLAY_MUSIC, executor.execute_play_music
+    )
+    scheduler_service.register_callback(
+        TaskType.PLAY_PLAYLIST, executor.execute_play_playlist
+    )
     scheduler_service.register_callback(TaskType.REMINDER, executor.execute_reminder)
     scheduler_service.register_callback(TaskType.COMMAND, executor.execute_command)
-    
+
     # Start scheduler
     await scheduler_service.start()
     logger.info("定时任务调度器已启动")
-    
+
     # Register config change callback
     def on_config_changed():
         """配置变更回调：重启相关服务"""
         logger.info("检测到配置变更，正在重启相关服务...")
-        
+
         # 创建异步任务来处理配置变更
         asyncio.create_task(_handle_config_change())
-    
+
     async def _handle_config_change():
         """异步处理配置变更"""
         try:
             # 重新加载配置后的值
             from xiaoai_media import config as cfg
-            
+
             # 1. 重启对话监听器
             if cfg.ENABLE_CONVERSATION_POLLING:
                 if not conversation_poller.running:
@@ -106,62 +112,69 @@ async def lifespan(app: FastAPI):
                 else:
                     # 更新轮询间隔
                     conversation_poller.poll_interval = cfg.CONVERSATION_POLL_INTERVAL
-                    logger.info("对话监听轮询间隔已更新: %s秒", cfg.CONVERSATION_POLL_INTERVAL)
+                    logger.info(
+                        "对话监听轮询间隔已更新: %s秒", cfg.CONVERSATION_POLL_INTERVAL
+                    )
             else:
                 if conversation_poller.running:
                     await conversation_poller.stop()
                     logger.info("对话监听已禁用")
-            
+
             # 2. 重启播放控制器
             from xiaoai_media.playback_controller import get_controller
+
             controller = get_controller()
-            
+
             # 如果控制器正在运行，重启以应用新配置
             if controller.running:
                 await controller.stop()
                 await controller.check_and_resume()
                 logger.info("播放控制器已重启（定时器模式）")
-            
+
             # 3. 更新日志级别
-            if hasattr(cfg, 'LOG_LEVEL'):
+            if hasattr(cfg, "LOG_LEVEL"):
                 from xiaoai_media.logger import set_log_level
+
                 set_log_level(cfg.LOG_LEVEL)
                 logger.info("日志级别已更新: %s", cfg.LOG_LEVEL)
-            
+
             # 4. 更新时区配置
-            if hasattr(cfg, 'TIMEZONE'):
+            if hasattr(cfg, "TIMEZONE"):
                 # 更新调度器时区
-                from xiaoai_media.services.scheduler_service import get_scheduler_service
+                from xiaoai_media.services.scheduler_service import (
+                    get_scheduler_service,
+                )
+
                 try:
                     scheduler_service = get_scheduler_service()
                     await scheduler_service.update_timezone(cfg.TIMEZONE)
                     logger.info("时区已更新: %s", cfg.TIMEZONE)
                 except Exception as e:
                     logger.error("更新时区失败: %s", e, exc_info=True)
-            
+
             logger.info("配置变更处理完成")
         except Exception as e:
             logger.error("处理配置变更时出错: %s", e, exc_info=True)
-    
+
     app_config.register_config_change_callback(on_config_changed)
     logger.info("已注册配置变更回调")
-    
+
     logger.info("应用启动完成")
-    
+
     yield  # Application runs here
-    
+
     # Shutdown
     logger.info("开始关闭应用...")
-    
+
     # Unregister config change callback
     app_config.unregister_config_change_callback(on_config_changed)
-    
+
     try:
         await asyncio.wait_for(conversation_poller.stop(), timeout=1.0)
         logger.info("对话监听已停止")
     except (asyncio.TimeoutError, Exception) as e:
         logger.warning("停止对话监听失败: %s", e)
-    
+
     try:
         # 停止播放控制器
         controller = get_controller()
@@ -169,14 +182,14 @@ async def lifespan(app: FastAPI):
         logger.info("播放控制器已停止")
     except (asyncio.TimeoutError, Exception) as e:
         logger.warning("停止播放监控/控制失败: %s", e)
-    
+
     try:
         scheduler_service = get_scheduler_service()
         await asyncio.wait_for(scheduler_service.stop(), timeout=1.0)
         logger.info("定时任务调度器已停止")
     except (asyncio.TimeoutError, Exception) as e:
         logger.warning("停止定时任务调度器失败: %s", e)
-    
+
     logger.info("应用已关闭")
 
 
@@ -207,20 +220,37 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api")
 
 # 其他所有路由都需要登录态校验
-from xiaoai_media.api.dependencies import get_current_user, get_current_user_or_skip_for_lan
-from fastapi import Depends
-
-app.include_router(devices.router, prefix="/api", dependencies=[Depends(get_current_user)])
+app.include_router(
+    devices.router, prefix="/api", dependencies=[Depends(get_current_user)]
+)
 app.include_router(tts.router, prefix="/api", dependencies=[Depends(get_current_user)])
-app.include_router(volume.router, prefix="/api", dependencies=[Depends(get_current_user)])
-app.include_router(command.router, prefix="/api", dependencies=[Depends(get_current_user)])
-app.include_router(config.router, prefix="/api", dependencies=[Depends(get_current_user)])
-app.include_router(music.router, prefix="/api", dependencies=[Depends(get_current_user)])
-app.include_router(playlist.router, prefix="/api", dependencies=[Depends(get_current_user)])
+app.include_router(
+    volume.router, prefix="/api", dependencies=[Depends(get_current_user)]
+)
+app.include_router(
+    command.router, prefix="/api", dependencies=[Depends(get_current_user)]
+)
+app.include_router(
+    config.router, prefix="/api", dependencies=[Depends(get_current_user)]
+)
+app.include_router(
+    music.router, prefix="/api", dependencies=[Depends(get_current_user)]
+)
+app.include_router(
+    playlist.router, prefix="/api", dependencies=[Depends(get_current_user)]
+)
 # proxy 路由支持局域网跳过认证
-app.include_router(proxy.router, prefix="/api", dependencies=[Depends(get_current_user_or_skip_for_lan)])
-app.include_router(scheduler.router, prefix="/api", dependencies=[Depends(get_current_user)])
-app.include_router(state.router, prefix="/api", dependencies=[Depends(get_current_user)])
+app.include_router(
+    proxy.router,
+    prefix="/api",
+    dependencies=[Depends(get_current_user_or_skip_for_lan)],
+)
+app.include_router(
+    scheduler.router, prefix="/api", dependencies=[Depends(get_current_user)]
+)
+app.include_router(
+    state.router, prefix="/api", dependencies=[Depends(get_current_user)]
+)
 
 # Serve frontend static files in production (built by Docker)
 _static_dir = Path(__file__).resolve().parents[4] / "static"
@@ -236,7 +266,7 @@ if _static_dir.is_dir():
         file_path = _static_dir / full_path
         if file_path.is_file():
             return FileResponse(str(file_path))
-        
+
         # Otherwise, serve the SPA index.html for client-side routing
         index = _static_dir / "index.html"
         return FileResponse(str(index))

@@ -5,8 +5,6 @@
 
 from __future__ import annotations
 
-import logging
-from typing import Any
 
 from fastapi import HTTPException
 from pydantic import BaseModel
@@ -22,6 +20,7 @@ _log = get_logger()
 
 class SongQuality(BaseModel):
     """歌曲音质信息"""
+
     type: str  # e.g. '128k', '320k', 'flac'
     format: str = "mp3"
     size: int | str = 0  # bytes or human-readable string, e.g. '9.15M'
@@ -29,6 +28,7 @@ class SongQuality(BaseModel):
 
 class SongMeta(BaseModel):
     """歌曲元数据"""
+
     albumName: str = ""
     picUrl: str = ""
     songId: int | str = 0
@@ -36,6 +36,7 @@ class SongMeta(BaseModel):
 
 class SongItem(BaseModel):
     """歌曲项"""
+
     id: str
     name: str
     singer: str
@@ -49,13 +50,15 @@ class PlaylistLoaderService:
     """播放列表加载服务类"""
 
     @staticmethod
-    def parse_songs_from_api_response(songs_raw: list[dict], platform: str) -> list[SongItem]:
+    def parse_songs_from_api_response(
+        songs_raw: list[dict], platform: str
+    ) -> list[SongItem]:
         """从API响应中解析歌曲列表
-        
+
         Args:
             songs_raw: API返回的原始歌曲数据
             platform: 平台代码
-            
+
         Returns:
             解析后的歌曲列表
         """
@@ -86,13 +89,13 @@ class PlaylistLoaderService:
         auto_play: bool = True,
     ) -> dict:
         """从搜索结果加载播放列表
-        
+
         Args:
             query: 搜索关键词
             device_id: 设备ID
             platform: 平台代码
             auto_play: 是否自动播放
-            
+
         Returns:
             加载结果
         """
@@ -112,7 +115,9 @@ class PlaylistLoaderService:
         # 解析歌曲列表
         songs = PlaylistLoaderService.parse_songs_from_api_response(songs_raw, plat)
         if not songs:
-            raise HTTPException(status_code=404, detail="Failed to parse search results")
+            raise HTTPException(
+                status_code=404, detail="Failed to parse search results"
+            )
 
         # 加载到播放列表
         player = get_player()
@@ -161,14 +166,14 @@ class PlaylistLoaderService:
         auto_play: bool = True,
     ) -> dict:
         """从排行榜加载播放列表
-        
+
         Args:
             chart_id: 排行榜ID
             chart_keyword: 排行榜关键词
             device_id: 设备ID
             platform: 平台代码
             auto_play: 是否自动播放
-            
+
         Returns:
             加载结果
         """
@@ -217,7 +222,9 @@ class PlaylistLoaderService:
 
         songs_raw: list[dict] = songs_data.get("data", {}).get("list", []) or []
         if not songs_raw:
-            raise HTTPException(status_code=404, detail=f"No songs in chart: {chart_name}")
+            raise HTTPException(
+                status_code=404, detail=f"No songs in chart: {chart_name}"
+            )
 
         # 解析歌曲列表
         songs = PlaylistLoaderService.parse_songs_from_api_response(songs_raw, plat)
@@ -271,12 +278,12 @@ class PlaylistLoaderService:
         auto_play: bool = True,
     ) -> dict:
         """从保存的播放列表加载
-        
+
         Args:
             playlist_id: 播放列表ID
             device_id: 设备ID
             auto_play: 是否自动播放
-            
+
         Returns:
             加载结果
         """
@@ -352,9 +359,7 @@ class PlaylistLoaderService:
             "playlist_id": playlist_id,
             "device_id": device_id,
             "total": len(songs),
-            "songs": [
-                {"name": s.name, "singer": s.singer} for s in songs[:10]
-            ],
+            "songs": [{"name": s.name, "singer": s.singer} for s in songs[:10]],
         }
 
         # 自动播放

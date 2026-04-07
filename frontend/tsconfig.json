@@ -11,10 +11,23 @@
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "preserve",
+    
+    // 严格模式选项
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
+    
+    // 额外的严格检查选项
+    "noImplicitReturns": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
+    "exactOptionalPropertyTypes": true,
+    "forceConsistentCasingInFileNames": true,
+    
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]

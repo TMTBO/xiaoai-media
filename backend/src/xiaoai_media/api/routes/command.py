@@ -16,7 +16,7 @@ class CommandRequest(BaseModel):
 @router.post("")
 async def send_command(req: CommandRequest, client: XiaoAiClient = Depends(get_client)):
     """Send a voice command to the speaker.
-    
+
     Args:
         text: Command text
         device_id: Target device ID (optional)
@@ -29,20 +29,25 @@ async def send_command(req: CommandRequest, client: XiaoAiClient = Depends(get_c
         return result
     except Exception as e:
         import logging
-        logging.getLogger(__name__).error("Command endpoint error: %s", e, exc_info=True)
+
+        logging.getLogger(__name__).error(
+            "Command endpoint error: %s", e, exc_info=True
+        )
         raise HTTPException(status_code=502, detail=str(e))
 
 
 @router.get("/conversation")
-async def get_conversation(device_id: str | None = None, client: XiaoAiClient = Depends(get_client)):
+async def get_conversation(
+    device_id: str | None = None, client: XiaoAiClient = Depends(get_client)
+):
     """Get latest conversation records from the speaker.
-    
+
     Returns the most recent 20 conversation history including user questions
     and XiaoAi's responses.
     """
     try:
         result = await client.get_latest_ask(device_id, limit=20)
-        
+
         # Transform to match frontend expected format
         conversations = [
             {
@@ -52,9 +57,12 @@ async def get_conversation(device_id: str | None = None, client: XiaoAiClient = 
             }
             for conv in result
         ]
-        
+
         return {"conversations": conversations}
     except Exception as e:
         import logging
-        logging.getLogger(__name__).error("Get conversation error: %s", e, exc_info=True)
+
+        logging.getLogger(__name__).error(
+            "Get conversation error: %s", e, exc_info=True
+        )
         raise HTTPException(status_code=502, detail=str(e))

@@ -1,14 +1,23 @@
 <template>
   <div class="global-device-selector">
     <!-- 设备信息显示区域 -->
-    <div v-if="selectedDevice" class="device-info">
+    <div
+      v-if="selectedDevice"
+      class="device-info"
+    >
       <div class="info-item">
-        <el-tag :type="selectedDevice.isOnline ? 'success' : 'info'" size="small">
+        <el-tag
+          :type="selectedDevice.isOnline ? 'success' : 'info'"
+          size="small"
+        >
           {{ selectedDevice.isOnline ? '在线' : '离线' }}
         </el-tag>
       </div>
       <div class="info-item">
-        <el-tag :type="playStatusType" size="small">
+        <el-tag
+          :type="playStatusType"
+          size="small"
+        >
           {{ playStatusText }}
         </el-tag>
       </div>
@@ -24,9 +33,9 @@
         type="danger"
         size="small"
         :icon="CircleClose"
-        @click="stopPlayback"
         :loading="stopping"
         :disabled="!isPlaying"
+        @click="stopPlayback"
       >
         停止
       </el-button>
@@ -49,13 +58,20 @@
         >
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span>{{ d.name }}</span>
-            <el-tag :type="d.isOnline ? 'success' : 'info'" size="small">
+            <el-tag
+              :type="d.isOnline ? 'success' : 'info'"
+              size="small"
+            >
               {{ d.isOnline ? '在线' : '离线' }}
             </el-tag>
           </div>
         </el-option>
       </el-select>
-      <el-button :loading="devicesLoading" @click="loadDevices(true)" :icon="Refresh" />
+      <el-button
+        :loading="devicesLoading"
+        :icon="Refresh"
+        @click="loadDevices(true)"
+      />
     </div>
   </div>
 </template>
@@ -108,7 +124,7 @@ const playStatusType = computed(() => {
   return typeMap[playStatus.value] || 'info'
 })
 
-async function stopPlayback() {
+async function stopPlayback(): Promise<void> {
   stopping.value = true
   try {
     await api.sendCommand('停止播放', deviceId.value || undefined)

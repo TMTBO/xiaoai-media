@@ -13,7 +13,7 @@ const _error = ref('')
 // Tracks the in-flight init promise so concurrent callers don't double-fetch
 let _initPromise: Promise<void> | null = null
 
-function _init() {
+function _init(): void {
     // 检查是否已登录，未登录则不初始化
     const token = localStorage.getItem('token')
     if (!token) {
@@ -37,9 +37,15 @@ function _init() {
     })
 }
 
-export function useDevices() {
+export function useDevices(): {
+    devices: typeof _devices
+    deviceId: typeof _deviceId
+    devicesLoading: typeof _loading
+    devicesError: typeof _error
+    loadDevices: (forceRefresh?: boolean) => Promise<void>
+} {
     /** Refresh device list. Pass forceRefresh=true to bypass backend cache. */
-    async function loadDevices(forceRefresh = false) {
+    async function loadDevices(forceRefresh = false): Promise<void> {
         _loading.value = true
         _error.value = ''
         try {

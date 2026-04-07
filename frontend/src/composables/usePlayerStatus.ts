@@ -14,7 +14,13 @@ export interface PlayerStatus {
     media_type: number
 }
 
-export function usePlayerStatus(deviceId: Ref<string | null> | string | null) {
+export function usePlayerStatus(deviceId: Ref<string | null> | string | null): {
+    status: Ref<PlayerStatus | null>
+    error: Ref<Error | null>
+    connected: Ref<boolean>
+    reconnect: () => void
+    disconnect: () => void
+} {
     const status = ref<PlayerStatus | null>(null)
     const error = ref<Error | null>(null)
     const connected = ref(false)
@@ -27,7 +33,7 @@ export function usePlayerStatus(deviceId: Ref<string | null> | string | null) {
 
     const deviceIdRef = isRef(deviceId) ? deviceId : ref(deviceId)
 
-    function connect() {
+    function connect(): void {
         // 如果没有设备 ID，不连接
         if (!deviceIdRef.value) {
             disconnect()
@@ -48,41 +54,34 @@ export function usePlayerStatus(deviceId: Ref<string | null> | string | null) {
                     error.value = null
                     reconnectAttempts = 0 // 重置重连次数
                 } catch (err) {
-                    console.error('Failed to parse SSE status data:', err)
                     error.value = err as Error
                 }
             })
 
-            eventSource.onopen = () => {
+            eventSource.onopen = (): void => {
                 connected.value = true
                 error.value = null
-                console.log('SSE connected:', deviceIdRef.value)
             }
 
-            eventSource.onerror = (err) => {
-                console.error('SSE error:', err)
+            eventSource.onerror = (): void => {
                 connected.value = false
                 error.value = new Error('SSE connection failed')
 
                 // 自动重连
                 if (reconnectAttempts < maxReconnectAttempts) {
                     reconnectAttempts++
-                    console.log(`Reconnecting... (${reconnectAttempts}/${maxReconnectAttempts})`)
 
                     reconnectTimer = window.setTimeout(() => {
                         connect()
                     }, reconnectDelay)
-                } else {
-                    console.error('Max reconnect attempts reached')
                 }
             }
         } catch (err) {
-            console.error('Failed to create EventSource:', err)
             error.value = err as Error
         }
     }
 
-    function disconnect() {
+    function disconnect(): void {
         if (reconnectTimer) {
             clearTimeout(reconnectTimer)
             reconnectTimer = null
@@ -92,7 +91,6 @@ export function usePlayerStatus(deviceId: Ref<string | null> | string | null) {
             eventSource.close()
             eventSource = null
             connected.value = false
-            console.log('SSE disconnected')
         }
     }
 
@@ -120,6 +118,6 @@ export function usePlayerStatus(deviceId: Ref<string | null> | string | null) {
 }
 
 // 辅助函数：检查是否为 Ref
-function isRef<T>(value: any): value is Ref<T> {
-    return value && typeof value === 'object' && '__v_isRef' in value
+function isRef<T>(value: unknown): value is Ref<T> {
+    return value !== null && typeof value === 'object' && '__v_isRef' in value
 }

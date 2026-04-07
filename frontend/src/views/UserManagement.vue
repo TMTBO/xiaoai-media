@@ -4,40 +4,69 @@
       <template #header>
         <div class="card-header">
           <span>用户管理</span>
-          <el-button type="primary" @click="showCreateDialog">
+          <el-button
+            type="primary"
+            @click="showCreateDialog"
+          >
             <el-icon><Plus /></el-icon>
             添加用户
           </el-button>
         </div>
       </template>
       
-      <el-table :data="users" v-loading="loading">
-        <el-table-column prop="username" label="用户名" width="150" />
-        <el-table-column prop="role" label="角色" width="100">
+      <el-table
+        v-loading="loading"
+        :data="users"
+      >
+        <el-table-column
+          prop="username"
+          label="用户名"
+          width="150"
+        />
+        <el-table-column
+          prop="role"
+          label="角色"
+          width="100"
+        >
           <template #default="{ row }">
             <el-tag :type="row.role === 'admin' ? 'danger' : 'info'">
               {{ row.role === 'admin' ? '管理员' : '普通用户' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="enabled" label="状态" width="100">
+        <el-table-column
+          prop="enabled"
+          label="状态"
+          width="100"
+        >
           <template #default="{ row }">
             <el-tag :type="row.enabled ? 'success' : 'info'">
               {{ row.enabled ? '启用' : '禁用' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="created_at" label="创建时间" width="180">
+        <el-table-column
+          prop="created_at"
+          label="创建时间"
+          width="180"
+        >
           <template #default="{ row }">
             {{ formatDate(row.created_at) }}
           </template>
         </el-table-column>
-        <el-table-column prop="last_login" label="最近登录" width="180">
+        <el-table-column
+          prop="last_login"
+          label="最近登录"
+          width="180"
+        >
           <template #default="{ row }">
             {{ row.last_login ? formatDate(row.last_login) : '从未登录' }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="280">
+        <el-table-column
+          label="操作"
+          width="280"
+        >
           <template #default="{ row }">
             <el-button
               size="small"
@@ -81,22 +110,37 @@
       :title="isEdit ? '编辑用户' : '创建用户'"
       width="500px"
     >
-      <el-form :model="userForm" :rules="formRules" ref="formRef" label-width="110px">
-        <el-form-item v-if="!isEdit" label="用户名" prop="username">
+      <el-form
+        ref="formRef"
+        :model="userForm"
+        :rules="formRules"
+        label-width="110px"
+      >
+        <el-form-item
+          v-if="!isEdit"
+          label="用户名"
+          prop="username"
+        >
           <el-input
             v-model="userForm.username"
             placeholder="请输入用户名"
           />
         </el-form-item>
         
-        <el-form-item v-if="isEdit" label="当前用户名">
+        <el-form-item
+          v-if="isEdit"
+          label="当前用户名"
+        >
           <el-input
             v-model="userForm.username"
             disabled
           />
         </el-form-item>
         
-        <el-form-item v-if="isEdit" label="新用户名">
+        <el-form-item
+          v-if="isEdit"
+          label="新用户名"
+        >
           <el-input
             v-model="userForm.newUsername"
             placeholder="留空则不修改用户名"
@@ -104,7 +148,10 @@
           />
         </el-form-item>
         
-        <el-form-item label="密码" prop="password">
+        <el-form-item
+          label="密码"
+          prop="password"
+        >
           <el-input
             v-model="userForm.password"
             type="password"
@@ -112,14 +159,29 @@
           />
         </el-form-item>
         
-        <el-form-item label="角色" prop="role">
-          <el-select v-model="userForm.role" style="width: 100%">
-            <el-option label="普通用户" value="user" />
-            <el-option label="管理员" value="admin" />
+        <el-form-item
+          label="角色"
+          prop="role"
+        >
+          <el-select
+            v-model="userForm.role"
+            style="width: 100%"
+          >
+            <el-option
+              label="普通用户"
+              value="user"
+            />
+            <el-option
+              label="管理员"
+              value="admin"
+            />
           </el-select>
         </el-form-item>
         
-        <el-form-item v-if="isEdit" label="启用状态">
+        <el-form-item
+          v-if="isEdit"
+          label="启用状态"
+        >
           <el-switch
             v-model="userForm.enabled"
             active-text="启用"
@@ -130,8 +192,14 @@
       </el-form>
       
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitting">
+        <el-button @click="dialogVisible = false">
+          取消
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="submitting"
+          @click="handleSubmit"
+        >
           确定
         </el-button>
       </template>
@@ -172,7 +240,7 @@ const formRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [
     {
-      validator: (rule: any, value: string, callback: any) => {
+      validator: (_rule: unknown, value: string, callback: (error?: Error) => void): void => {
         if (!isEdit.value && !value) {
           callback(new Error('请输入密码'))
         } else {
@@ -185,18 +253,19 @@ const formRules = {
   role: [{ required: true, message: '请选择角色', trigger: 'change' }]
 }
 
-const loadUsers = async () => {
+const loadUsers = async (): Promise<void> => {
   loading.value = true
   try {
     users.value = await listUsers()
-  } catch (error: any) {
-    ElMessage.error(error.response?.data?.detail || '加载用户列表失败')
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: { detail?: string } } }
+    ElMessage.error(err.response?.data?.detail || '加载用户列表失败')
   } finally {
     loading.value = false
   }
 }
 
-const showCreateDialog = () => {
+const showCreateDialog = (): void => {
   isEdit.value = false
   userForm.username = ''
   userForm.newUsername = ''
@@ -206,7 +275,7 @@ const showCreateDialog = () => {
   dialogVisible.value = true
 }
 
-const showEditDialog = (user: User) => {
+const showEditDialog = (user: User): void => {
   isEdit.value = true
   userForm.username = user.username
   userForm.newUsername = ''
@@ -216,7 +285,7 @@ const showEditDialog = (user: User) => {
   dialogVisible.value = true
 }
 
-const handleSubmit = async () => {
+const handleSubmit = async (): Promise<void> => {
   if (!formRef.value) return
   
   await formRef.value.validate(async (valid) => {
@@ -263,15 +332,16 @@ const handleSubmit = async () => {
       
       dialogVisible.value = false
       await loadUsers()
-    } catch (error: any) {
-      ElMessage.error(error.response?.data?.detail || '操作失败')
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: string } } }
+      ElMessage.error(err.response?.data?.detail || '操作失败')
     } finally {
       submitting.value = false
     }
   })
 }
 
-const handleDelete = async (user: User) => {
+const handleDelete = async (user: User): Promise<void> => {
   try {
     await ElMessageBox.confirm(
       `确定要删除用户 ${user.username} 吗？`,
@@ -286,24 +356,26 @@ const handleDelete = async (user: User) => {
     await deleteUser(user.username)
     ElMessage.success('用户删除成功')
     await loadUsers()
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error !== 'cancel') {
-      ElMessage.error(error.response?.data?.detail || '删除失败')
+      const err = error as { response?: { data?: { detail?: string } } }
+      ElMessage.error(err.response?.data?.detail || '删除失败')
     }
   }
 }
 
-const handleEnable = async (user: User) => {
+const handleEnable = async (user: User): Promise<void> => {
   try {
     await enableUser(user.username)
     ElMessage.success(`用户 ${user.username} 已启用`)
     await loadUsers()
-  } catch (error: any) {
-    ElMessage.error(error.response?.data?.detail || '启用失败')
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: { detail?: string } } }
+    ElMessage.error(err.response?.data?.detail || '启用失败')
   }
 }
 
-const handleDisable = async (user: User) => {
+const handleDisable = async (user: User): Promise<void> => {
   // 前端额外检查：不允许禁用管理员
   if (user.role === 'admin') {
     ElMessage.error('不能禁用管理员账户')
@@ -324,14 +396,15 @@ const handleDisable = async (user: User) => {
     await disableUser(user.username)
     ElMessage.success(`用户 ${user.username} 已禁用`)
     await loadUsers()
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error !== 'cancel') {
-      ElMessage.error(error.response?.data?.detail || '禁用失败')
+      const err = error as { response?: { data?: { detail?: string } } }
+      ElMessage.error(err.response?.data?.detail || '禁用失败')
     }
   }
 }
 
-const formatDate = (dateStr: string) => {
+const formatDate = (dateStr: string): string => {
   return new Date(dateStr).toLocaleString('zh-CN')
 }
 

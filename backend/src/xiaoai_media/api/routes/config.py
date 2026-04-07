@@ -15,6 +15,7 @@ router = APIRouter(prefix="/config", tags=["config"])
 
 class ConfigUpdate(BaseModel):
     """配置更新请求模型"""
+
     MI_USER: str | None = None
     MI_PASS: str | None = None
     MI_DID: str | None = None
@@ -60,5 +61,5 @@ async def update_config(body: ConfigUpdate):
 
     return {
         "message": "Configuration updated and reloaded successfully",
-        "note": "All services have been updated with new configuration"
+        "note": "All services have been updated with new configuration",
     }

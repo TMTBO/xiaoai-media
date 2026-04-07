@@ -1,6 +1,9 @@
 <template>
   <transition name="slide-down">
-    <div v-if="shouldShow" class="global-player-bar">
+    <div
+      v-if="shouldShow"
+      class="global-player-bar"
+    >
       <div class="player-content">
         <!-- 封面 -->
         <div class="cover">
@@ -10,16 +13,29 @@
             :alt="displaySong.name"
             @error="onCoverError"
           >
-          <el-icon v-else class="default-cover"><Headset /></el-icon>
+          <el-icon
+            v-else
+            class="default-cover"
+          >
+            <Headset />
+          </el-icon>
         </div>
         
         <!-- 歌曲信息 -->
         <div class="song-info">
-          <div class="song-name">{{ displaySong?.name || '未知歌曲' }}</div>
+          <div class="song-name">
+            {{ displaySong?.name || '未知歌曲' }}
+          </div>
           <div class="song-meta">
             <span class="artist">{{ displaySong?.singer || '未知歌手' }}</span>
-            <span v-if="displaySong?.album" class="separator">·</span>
-            <span v-if="displaySong?.album" class="album">{{ displaySong.album }}</span>
+            <span
+              v-if="displaySong?.album"
+              class="separator"
+            >·</span>
+            <span
+              v-if="displaySong?.album"
+              class="album"
+            >{{ displaySong.album }}</span>
           </div>
         </div>
         
@@ -28,17 +44,17 @@
           <el-button 
             circle
             :icon="CaretLeft" 
-            @click="playPrev"
             :disabled="!playlist || playlist.total <= 1"
             title="上一曲"
             class="control-btn prev-btn"
+            @click="playPrev"
           />
           <el-button 
             circle
-            @click="togglePlay"
             class="control-btn play-btn"
             :title="isPlaying ? '暂停' : '播放'"
             :disabled="!state || state.play_status === 'unknown'"
+            @click="togglePlay"
           >
             <el-icon :size="24">
               <VideoPause v-if="isPlaying" />
@@ -48,10 +64,10 @@
           <el-button 
             circle
             :icon="CaretRight" 
-            @click="playNext"
             :disabled="!playlist || playlist.total <= 1"
             title="下一曲"
             class="control-btn next-btn"
+            @click="playNext"
           />
         </div>
         
@@ -73,15 +89,13 @@
           <span v-if="playlist">{{ playlist.current + 1 }} / {{ playlist.total }}</span>
           <span v-else>-</span>
         </div>
-        
-
       </div>
     </div>
   </transition>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { 
   VideoPlay, 
   VideoPause, 
@@ -136,13 +150,13 @@ function formatTime(ms: number): string {
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
 }
 
-function onCoverError(e: Event) {
+function onCoverError(e: Event): void {
   // 封面加载失败时隐藏图片
   const img = e.target as HTMLImageElement
   img.style.display = 'none'
 }
 
-async function togglePlay() {
+async function togglePlay(): Promise<void> {
   try {
     if (isPlaying.value) {
       // 暂停播放
@@ -157,7 +171,7 @@ async function togglePlay() {
   }
 }
 
-async function playNext() {
+async function playNext(): Promise<void> {
   try {
     // 如果有播放列表，使用播放列表的下一曲（支持循环模式）
     if (playlist.value && playlist.value.id) {
@@ -173,7 +187,7 @@ async function playNext() {
   }
 }
 
-async function playPrev() {
+async function playPrev(): Promise<void> {
   try {
     // 上一曲功能暂时只支持旧的播放器逻辑
     await api.prevMusic(deviceId.value || undefined)

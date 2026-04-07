@@ -6,7 +6,6 @@
 
 from __future__ import annotations
 
-import logging
 from xiaoai_media.logger import get_logger
 from typing import Any
 
@@ -52,7 +51,7 @@ async def create_playlist(req: CreatePlaylistRequest) -> Playlist:
 @router.get("/directories")
 async def list_directories():
     """列出可用的目录
-    
+
     - 本地模式：返回常用目录列表
     - Docker模式：返回 /data 下的可用目录列表
     """
@@ -62,7 +61,9 @@ async def list_directories():
         return {
             "directories": directories,
             "is_docker": is_docker,
-            "message": "Docker模式：从列表中选择目录" if is_docker else "本地模式：浏览目录"
+            "message": "Docker模式：从列表中选择目录"
+            if is_docker
+            else "本地模式：浏览目录",
         }
     except Exception as e:
         _log.error("Failed to list directories: %s", e, exc_info=True)
@@ -72,10 +73,10 @@ async def list_directories():
 @router.get("/directories/browse")
 async def browse_directory(path: str | None = None):
     """浏览指定目录，返回子目录列表
-    
+
     参数：
     - path: 目录路径（可选），如果为空则返回根目录
-    
+
     返回：
     - current_path: 当前路径
     - parent_path: 父路径（如果有）
@@ -100,7 +101,9 @@ async def get_playlist(playlist_id: str) -> Playlist:
     try:
         playlist = PlaylistService.get_playlist(playlist_id)
         if playlist is None:
-            raise HTTPException(status_code=404, detail=f"Playlist not found: {playlist_id}")
+            raise HTTPException(
+                status_code=404, detail=f"Playlist not found: {playlist_id}"
+            )
         return playlist
     except HTTPException:
         raise
@@ -193,7 +196,7 @@ async def play_by_voice_command(
     - "播放音乐播单"
     - "播放有声书"
     - "播放我的播客"
-    
+
     从索引文件中匹配唤醒词，然后加载对应的播单
     """
     try:
@@ -240,7 +243,7 @@ async def stop_playlist(playlist_id: str, device_id: str | None = None):
 @router.post("/{playlist_id}/play-mode")
 async def set_play_mode(playlist_id: str, req: PlayModeRequest):
     """设置播放模式
-    
+
     支持的播放模式：
     - loop: 列表循环
     - single: 单曲循环
@@ -277,13 +280,12 @@ async def play_next(playlist_id: str, device_id: str | None = None):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-
 @router.post("/{playlist_id}/import")
 async def import_from_directory(playlist_id: str, req: ImportFromDirectoryRequest):
     """从指定目录或文件列表批量导入音频文件
-    
+
     支持的音频格式：.mp3, .m4a, .flac, .wav, .ogg, .aac, .wma
-    
+
     参数：
     - directory: 目录路径（与 files 二选一）
       - 本地模式：完整的本地文件系统路径
@@ -292,7 +294,7 @@ async def import_from_directory(playlist_id: str, req: ImportFromDirectoryReques
       - 支持多个文件路径
     - recursive: 是否递归扫描子目录（仅目录模式有效）
     - file_extensions: 要导入的文件扩展名列表（仅目录模式有效）
-    
+
     返回：
     - imported: 成功导入的文件数量
     - skipped: 跳过的文件数量
@@ -305,7 +307,7 @@ async def import_from_directory(playlist_id: str, req: ImportFromDirectoryReques
             directory=req.directory,
             files=req.files,
             recursive=req.recursive,
-            file_extensions=req.file_extensions
+            file_extensions=req.file_extensions,
         )
         return result
     except ValueError as e:
